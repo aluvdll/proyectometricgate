@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CompanyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,12 +31,12 @@ Route::middleware('auth:sanctum')->group(function () {
     */
     Route::middleware('superadmin')->group(function () {
 
-        // 🏢 CRUD empresas (solo tú)
-        #Route::post('/companies', [CompanyController::class, 'store']);
-        #Route::get('/companies', [CompanyController::class, 'index']);
-        #Route::get('/companies/{id}', [CompanyController::class, 'show']);
-        #Route::put('/companies/{id}', [CompanyController::class, 'update']);
-        #Route::delete('/companies/{id}', [CompanyController::class, 'destroy']);
+        // 🏢 CRUD empresas (solo super admin)
+        Route::get('/companies', [CompanyController::class, 'index']);
+        Route::get('/companies/{id}', [CompanyController::class, 'show']);
+        Route::post('/companies', [CompanyController::class, 'store']);
+        Route::put('/companies/{id}', [CompanyController::class, 'update']);
+        Route::delete('/companies/{id}', [CompanyController::class, 'destroy']);
     });
 
     /*
