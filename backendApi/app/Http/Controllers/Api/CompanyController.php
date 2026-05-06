@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class CompanyController extends Controller
 {
@@ -47,13 +49,54 @@ class CompanyController extends Controller
             'logo' => 'nullable|string|max:255',
             'active' => 'boolean',
             'max_users' => 'nullable|integer|min:1',
+
+            // 👤 ADMIN DE LA EMPRESA
+            'admin_name' => 'required|string',
+            'admin_email' => 'required|email|unique:users,email',
+            'admin_password' => 'required|string|min:6',
+            'admin_dni' => 'required|string',
+            'admin_phone' => 'nullable|string',
+            'admin_address' => 'nullable|string',
+            'admin_city' => 'nullable|string',
+            'admin_province' => 'nullable|string',
         ]);
 
-        $company = Company::create($request->all());
+        // 🏢 1. CREAR EMPRESA
+        $company = Company::create([
+            'fiscal_name' => $request->fiscal_name,
+            'commercial_name' => $request->commercial_name,
+            'cif_nif' => $request->cif_nif,
+            'email' => $request->email,
+            'address' => $request->address,
+            'phone' => $request->phone,
+            'phone2' => $request->phone2,
+            'city' => $request->city,
+            'province' => $request->province,
+            'postal_code' => $request->postal_code,
+            'logo' => $request->logo,
+            'max_users' => $request->max_users ?? 5,
+            'active' => true,
+        ]);
+
+        // 👤 2. CREAR ADMIN AUTOMÁTICO
+        $admin = User::create([
+            'company_id' => $company->id,
+            'name' => $request->admin_name,
+            'email' => $request->admin_email,
+            'password' => Hash::make($request->admin_password),
+            'dni' => $request->admin_dni,
+            'phone' => $request->admin_phone,
+            'address' => $request->admin_address,
+            'city' => $request->admin_city,
+            'province' => $request->admin_province,
+            'role' => 'admin',
+            'active' => true,
+        ]);
 
         return response()->json([
             'message' => 'Empresa creada correctamente',
-            'company' => $company
+            'company' => $company,
+            'admin' => $admin,
         ], 201);
     }
 
@@ -88,7 +131,8 @@ class CompanyController extends Controller
 
         return response()->json([
             'message' => 'Empresa actualizada correctamente',
-            'company' => $company
+            'company' => $company,
+
         ]);
     }
 
@@ -101,6 +145,10 @@ class CompanyController extends Controller
             return response()->json([
                 'error' => 'Empresa no encontrada'
             ], 404);
+        }
+
+        if ($company->users()->count() > 0) {
+            $company->users()->delete(); 
         }
 
         $company->delete();
