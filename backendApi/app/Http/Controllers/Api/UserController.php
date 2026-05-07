@@ -76,12 +76,27 @@ class UserController extends Controller
     // 📄 listar todos los usuarios de la empresa (admin )
     // listar solo su empresa
      // 📄 listar usuarios de la empresa del usuario logueado (admin)
-    private function companyUser($id)
-    {
-        return User::where('company_id', request()->user()->company_id)
-            ->where('id', $id)
-            ->first();
+  // 📄 listar usuarios de la empresa del admin logueado
+public function companyUsers(Request $request)
+{
+    $user = $request->user();
+
+    if (!$user) {
+        return response()->json([
+            'error' => 'No autenticado'
+        ], 401);
     }
+
+    if ($user->role !== 'admin') {
+        return response()->json([
+            'error' => 'No autorizado'
+        ], 403);
+    }
+
+    $users = User::where('company_id', $user->company_id)->get();
+
+    return response()->json($users);
+}
 
 
     // ➕ crear usuario dentro de la empresa (admin)
