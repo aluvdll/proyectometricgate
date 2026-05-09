@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import AvatarInput from "./AvatarInput";
 import { useAuth } from "../context/AuthContext";
+import { NotificationModal } from "./NotificationModal";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -27,6 +28,10 @@ export function FormUsuario({ mode, userId }) {
   const [avatar, setAvatar] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
+  const [notifyVisible, setNotifyVisible] = useState(false);
+  const [notifyTitle, setNotifyTitle] = useState("");
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifyType, setNotifyType] = useState("success");
 
   const {
     register,
@@ -38,6 +43,15 @@ export function FormUsuario({ mode, userId }) {
   } = useForm({
     defaultValues: valoresIniciales,
   });
+
+  const showNotification = (title, message, type) => {
+    setNotifyTitle(title);
+    setNotifyMessage(message);
+    setNotifyType(type);
+    setNotifyVisible(true);
+
+    setTimeout(() => setNotifyVisible(false), 2500);
+  };
 
   useEffect(() => {
     if (isEdit && userId) {
@@ -64,13 +78,25 @@ export function FormUsuario({ mode, userId }) {
           setAvatarUrl(res.data.avatar ?? null);
           setRemoveAvatar(false);
         })
-        .catch(() => alert("Error cargando usuario"));
+
+        .catch(() => {
+          showNotification(
+            "Error",
+            "Error cargando usuario. Inténtalo de nuevo.",
+            "error",
+          );
+        });
     }
   }, [isEdit, userId, token, reset]);
 
   const onSubmit = async (data) => {
     if (!token) {
-      alert("Sesión expirada. Vuelve a iniciar sesión.");
+      showNotification(
+        "Error",
+        "Sesión expirada. Vuelve a iniciar sesión.",
+        "error",
+      );
+
       return;
     }
 
@@ -109,8 +135,8 @@ export function FormUsuario({ mode, userId }) {
             },
           },
         );
-        alert("Usuario editado");
-        navigate("/adminPanel/usuarios");
+        showNotification("Éxito", "Usuario editado", "success");
+        setTimeout(() => navigate("/adminPanel/usuarios"), 2500);
       } else {
         await axios.post("http://127.0.0.1:8000/api/company/users", payload, {
           headers: {
@@ -118,12 +144,14 @@ export function FormUsuario({ mode, userId }) {
             "Content-Type": "multipart/form-data",
           },
         });
-        alert("Usuario creado");
-        navigate("/adminPanel/usuarios");
-        reset(valoresIniciales);
-        setAvatar(null);
-        setAvatarUrl(null);
-        setRemoveAvatar(false);
+        showNotification("Éxito", "Usuario creado", "success");
+        setTimeout(() => {
+          navigate("/adminPanel/usuarios");
+          reset(valoresIniciales);
+          setAvatar(null);
+          setAvatarUrl(null);
+          setRemoveAvatar(false);
+        }, 2500);
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -140,9 +168,9 @@ export function FormUsuario({ mode, userId }) {
           error.message ||
           "Error al guardar usuario";
 
-        alert(message);
+        showNotification("Error", message, "error");
       } else {
-        alert("Error al guardar usuario");
+        showNotification("Error", "Error al guardar usuario", "error");
       }
     }
   };
@@ -311,6 +339,14 @@ export function FormUsuario({ mode, userId }) {
           {isEdit ? "Guardar cambios" : "Añadir usuario"}
         </button>
       </form>
+
+      {notifyVisible && (
+        <NotificationModal
+          title={notifyTitle}
+          message={notifyMessage}
+          type={notifyType}
+        />
+      )}
     </div>
   );
 }

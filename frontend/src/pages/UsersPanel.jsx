@@ -43,8 +43,13 @@ export const UsersPanel = () => {
         console.log("DATA:", response.data);
         setUsuarios(response.data);
       })
-      .catch((err) => {
-        setError("Error fetching users: " + err.message);
+      .catch(() => {
+        setError(null);
+        setNotifyTitle("Error");
+        setNotifyMessage("No hay conexión con el servidor.");
+        setNotifyType("error");
+        setNotifyVisible(true);
+        setTimeout(() => setNotifyVisible(false), 3000);
       })
       .finally(() => {
         setLoading(false);
