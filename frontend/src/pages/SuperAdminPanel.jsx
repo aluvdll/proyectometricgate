@@ -7,6 +7,7 @@ import {
   obtenerEmpresas,
   reactivarEmpresa,
 } from "../services/panelEmpresas";
+import { NotificationModal } from "../components/NotificationModal";
 
 const formularioInicial = {
   fiscal_name: "",
@@ -50,6 +51,21 @@ export function SuperAdminPanel() {
   const [error, setError] = useState("");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
+  const [notifyVisible, setNotifyVisible] = useState(false);
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifyTitle, setNotifyTitle] = useState("");
+  const [notifyType, setNotifyType] = useState("success");
+
+  const showNotification = (title, message, type = "success") => {
+    setNotifyTitle(title);
+    setNotifyMessage(message);
+    setNotifyType(type);
+    setNotifyVisible(true);
+    setTimeout(() => {
+      setNotifyVisible(false);
+    }, 2500);
+  };
+
   const {
     register,
     handleSubmit,
@@ -70,9 +86,9 @@ export function SuperAdminPanel() {
   const cargarEmpresas = async () => {
     if (!tokenSesion) {
       setCargando(false);
+      showNotification("Error", "No autorizado", "error");
       return;
     }
-
     try {
       setCargando(true);
       setError("");
@@ -80,6 +96,7 @@ export function SuperAdminPanel() {
       setEmpresas(lista);
     } catch (e) {
       setError(obtenerMensajeError(e));
+      showNotification("Error", obtenerMensajeError(e), "error");
     } finally {
       setCargando(false);
     }
@@ -103,13 +120,15 @@ export function SuperAdminPanel() {
 
     darAltaEmpresa(tokenSesion, data)
       .then(() => {
-        setMensaje("Empresa creada correctamente");
+        showNotification("Éxito", "Empresa creada correctamente", "success");
+
         reset(formularioInicial);
         setMostrarFormulario(false);
         return cargarEmpresas();
       })
       .catch((err) => {
         setError(obtenerMensajeError(err));
+        showNotification("Error", obtenerMensajeError(err), "error");
       })
       .finally(() => {
         setGuardando(false);
@@ -126,14 +145,25 @@ export function SuperAdminPanel() {
       if (empresa.active) {
         await darBajaEmpresa(tokenSesion, empresa.id);
         setMensaje(`Empresa ${empresa.fiscal_name} dada de baja`);
+        showNotification(
+          "Éxito",
+          `Empresa ${empresa.fiscal_name} dada de baja`,
+          "baja",
+        );
       } else {
         await reactivarEmpresa(tokenSesion, empresa.id);
         setMensaje(`Empresa ${empresa.fiscal_name} reactivada`);
+        showNotification(
+          "Éxito",
+          `Empresa ${empresa.fiscal_name} reactivada`,
+          "success",
+        );
       }
 
       await cargarEmpresas();
     } catch (err) {
       setError(obtenerMensajeError(err));
+      showNotification("Error", obtenerMensajeError(err), "error");
     }
   };
 
@@ -630,13 +660,12 @@ export function SuperAdminPanel() {
           </section>
         )}
 
-        {mensaje && (
-          <p className="text-sm text-green-600 dark:text-green-400">
-            {mensaje}
-          </p>
-        )}
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        {notifyVisible && (
+          <NotificationModal
+            title={notifyTitle}
+            message={notifyMessage}
+            type={notifyType}
+          />
         )}
       </div>
     </div>
