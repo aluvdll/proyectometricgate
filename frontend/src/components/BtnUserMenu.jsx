@@ -60,11 +60,13 @@ export function BtnUserMenu() {
           href="/adminPanel"
           className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
         >
-          {auth.user?.rol === "Admin"
+          { auth.user?.role === "super_admin" 
+          ? "SuperAdminPanel"
+          : auth.user?.role === "admin"
             ? "AdminPanel"
-            : auth.user?.rol === "comercial"
+            : auth.user?.role === "commercial"
               ? "ComerPanel"
-              : auth.user?.rol === "Tecnico"
+              : auth.user?.role === "tecnician"
                 ? "TecniPanel"
                 : ""}
         </a>

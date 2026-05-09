@@ -1,6 +1,10 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { Usuario } from "../types/Usuarios";
+import "../services/axiosSetup.js";
+
+const LAST_ACTIVITY_KEY = "last_activity";
+const MAX_INACTIVITY_MS = 1 * 60 * 60 * 1000; // 1 hora
 
 interface AuthContextType {
   isLogged: boolean;
@@ -46,6 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("usuario", JSON.stringify(userData));
     localStorage.setItem("token", token);
     localStorage.setItem("role", role);
+    localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
 
     setUser(userData);
     setToken(token);
@@ -68,10 +73,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("usuario");
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
     setUser(null);
     setToken(null);
     setRole(null);
   };
+
+  // ⏱ Comprobar inactividad cada "MAX_INACTIVITY_MS" y cerrar sesión si se supera
+  useEffect(() => {
+    const comprobarInactividad = () => {
+      const lastActivity = localStorage.getItem(LAST_ACTIVITY_KEY);
+      if (!lastActivity) return;
+
+      const tiempoTranscurrido = Date.now() - Number(lastActivity);
+      if (tiempoTranscurrido > MAX_INACTIVITY_MS) {
+        logout();
+      }
+    };
+
+    const intervalo = setInterval(comprobarInactividad, 300 * 1000);
+    return () => clearInterval(intervalo);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 🔔 Escuchar evento de sesión expirada por 401 del servidor
+  useEffect(() => {
+    const handleSessionExpired = () => logout();
+    window.addEventListener("session-expired", handleSessionExpired);
+    return () => window.removeEventListener("session-expired", handleSessionExpired);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <AuthContext.Provider
