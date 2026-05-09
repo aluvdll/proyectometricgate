@@ -4,7 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\PanelEmpresasController;
 use App\Http\Controllers\Api\UserController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +15,8 @@ use App\Http\Controllers\Api\UserController;
 */
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +35,16 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('superadmin')->group(function () {
+
+        // 🧭 Panel de administración de empresas (solo super admin)
+        Route::prefix('/panel/superadmin/empresas')->group(function () {
+            Route::get('/', [PanelEmpresasController::class, 'listarEmpresas']);
+            Route::get('/{id}', [PanelEmpresasController::class, 'verEmpresa']);
+            Route::post('/alta', [PanelEmpresasController::class, 'darDeAltaEmpresa']);
+            Route::put('/{id}', [PanelEmpresasController::class, 'actualizarEmpresa']);
+            Route::patch('/{id}/baja', [PanelEmpresasController::class, 'darDeBajaEmpresa']);
+            Route::patch('/{id}/reactivar', [PanelEmpresasController::class, 'reactivarEmpresa']);
+        });
 
         // 🏢 CRUD empresas (solo super admin)
         // Ruta para obtener compñias (todas o por id)
@@ -56,6 +70,7 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
 
         // Rutas para que el admin de la empresa pueda gestionar sus usuarios dentro de su empresa
         Route::get('/company/users', [UserController::class, 'companyUsers']);
+        Route::get('/company/users/{id}', [UserController::class, 'showByCompany']);
         Route::post('/company/users', [UserController::class, 'storeByCompany']);
         Route::put('/company/users/{id}', [UserController::class, 'updateByCompany']);
         Route::delete('/company/users/{id}', [UserController::class, 'destroyByCompany']);

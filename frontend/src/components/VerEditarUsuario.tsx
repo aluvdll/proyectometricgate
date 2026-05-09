@@ -1,0 +1,11 @@
+// VerEditarUsuario.tsx
+import type { JSX } from "react";
+import { useParams } from "react-router-dom";
+import { FormUsuario } from "./FormUsuario";
+
+export function VerEditarUsuario(): JSX.Element {
+  const { id } = useParams<{ id: string }>();
+  if (!id) return <div>Usuario no encontrado</div>;
+
+  return <FormUsuario mode="edit" userId={id} />;
+}
