@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const RAW_API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_URL = RAW_API_URL.replace(/\/api\/?$/, "");
 
 export function BtnUserMenu() {
   const [open, setOpen] = useState(false);
@@ -18,9 +19,30 @@ export function BtnUserMenu() {
   }
 
   function getAvatarUrl() {
-    if (!auth.user?.avatar) return "/ico_avatar_default.png";
-    return `${API_URL}/storage/${auth.user.avatar}`;
+    const avatar =
+      auth.user?.avatar ||
+      auth.user?.avatarUrl ||
+      auth.user?.avatar_url ||
+      "";
+
+    if (!avatar) return "/ico_avatar_default.png";
+
+    // Soporta avatar en varios formatos para evitar URLs rotas.
+    if (avatar.startsWith("http://") || avatar.startsWith("https://")) {
+      return avatar;
+    }
+
+    if (avatar.startsWith("/storage/")) {
+      return `${API_URL}${avatar}`;
+    }
+
+    if (avatar.startsWith("storage/")) {
+      return `${API_URL}/${avatar}`;
+    }
+
+    return `${API_URL}/storage/${avatar}`;
   }
+  
 
   return (
     <div className="relative">
@@ -28,11 +50,18 @@ export function BtnUserMenu() {
         onClick={() => setOpen(!open)}
         className="flex items-center space-x-2 px-3 py-2 rounded border-2 border-orange-400 hover:bg-orange-300 text-gray-900 hover:text-white"
       >
-        <img src={getAvatarUrl()} alt="user" className="w-8 h-8 rounded-full" />
+        <img
+          src={getAvatarUrl()}
+          alt="user"
+          className="w-8 h-8 rounded-full"
+          onError={(e) => {
+            e.currentTarget.src = "/ico_avatar_default.png";
+          }}
+        />
 
         <div className="flex flex-col">
-          <span className="text-xs font-bold">{auth.user?.nombre}</span>
-          <span className="text-xs ">{auth.user?.rol}</span>
+          <span className="text-xs font-bold">{auth.user?.name}</span>
+          <span className="text-xs ">{auth.user?.role}</span>
         </div>
 
         <svg
@@ -60,15 +89,15 @@ export function BtnUserMenu() {
           href="/adminPanel"
           className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
         >
-          { auth.user?.role === "super_admin" 
-          ? "SuperAdminPanel"
-          : auth.user?.role === "admin"
-            ? "AdminPanel"
-            : auth.user?.role === "commercial"
-              ? "ComerPanel"
-              : auth.user?.role === "tecnician"
-                ? "TecniPanel"
-                : ""}
+          {auth.user?.role === "super_admin"
+            ? "SuperAdminPanel"
+            : auth.user?.role === "admin"
+              ? "AdminPanel"
+              : auth.user?.role === "commercial"
+                ? "ComerPanel"
+                : auth.user?.role === "tecnician"
+                  ? "TecniPanel"
+                  : ""}
         </a>
 
         <a

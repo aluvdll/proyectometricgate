@@ -23,7 +23,7 @@ const valoresIniciales = {
 
 export function FormUsuario({ mode, userId }) {
   const isEdit = mode === "edit";
-  const { token } = useAuth();
+  const { token, user: authUser, updateUser } = useAuth();
   const navigate = useNavigate();
   const [avatar, setAvatar] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -125,7 +125,7 @@ export function FormUsuario({ mode, userId }) {
 
       if (isEdit && userId) {
         payload.append("_method", "PUT");
-        await axios.post(
+        const response = await axios.post(
           `http://127.0.0.1:8000/api/company/users/${userId}`,
           payload,
           {
@@ -135,6 +135,17 @@ export function FormUsuario({ mode, userId }) {
             },
           },
         );
+
+        // Si el usuario editado es el usuario logueado, sincronizamos AuthContext
+        // para que el avatar/nombre del menú se refresquen sin relogin.
+        if (
+          authUser?.id &&
+          Number(userId) === Number(authUser.id) &&
+          response?.data?.user
+        ) {
+          updateUser(response.data.user);
+        }
+
         showNotification("Éxito", "Usuario editado", "success");
         setTimeout(() => navigate("/adminPanel/usuarios"), 2500);
       } else {
