@@ -2,14 +2,28 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUsuario } from "../services/auth";
 import { useAuth } from "../context/AuthContext";
+import { NotificationModal } from "../components/NotificationModal";
 
 export function Login() {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notifyVisible, setNotifyVisible] = useState(false);
+  const [notifyTitle, setNotifyTitle] = useState("");
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifyType, setNotifyType] = useState("error");
 
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  const showNotification = (title, message, type = "error") => {
+    setNotifyTitle(title);
+    setNotifyMessage(message);
+    setNotifyType(type);
+    setNotifyVisible(true);
+
+    setTimeout(() => setNotifyVisible(false), 3500);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,8 +47,10 @@ export function Login() {
     } catch (err) {
       if (err instanceof Error && err.message) {
         setError(err.message);
+        showNotification("Error", err.message, "error");
       } else {
         setError("Error de conexión con el servidor");
+        showNotification("Error", "Error de conexión con el servidor", "error");
       }
     }
   };
@@ -121,6 +137,14 @@ export function Login() {
           </a>
         </p>
       </div>
+
+      {notifyVisible && (
+        <NotificationModal
+          title={notifyTitle}
+          message={notifyMessage}
+          type={notifyType}
+        />
+      )}
     </div>
   );
 }
