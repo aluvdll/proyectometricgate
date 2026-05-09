@@ -36,6 +36,7 @@ import { ArticulosPanel } from "./components/ArticulosPanel";
 import FormArticulo from "./components/FormArticulo";
 import { VerEditarArticulo } from "./components/VerEditarArticulo";
 import { SuperAdminPanel } from "./pages/SuperAdminPanel";
+import PoliticaPrivacidad from "./pages/PoliticaPrivacidad.jsx";
 
 // ----------------------------
 // Componente que protege rutas privadas
@@ -142,6 +143,17 @@ export default function App() {
             </PublicLayout>
           }
         />
+        
+        <Route
+          path="/politica-privacidad"
+           element={
+            <PublicLayout>
+              <PoliticaPrivacidad />
+            </PublicLayout>
+          }
+        />  
+
+
         <Route
           path="/politica-cookies"
           element={

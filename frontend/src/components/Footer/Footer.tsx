@@ -162,13 +162,14 @@ export const Footer = () => {
             </li>
             <li>
               <a
-                href="/"
+                href="/politica-privacidad"
                 className="text-sm text-gray-600 transition-colors duration-300 hover:text-orange-800"
               >
-                Privacy Policy
+                Política de Privacidad
               </a>
             </li>
-            <li>
+           
+           {/* <li>
               <a
                 href="/"
                 className="text-sm text-gray-600 transition-colors duration-300 hover:text-orange-800"
@@ -176,6 +177,7 @@ export const Footer = () => {
                 Terms &amp; Conditions
               </a>
             </li>
+            */}
             <li>
               <a
                 href="/politica-cookies"
