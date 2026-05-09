@@ -9,6 +9,7 @@ import { Contacto } from "./pages/Contacto";
 import { Tarifas } from "./pages/tarifas";
 import { RecuperarContraseña } from "./pages/RecuperarContraseña";
 import { ResetPassword } from "./pages/ResetPassword";
+import { PoliticaCookies } from "./pages/PoliticaCookies";
 
 // Páginas privadas (Admin)
 import { AdminPanel } from "./pages/AdminPanel";
@@ -19,6 +20,7 @@ import { Dashboard } from "./components/Dashboard";
 // Componentes
 import { Nav } from "./components/nav";
 import { Footer } from "./components/Footer/Footer";
+import { CookieBanner } from "./components/CookieBanner";
 
 // Context
 import { useAuth } from "./context/AuthContext";
@@ -140,6 +142,14 @@ export default function App() {
             </PublicLayout>
           }
         />
+        <Route
+          path="/politica-cookies"
+          element={
+            <PublicLayout>
+              <PoliticaCookies />
+            </PublicLayout>
+          }
+        />
 
         {/* ---------------------- */}
         {/* Panel de administración (privado) */}
@@ -207,6 +217,7 @@ export default function App() {
           }
         />
       </Routes>
+      <CookieBanner />
     </BrowserRouter>
   );
 }
