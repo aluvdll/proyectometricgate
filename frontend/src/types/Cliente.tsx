@@ -1,16 +1,15 @@
 export interface Cliente {
   id: number;
+  company_id: number;
+  client_number: string;
+  active: boolean;
   nombre: string;
-  apellido1: string;
-  apellido2: string;
-  correo_electronico: string;
-  password?: string;
-  telefono: string;
+  direccion: string;
+  telefono?: string | null;
+  telefono2?: string | null;
   codigo_postal: string;
   poblacion: string;
-  calle: string;
   provincia: string;
-  pais: string;
   dni: string;
-  email?: string;
+  email?: string | null;
 }

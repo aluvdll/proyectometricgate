@@ -30,8 +30,8 @@ import { PresupuestosPanel } from "./components/PresupuestoPanel";
 import { FormPresupuesto } from "./components/FormPresupuesto";
 import { VerEditarPresupuesto } from "./components/VerEditarPresupuesto";
 import { FormNuevoCliente } from "./FormNuevoCliente";
-import { ClientesPanel } from "./components/ClientesPanel";
-import { VerEditarCliente } from "./components/VerEditarCliente";
+import { ClientesPanel } from "./components/ClientesPanel.jsx";
+import { VerEditarCliente } from "./components/VerEditarCliente.jsx";
 import { ArticulosPanel } from "./components/ArticulosPanel";
 import FormArticulo from "./components/FormArticulo";
 import { VerEditarArticulo } from "./components/VerEditarArticulo";
@@ -143,16 +143,15 @@ export default function App() {
             </PublicLayout>
           }
         />
-        
+
         <Route
           path="/politica-privacidad"
-           element={
+          element={
             <PublicLayout>
               <PoliticaPrivacidad />
             </PublicLayout>
           }
-        />  
-
+        />
 
         <Route
           path="/politica-cookies"
