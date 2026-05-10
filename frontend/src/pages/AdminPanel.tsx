@@ -14,18 +14,17 @@ export function AdminPanel() {
           {/*Titulo dinámico según rol*/}
           <span className="text-orange-600">
             {userRole === "admin"
-                ? "Admin"
-                : userRole === "commercial"
-                  ? "Comer"
-                  : userRole === "tecnician"
-                    ? "Tecni"
+              ? "Admin"
+              : userRole === "commercial"
+                ? "Comer"
+                : userRole === "tecnician"
+                  ? "Tecni"
                   : ""}
           </span>
           Panel
         </div>
 
         <nav className="flex-1 px-6 pt-1 space-y-1">
-
           <Link
             to="/adminPanel"
             className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
@@ -96,10 +95,26 @@ export function AdminPanel() {
           )}
           {userRole === "admin" && (
             <Link
+              to="/adminPanel/familias"
+              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+            >
+              Familias
+            </Link>
+          )}
+          {userRole === "admin" && (
+            <Link
               to="/adminPanel/articulos/nuevoarticulo"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
               Nuevo Artículo
+            </Link>
+          )}
+          {userRole === "admin" && (
+            <Link
+              to="/adminPanel/familias/nuevafamilia"
+              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+            >
+              Crear Familia
             </Link>
           )}
         </nav>

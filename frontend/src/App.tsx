@@ -26,15 +26,18 @@ import { CookieBanner } from "./components/CookieBanner";
 import { useAuth } from "./context/AuthContext";
 import type { ReactNode } from "react";
 import { VerEditarUsuario } from "./components/VerEditarUsuario";
-import { PresupuestosPanel } from "./components/PresupuestoPanel";
-import { FormPresupuesto } from "./components/FormPresupuesto";
-import { VerEditarPresupuesto } from "./components/VerEditarPresupuesto";
+import { PresupuestosPanel } from "./components/PresupuestoPanel.jsx";
+import { FormPresupuesto } from "./components/FormPresupuesto.jsx";
+import { VerEditarPresupuesto } from "./components/VerEditarPresupuesto.jsx";
 import { FormNuevoCliente } from "./FormNuevoCliente";
 import { ClientesPanel } from "./components/ClientesPanel.jsx";
 import { VerEditarCliente } from "./components/VerEditarCliente.jsx";
-import { ArticulosPanel } from "./components/ArticulosPanel";
-import FormArticulo from "./components/FormArticulo";
-import { VerEditarArticulo } from "./components/VerEditarArticulo";
+import { ArticulosPanel } from "./components/ArticulosPanel.jsx";
+import { FamiliasArticulosPanel } from "./components/FamiliasArticulosPanel.jsx";
+import FormFamiliaArticulo from "./components/FormFamiliaArticulo.jsx";
+import FormArticulo from "./components/FormArticulo.jsx";
+import { VerEditarArticulo } from "./components/VerEditarArticulo.jsx";
+import { VerEditarFamiliaArticulo } from "./components/VerEditarFamiliaArticulo.jsx";
 import { SuperAdminPanel } from "./pages/SuperAdminPanel";
 import PoliticaPrivacidad from "./pages/PoliticaPrivacidad.jsx";
 
@@ -205,10 +208,20 @@ export default function App() {
           />
           <Route path="clientes" element={<ClientesPanel />} />
 
+          <Route path="familias" element={<FamiliasArticulosPanel />} />
+          <Route
+            path="familias/nuevafamilia"
+            element={<FormFamiliaArticulo mode="create" />}
+          />
+          <Route
+            path="familias/vereditarfamilia/:id"
+            element={<VerEditarFamiliaArticulo />}
+          />
+
           <Route path="articulos" element={<ArticulosPanel />} />
           <Route
             path="articulos/nuevoarticulo"
-            element={<FormArticulo mode="create" />}
+            element={<FormArticulo mode="create" articuloId={undefined} />}
           />
           <Route
             path="articulos/vereditararticulo/:id"
