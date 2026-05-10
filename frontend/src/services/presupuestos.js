@@ -21,9 +21,12 @@ function extraerMensajeError(error) {
     const data = error.response?.data;
     if (data?.error) return data.error;
     if (data?.message) return data.message;
-    if (error.response?.status === 401) return "Sesion expirada o token invalido.";
-    if (error.response?.status === 403) return "No tienes permisos para esta accion.";
-    if (error.response?.status === 422) return "Hay datos invalidos en el formulario.";
+    if (error.response?.status === 401)
+      return "Sesion expirada o token invalido.";
+    if (error.response?.status === 403)
+      return "No tienes permisos para esta accion.";
+    if (error.response?.status === 422)
+      return "Hay datos invalidos en el formulario.";
     return error.message || "Error inesperado en la peticion";
   }
 

@@ -49,7 +49,12 @@ function construirTextoCliente(cliente) {
 }
 
 function construirTextoArticulo(articulo) {
-  return [articulo.code, articulo.name, articulo.family?.name, articulo.description]
+  return [
+    articulo.code,
+    articulo.name,
+    articulo.family?.name,
+    articulo.description,
+  ]
     .filter(Boolean)
     .join(" - ");
 }
@@ -140,7 +145,11 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
         }
       })
       .catch((error) => {
-        showNotification("Error", error.message || "Error cargando datos del presupuesto", "error");
+        showNotification(
+          "Error",
+          error.message || "Error cargando datos del presupuesto",
+          "error",
+        );
       })
       .finally(() => setLoadingForm(false));
   }, [isEdit, presupuestoId]);
@@ -163,7 +172,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   }, [isClientModalOpen, isArticleModalOpen]);
 
   const clienteSeleccionado = useMemo(() => {
-    return clientes.find((cliente) => String(cliente.id) === String(formData.client_id));
+    return clientes.find(
+      (cliente) => String(cliente.id) === String(formData.client_id),
+    );
   }, [clientes, formData.client_id]);
 
   const clientesFiltrados = useMemo(() => {
@@ -174,7 +185,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     }
 
     return clientes
-      .filter((cliente) => construirTextoCliente(cliente).toLowerCase().includes(texto))
+      .filter((cliente) =>
+        construirTextoCliente(cliente).toLowerCase().includes(texto),
+      )
       .slice(0, 8);
   }, [clientes, clientSearch]);
 
@@ -186,7 +199,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     }
 
     return articulos
-      .filter((articulo) => construirTextoArticulo(articulo).toLowerCase().includes(texto))
+      .filter((articulo) =>
+        construirTextoArticulo(articulo).toLowerCase().includes(texto),
+      )
       .slice(0, 20);
   }, [articulos, articleSearch]);
 
@@ -251,7 +266,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       (articulo) => String(articulo.id) === String(linea?.standard_article_id),
     );
 
-    setArticleSearch(articuloSeleccionado ? construirTextoArticulo(articuloSeleccionado) : "");
+    setArticleSearch(
+      articuloSeleccionado ? construirTextoArticulo(articuloSeleccionado) : "",
+    );
     setIsArticleModalOpen(true);
   };
 
@@ -291,7 +308,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   };
 
   const removeLinea = (index) => {
-    setLines((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
+    setLines((prev) =>
+      prev.filter((_, currentIndex) => currentIndex !== index),
+    );
   };
 
   // Guardamos el id del cliente seleccionado y cerramos el modal.
@@ -303,7 +322,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   };
 
   const abrirModalClientes = () => {
-    setClientSearch(clienteSeleccionado ? construirTextoCliente(clienteSeleccionado) : "");
+    setClientSearch(
+      clienteSeleccionado ? construirTextoCliente(clienteSeleccionado) : "",
+    );
     setIsClientModalOpen(true);
   };
 
@@ -326,7 +347,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       status: formData.status,
       notes: formData.notes,
       lines: lines.map((line, index) => ({
-        standard_article_id: line.standard_article_id ? Number(line.standard_article_id) : null,
+        standard_article_id: line.standard_article_id
+          ? Number(line.standard_article_id)
+          : null,
         name: line.name,
         description: line.description,
         quantity: Number(line.quantity || 0),
@@ -380,7 +403,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
 
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm font-bold text-gray-800 dark:text-gray-100">Cliente</label>
+            <label className="mb-2 block text-sm font-bold text-gray-800 dark:text-gray-100">
+              Cliente
+            </label>
             <button
               type="button"
               onClick={abrirModalClientes}
@@ -429,22 +454,28 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                 {isClientAccordionOpen && (
                   <div className="mt-3 grid gap-2 border-t border-orange-200 pt-3 text-xs text-gray-700 dark:border-orange-500/40 dark:text-gray-100 md:grid-cols-2">
                     <div>
-                      <span className="font-semibold">DNI:</span> {clienteSeleccionado.dni || "Sin DNI"}
+                      <span className="font-semibold">DNI:</span>{" "}
+                      {clienteSeleccionado.dni || "Sin DNI"}
                     </div>
                     <div>
-                      <span className="font-semibold">Telefono:</span> {clienteSeleccionado.telefono || "-"}
+                      <span className="font-semibold">Telefono:</span>{" "}
+                      {clienteSeleccionado.telefono || "-"}
                     </div>
                     <div>
-                      <span className="font-semibold">Direccion:</span> {clienteSeleccionado.direccion || "-"}
+                      <span className="font-semibold">Direccion:</span>{" "}
+                      {clienteSeleccionado.direccion || "-"}
                     </div>
                     <div>
-                      <span className="font-semibold">Poblacion:</span> {clienteSeleccionado.poblacion || "-"}
+                      <span className="font-semibold">Poblacion:</span>{" "}
+                      {clienteSeleccionado.poblacion || "-"}
                     </div>
                     <div>
-                      <span className="font-semibold">Provincia:</span> {clienteSeleccionado.provincia || "-"}
+                      <span className="font-semibold">Provincia:</span>{" "}
+                      {clienteSeleccionado.provincia || "-"}
                     </div>
                     <div>
-                      <span className="font-semibold">Codigo Postal:</span> {clienteSeleccionado.codigo_postal || "-"}
+                      <span className="font-semibold">Codigo Postal:</span>{" "}
+                      {clienteSeleccionado.codigo_postal || "-"}
                     </div>
                   </div>
                 )}
@@ -458,7 +489,12 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
               type="date"
               name="budget_date"
               value={formData.budget_date}
-              onChange={(e) => setFormData((prev) => ({ ...prev, budget_date: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  budget_date: e.target.value,
+                }))
+              }
               className="w-full rounded-md border border-orange-500 px-3 py-2"
             />
 
@@ -467,7 +503,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
               <select
                 name="status"
                 value={formData.status}
-                onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, status: e.target.value }))
+                }
                 className="w-full rounded-md border border-orange-500 bg-white px-3 py-2 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
               >
                 {estados.map((estado) => (
@@ -495,7 +533,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             >
               {/* Click fuera del cuadro: cierra modal. Click dentro: no cierra. */}
               <div className="flex items-center justify-between border-b border-orange-200 px-4 py-3 dark:border-orange-500/60">
-                <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">Seleccionar cliente</h3>
+                <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">
+                  Seleccionar cliente
+                </h3>
                 <button
                   type="button"
                   onClick={() => setIsClientModalOpen(false)}
@@ -513,7 +553,8 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
 
                 <div className="max-h-105 space-y-2 overflow-y-auto pr-1">
                   {clientesFiltrados.map((cliente) => {
-                    const seleccionado = String(cliente.id) === String(formData.client_id);
+                    const seleccionado =
+                      String(cliente.id) === String(formData.client_id);
 
                     return (
                       <article
@@ -530,9 +571,12 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                           </span>
 
                           <div>
-                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{cliente.nombre}</p>
+                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                              {cliente.nombre}
+                            </p>
                             <p className="text-xs text-gray-600 dark:text-gray-300">
-                              {cliente.dni || "Sin DNI"} | {cliente.telefono || "Sin teléfono"}
+                              {cliente.dni || "Sin DNI"} |{" "}
+                              {cliente.telefono || "Sin teléfono"}
                             </p>
                           </div>
 
@@ -570,7 +614,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             >
               {/* Modal de artículos: buscar, visualizar imagen y seleccionar en la línea activa. */}
               <div className="flex items-center justify-between border-b border-orange-200 px-4 py-3 dark:border-orange-500/60">
-                <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">Seleccionar artículo</h3>
+                <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">
+                  Seleccionar artículo
+                </h3>
                 <button
                   type="button"
                   onClick={cerrarModalArticulos}
@@ -582,7 +628,10 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
 
               <div className="p-4">
                 <div className="mb-3 w-full">
-                  <UserSearch value={articleSearch} onChange={setArticleSearch} />
+                  <UserSearch
+                    value={articleSearch}
+                    onChange={setArticleSearch}
+                  />
                 </div>
 
                 <div className="mb-3">
@@ -621,7 +670,10 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                             {articulo.code} - {articulo.name}
                           </p>
                           <p className="text-xs text-gray-600 dark:text-gray-300">
-                            {articulo.family?.name || "Sin familia"} | Base: {Number(articulo.base_price || 0).toFixed(2)} EUR | IVA: {Number(articulo.tax_percentage || 0).toFixed(2)}%
+                            {articulo.family?.name || "Sin familia"} | Base:{" "}
+                            {Number(articulo.base_price || 0).toFixed(2)} EUR |
+                            IVA:{" "}
+                            {Number(articulo.tax_percentage || 0).toFixed(2)}%
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             {articulo.description || "Sin descripción"}
@@ -630,7 +682,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
 
                         <button
                           type="button"
-                          onClick={() => seleccionarArticuloDesdeModal(articulo)}
+                          onClick={() =>
+                            seleccionarArticuloDesdeModal(articulo)
+                          }
                           className="rounded-md bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700"
                         >
                           Seleccionar
@@ -655,20 +709,29 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
           <textarea
             name="notes"
             value={formData.notes}
-            onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, notes: e.target.value }))
+            }
             className="w-full rounded-md border border-orange-500 px-3 py-2"
           />
         </div>
 
         <div className="mb-4">
-          <h3 className="text-lg font-bold text-gray-700 dark:text-gray-100">Líneas</h3>
+          <h3 className="text-lg font-bold text-gray-700 dark:text-gray-100">
+            Líneas
+          </h3>
         </div>
 
         <div className="space-y-4">
           {lines.map((line, index) => (
-            <div key={index} className="rounded-md border border-orange-300 p-4">
+            <div
+              key={index}
+              className="rounded-md border border-orange-300 p-4"
+            >
               <div className="mb-3 flex items-center justify-between">
-                <span className="font-semibold text-gray-700">Línea {index + 1}</span>
+                <span className="font-semibold text-gray-700">
+                  Línea {index + 1}
+                </span>
                 {lines.length > 1 && (
                   <button
                     type="button"
@@ -681,7 +744,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
               </div>
 
               <div className="mb-3">
-                <label className="mb-2 block text-sm font-bold">Artículo estándar</label>
+                <label className="mb-2 block text-sm font-bold">
+                  Artículo estándar
+                </label>
                 {/* El artículo ahora se selecciona desde modal con buscador para facilitar la elección. */}
                 <button
                   type="button"
@@ -697,7 +762,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                   <div className="mt-2 flex items-center gap-3 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-gray-700 dark:border-orange-500/50 dark:bg-orange-900/20 dark:text-gray-100">
                     {(() => {
                       const articuloLinea = articulos.find(
-                        (articulo) => String(articulo.id) === String(line.standard_article_id),
+                        (articulo) =>
+                          String(articulo.id) ===
+                          String(line.standard_article_id),
                       );
 
                       return (
@@ -719,13 +786,18 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                               Código: {articuloLinea?.code || "Sin código"}
                             </div>
                             <div>
-                              Nombre: {articuloLinea?.name || line.name || "Sin nombre"}
+                              Nombre:{" "}
+                              {articuloLinea?.name || line.name || "Sin nombre"}
                             </div>
                             <div>
-                              Familia: {articuloLinea?.family?.name || "Sin familia"}
+                              Familia:{" "}
+                              {articuloLinea?.family?.name || "Sin familia"}
                             </div>
                             <div>
-                              Descripción: {articuloLinea?.description || line.description || "Sin descripción"}
+                              Descripción:{" "}
+                              {articuloLinea?.description ||
+                                line.description ||
+                                "Sin descripción"}
                             </div>
                           </div>
                         </>
@@ -739,20 +811,28 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                 <div className="mb-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* Estos campos solo se usan cuando la línea es manual (sin artículo seleccionado). */}
                   <div>
-                    <label className="mb-2 block text-sm font-bold">Nombre</label>
+                    <label className="mb-2 block text-sm font-bold">
+                      Nombre
+                    </label>
                     <input
                       type="text"
                       value={line.name}
-                      onChange={(e) => actualizarLinea(index, 'name', e.target.value)}
+                      onChange={(e) =>
+                        actualizarLinea(index, "name", e.target.value)
+                      }
                       className="w-full rounded-md border border-orange-500 px-3 py-2"
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-bold">Descripción</label>
+                    <label className="mb-2 block text-sm font-bold">
+                      Descripción
+                    </label>
                     <input
                       type="text"
                       value={line.description}
-                      onChange={(e) => actualizarLinea(index, 'description', e.target.value)}
+                      onChange={(e) =>
+                        actualizarLinea(index, "description", e.target.value)
+                      }
                       className="w-full rounded-md border border-orange-500 px-3 py-2"
                     />
                   </div>
@@ -761,36 +841,52 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                 <div>
-                  <label className="mb-2 block text-sm font-bold">Cantidad</label>
+                  <label className="mb-2 block text-sm font-bold">
+                    Cantidad
+                  </label>
                   <input
                     type="number"
                     min="0.01"
                     step="0.01"
                     value={line.quantity}
-                    onChange={(e) => actualizarLinea(index, 'quantity', e.target.value)}
+                    onChange={(e) =>
+                      actualizarLinea(index, "quantity", e.target.value)
+                    }
                     className="w-full rounded-md border border-orange-500 px-3 py-2"
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-bold">Precio unitario</label>
+                  <label className="mb-2 block text-sm font-bold">
+                    Precio unitario
+                  </label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={line.unit_price}
-                    onChange={(e) => actualizarLinea(index, 'unit_price', e.target.value)}
+                    onChange={(e) =>
+                      actualizarLinea(index, "unit_price", e.target.value)
+                    }
                     className="w-full rounded-md border border-orange-500 px-3 py-2"
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-bold">Descuento %</label>
+                  <label className="mb-2 block text-sm font-bold">
+                    Descuento %
+                  </label>
                   <input
                     type="number"
                     min="0"
                     max="100"
                     step="0.01"
                     value={line.discount_percentage}
-                    onChange={(e) => actualizarLinea(index, 'discount_percentage', e.target.value)}
+                    onChange={(e) =>
+                      actualizarLinea(
+                        index,
+                        "discount_percentage",
+                        e.target.value,
+                      )
+                    }
                     className="w-full rounded-md border border-orange-500 px-3 py-2"
                   />
                 </div>
@@ -802,7 +898,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                     max="100"
                     step="0.01"
                     value={line.tax_percentage}
-                    onChange={(e) => actualizarLinea(index, 'tax_percentage', e.target.value)}
+                    onChange={(e) =>
+                      actualizarLinea(index, "tax_percentage", e.target.value)
+                    }
                     className="w-full rounded-md border border-orange-500 px-3 py-2"
                   />
                 </div>
@@ -822,9 +920,15 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
         </div>
 
         <div className="mt-6 rounded-md border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-gray-800">
-          <div>Base imponible: <strong>{resumen.base.toFixed(2)} €</strong></div>
-          <div>IVA: <strong>{resumen.tax.toFixed(2)} €</strong></div>
-          <div>Total: <strong>{resumen.total.toFixed(2)} €</strong></div>
+          <div>
+            Base imponible: <strong>{resumen.base.toFixed(2)} €</strong>
+          </div>
+          <div>
+            IVA: <strong>{resumen.tax.toFixed(2)} €</strong>
+          </div>
+          <div>
+            Total: <strong>{resumen.total.toFixed(2)} €</strong>
+          </div>
         </div>
 
         <button
@@ -832,7 +936,11 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
           disabled={saving}
           className="mt-6 w-full rounded-md bg-green-600 py-2 text-white hover:bg-green-700 disabled:opacity-60"
         >
-          {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear presupuesto"}
+          {saving
+            ? "Guardando..."
+            : isEdit
+              ? "Guardar cambios"
+              : "Crear presupuesto"}
         </button>
       </form>
 

@@ -34,7 +34,11 @@ export function PresupuestosPanel() {
     obtenerPresupuestosEmpresa()
       .then((data) => setPresupuestos(data))
       .catch((error) => {
-        showNotification("Error", error.message || "Error cargando presupuestos", "error");
+        showNotification(
+          "Error",
+          error.message || "Error cargando presupuestos",
+          "error",
+        );
       })
       .finally(() => setCargando(false));
   }, []);
@@ -59,14 +63,18 @@ export function PresupuestosPanel() {
   }, [presupuestos, textoBusqueda]);
 
   if (cargando) {
-    return <div className="container w-full mt-1">Cargando presupuestos...</div>;
+    return (
+      <div className="container w-full mt-1">Cargando presupuestos...</div>
+    );
   }
 
   return (
     <div className="container w-full mt-1">
       <div className="w-full mx-auto rounded-md border border-orange-400 p-4 shadow-amber-600">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">Presupuestos</h2>
+          <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">
+            Presupuestos
+          </h2>
 
           <div className="flex items-center gap-2">
             <div className="w-64">
@@ -74,7 +82,9 @@ export function PresupuestosPanel() {
             </div>
             <button
               type="button"
-              onClick={() => navigate("/adminPanel/presupuestos/nuevopresupuesto")}
+              onClick={() =>
+                navigate("/adminPanel/presupuestos/nuevopresupuesto")
+              }
               className="rounded-md bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600"
             >
               Nuevo presupuesto
@@ -117,7 +127,11 @@ export function PresupuestosPanel() {
                 <td className="border border-orange-400 px-3 py-2 text-center">
                   <button
                     type="button"
-                    onClick={() => navigate(`/adminPanel/presupuestos/vereditarpresupuesto/${presupuesto.id}`)}
+                    onClick={() =>
+                      navigate(
+                        `/adminPanel/presupuestos/vereditarpresupuesto/${presupuesto.id}`,
+                      )
+                    }
                     className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
                   >
                     Ver
