@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ArticleFamily;
 use App\Models\StandardArticle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -70,7 +71,8 @@ class StandardArticleController extends Controller
 
         $companyId = $request->user()->company_id;
 
-        $articles = StandardArticle::where('company_id', $companyId)
+        $articles = StandardArticle::with('family')
+            ->where('company_id', $companyId)
             ->orderBy('code')
             ->get();
 
@@ -89,7 +91,8 @@ class StandardArticleController extends Controller
 
         $companyId = $request->user()->company_id;
 
-        $article = StandardArticle::where('company_id', $companyId)
+        $article = StandardArticle::with('family')
+            ->where('company_id', $companyId)
             ->where('id', $id)
             ->first();
 
@@ -125,6 +128,13 @@ class StandardArticleController extends Controller
             ],
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'family_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('article_families', 'id')->where(function ($query) use ($companyId) {
+                    return $query->where('company_id', $companyId);
+                }),
+            ],
             'base_price' => 'required|numeric|min:0',
             'tax_percentage' => 'nullable|numeric|min:0|max:100',
             'active' => 'nullable|boolean',
@@ -133,6 +143,7 @@ class StandardArticleController extends Controller
             'code.required' => 'El código es obligatorio.',
             'code.unique' => 'Este código ya existe en tu empresa.',
             'name.required' => 'El nombre es obligatorio.',
+            'family_id.exists' => 'La familia seleccionada no pertenece a tu empresa.',
             'base_price.required' => 'El precio base es obligatorio.',
             'image.image' => 'El archivo debe ser una imagen válida.',
             'image.max' => 'La imagen no puede superar 30MB.',
@@ -145,6 +156,7 @@ class StandardArticleController extends Controller
 
         $article = StandardArticle::create([
             'company_id' => $companyId,
+            'family_id' => $validated['family_id'] ?? null,
             'code' => trim($validated['code']),
             'name' => trim($validated['name']),
             'description' => $validated['description'] ?? null,
@@ -156,7 +168,7 @@ class StandardArticleController extends Controller
 
         return response()->json([
             'message' => 'Artículo creado correctamente.',
-            'article' => $article,
+            'article' => $article->load('family'),
         ], 201);
     }
 
@@ -194,6 +206,14 @@ class StandardArticleController extends Controller
             ],
             'name' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|nullable|string',
+            'family_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                Rule::exists('article_families', 'id')->where(function ($query) use ($companyId) {
+                    return $query->where('company_id', $companyId);
+                }),
+            ],
             'base_price' => 'sometimes|required|numeric|min:0',
             'tax_percentage' => 'sometimes|nullable|numeric|min:0|max:100',
             'active' => 'sometimes|boolean',
@@ -202,12 +222,14 @@ class StandardArticleController extends Controller
             'code.required' => 'El código es obligatorio.',
             'code.unique' => 'Este código ya existe en tu empresa.',
             'name.required' => 'El nombre es obligatorio.',
+            'family_id.exists' => 'La familia seleccionada no pertenece a tu empresa.',
             'base_price.required' => 'El precio base es obligatorio.',
             'image.image' => 'El archivo debe ser una imagen válida.',
             'image.max' => 'La imagen no puede superar 30MB.',
         ]);
 
         $updateData = [
+            'family_id' => $request->has('family_id') ? ($validated['family_id'] ?? null) : $article->family_id,
             'code' => $request->has('code') ? trim($validated['code']) : $article->code,
             'name' => $request->has('name') ? trim($validated['name']) : $article->name,
             'description' => $request->has('description') ? $validated['description'] : $article->description,
@@ -227,7 +249,7 @@ class StandardArticleController extends Controller
 
         return response()->json([
             'message' => 'Artículo actualizado correctamente.',
-            'article' => $article->fresh(),
+            'article' => $article->fresh()->load('family'),
         ]);
     }
 }

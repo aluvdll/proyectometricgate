@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ArticleFamilyController;
+use App\Http\Controllers\Api\BudgetController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\PanelEmpresasController;
@@ -83,7 +85,19 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
         Route::post('/company/clients', [ClientController::class, 'store']);
         Route::put('/company/clients/{id}', [ClientController::class, 'update']);
 
+        // Rutas para presupuestos de la empresa (admin o commercial)
+        Route::get('/company/budgets', [BudgetController::class, 'index']);
+        Route::get('/company/budgets/{id}', [BudgetController::class, 'show']);
+        Route::post('/company/budgets', [BudgetController::class, 'store']);
+        Route::put('/company/budgets/{id}', [BudgetController::class, 'update']);
+
         // Rutas para artículos estándar de la empresa
+        // Familias de artículos: ver (admin/commercial), crear/editar (solo admin)
+        Route::get('/company/article-families', [ArticleFamilyController::class, 'index']);
+        Route::get('/company/article-families/{id}', [ArticleFamilyController::class, 'show']);
+        Route::post('/company/article-families', [ArticleFamilyController::class, 'store']);
+        Route::put('/company/article-families/{id}', [ArticleFamilyController::class, 'update']);
+
         // Ver (admin/commercial)
         Route::get('/company/articles', [StandardArticleController::class, 'index']);
         Route::get('/company/articles/{id}', [StandardArticleController::class, 'show']);

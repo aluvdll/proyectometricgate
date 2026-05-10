@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\ArticleFamily;
 
 class StandardArticle extends Model
 {
@@ -11,6 +12,7 @@ class StandardArticle extends Model
 
     protected $fillable = [
         'company_id',
+        'family_id',
         'code',
         'name',
         'description',
@@ -28,6 +30,12 @@ class StandardArticle extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    // 🗂️ Un artículo puede pertenecer a una familia o a ninguna
+    public function family()
+    {
+        return $this->belongsTo(ArticleFamily::class, 'family_id');
     }
 
     // 🧾 Un artículo puede aparecer en muchas líneas de presupuesto

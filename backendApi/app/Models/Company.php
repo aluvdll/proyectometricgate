@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ArticleFamily;
 
 class Company extends Model
 {
@@ -43,6 +44,12 @@ class Company extends Model
     public function standardArticles()
     {
         return $this->hasMany(StandardArticle::class);
+    }
+
+    # Una empresa tiene muchas familias de artículos
+    public function articleFamilies()
+    {
+        return $this->hasMany(ArticleFamily::class);
     }
 
     # Una empresa tiene muchos presupuestos

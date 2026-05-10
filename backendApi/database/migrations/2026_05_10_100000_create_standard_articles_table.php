@@ -17,6 +17,12 @@ return new class extends Migration
                 ->constrained()
                 ->onDelete('cascade');
 
+            // 🗂️ FAMILIA (opcional, el artículo puede no pertenecer a ninguna)
+            $table->foreignId('family_id')
+                ->nullable()
+                ->constrained('article_families')
+                ->nullOnDelete();
+
             // 🔢 CÓDIGO (obligatorio y único por empresa)
             $table->string('code');
 
