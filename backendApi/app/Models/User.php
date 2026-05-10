@@ -46,4 +46,10 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Company::class);
     }
+
+    // 📄 Presupuestos creados por este usuario
+    public function createdBudgets()
+    {
+        return $this->hasMany(Budget::class, 'created_by_user_id');
+    }
 }

@@ -32,12 +32,26 @@ class Company extends Model
     {
         return $this->hasMany(User::class);
     }
-/*
+
     # Una empresa tiene muchos clientes
     public function clients()
     {
         return $this->hasMany(Client::class);
     }
+
+    # Una empresa tiene muchos artículos estándar
+    public function standardArticles()
+    {
+        return $this->hasMany(StandardArticle::class);
+    }
+
+    # Una empresa tiene muchos presupuestos
+    public function budgets()
+    {
+        return $this->hasMany(Budget::class);
+    }
+
+    /*
 
     # Una empresa tiene muchos productos
     public function products()

@@ -4,7 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\PanelEmpresasController;
+use App\Http\Controllers\Api\StandardArticleController;
 use App\Http\Controllers\Api\UserController;
 
 
@@ -75,10 +77,19 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
         Route::put('/company/users/{id}', [UserController::class, 'updateByCompany']);
         Route::delete('/company/users/{id}', [UserController::class, 'destroyByCompany']);
 
-        // ejemplo futuro
-        Route::get('/clients', function () {
-            return 'clientes de la empresa';
-        });
+        // Rutas para clientes de la empresa (admin o commercial)
+        Route::get('/company/clients', [ClientController::class, 'index']);
+        Route::get('/company/clients/{id}', [ClientController::class, 'show']);
+        Route::post('/company/clients', [ClientController::class, 'store']);
+        Route::put('/company/clients/{id}', [ClientController::class, 'update']);
+
+        // Rutas para artículos estándar de la empresa
+        // Ver (admin/commercial)
+        Route::get('/company/articles', [StandardArticleController::class, 'index']);
+        Route::get('/company/articles/{id}', [StandardArticleController::class, 'show']);
+        // Crear y editar (solo admin)
+        Route::post('/company/articles', [StandardArticleController::class, 'store']);
+        Route::put('/company/articles/{id}', [StandardArticleController::class, 'update']);
 
         Route::get('/products', function () {
             return 'productos de la empresa';

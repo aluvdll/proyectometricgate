@@ -39,6 +39,17 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // ❌ empresa inactiva (solo aplica a usuarios de empresa)
+        if ($user->company_id) {
+            $company = Company::find($user->company_id);
+
+            if ($company && !$company->active) {
+                return response()->json([
+                    'error' => 'Por favor, contacte con el servicio técnico de MetricGate.'
+                ], 403);
+            }
+        }
+
         // 🔐 crear token
         $token = $user->createToken('api-token')->plainTextToken;
 

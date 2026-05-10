@@ -25,12 +25,49 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'company_id' => null,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'dni' => fake()->unique()->regexify('[0-9]{8}[A-Z]'),
+            'phone' => fake()->numerify('6########'),
+            'address' => fake()->streetAddress(),
+            'city' => fake()->city(),
+            'province' => fake()->state(),
+            'avatar' => null,
+            'role' => 'commercial',
+            'active' => true,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public function forCompany(int $companyId): static
+    {
+        return $this->state(fn() => [
+            'company_id' => $companyId,
+        ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn() => [
+            'role' => 'admin',
+        ]);
+    }
+
+    public function commercial(): static
+    {
+        return $this->state(fn() => [
+            'role' => 'commercial',
+        ]);
+    }
+
+    public function technician(): static
+    {
+        return $this->state(fn() => [
+            'role' => 'technician',
+        ]);
     }
 
     /**
@@ -38,7 +75,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
     }
