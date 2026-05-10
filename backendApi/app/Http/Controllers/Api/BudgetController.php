@@ -114,7 +114,7 @@ class BudgetController extends Controller
         $articleIds = collect($lines)
             ->pluck('standard_article_id')
             ->filter()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->values()
             ->all();
 
