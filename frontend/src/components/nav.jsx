@@ -4,7 +4,7 @@ import { MenuDescktop } from "./MenuDescktop.jsx";
 import { AuthDescktop } from "./AuthDescktop.jsx";
 import { BtnToggler } from "./BtnToggler.jsx";
 import { MenuMobile } from "./MenuMobile.jsx";
-import { BtnUserMenu } from "../components/BtnUserMenu";
+import { BtnUserMenu } from "../components/BtnUserMenu.jsx";
 import { useAuth } from "../context/AuthContext";
 
 export function Nav() {
