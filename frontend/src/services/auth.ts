@@ -7,8 +7,6 @@ interface LoginData {
   password: string;
 }
 
-
-
 // Función que llama al backend para login
 export const loginUsuario = async (data: LoginData) => {
   try {
@@ -25,25 +23,27 @@ export const loginUsuario = async (data: LoginData) => {
   }
 };
 
-
 export const addUsuario = async (data: Usuario, file?: File) => {
   try {
     const formData = new FormData();
 
-    formData.append("name", data.nombre);
+    formData.append("name", data.name);
     formData.append("apellido1", data.apellido1);
     formData.append("apellido2", data.apellido2);
     formData.append("email", data.email);
     formData.append("password", data.password || "");
 
-    
     if (file) {
       formData.append("avatar", file);
     }
 
-    const response = await axios.post("http://127.0.0.1:8000/api/login", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await axios.post(
+      "http://127.0.0.1:8000/api/login",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
 
     return response.data;
   } catch (error: unknown) {
@@ -53,6 +53,4 @@ export const addUsuario = async (data: Usuario, file?: File) => {
       throw new Error("Error de conexión con el servidor");
     }
   }
-    
 };
-
