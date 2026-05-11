@@ -1,11 +1,4 @@
-import React from "react";
-
-interface UserSearchProps {
-  value: string;
-  onChange: (value: string) => void;
-}
-
-export const UserSearch: React.FC<UserSearchProps> = ({ value, onChange }) => {
+export const UserSearch = ({ value, onChange }) => {
   return (
     <div className="relative w-full">
       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-900 dark:text-gray-200">

@@ -1,13 +1,11 @@
-import Hero from "../components/Hero";
+import { Hero } from "../components/Hero.jsx";
 
 const Home = () => {
   return (
     <>
-<Hero />
-</>
+      <Hero />
+    </>
   );
-
-
 };
 
 export default Home;

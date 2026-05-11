@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { NotificationModal } from "./NotificationModal";
-import { UserSearch } from "./UserSearch";
+import { UserSearch } from "./UserSearch.jsx";
 import { obtenerClientesEmpresa } from "../services/clientes";
 
 export const ClientesPanel = () => {
@@ -109,7 +109,9 @@ export const ClientesPanel = () => {
                         className="rounded-md bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700"
                         aria-expanded={fichaClienteDesplegable === cliente.id}
                       >
-                        {fichaClienteDesplegable === cliente.id ? "Ocultar" : "Ver"}
+                        {fichaClienteDesplegable === cliente.id
+                          ? "Ocultar"
+                          : "Ver"}
                       </button>
                     </div>
                   </div>

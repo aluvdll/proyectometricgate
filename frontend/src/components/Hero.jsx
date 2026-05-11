@@ -1,7 +1,7 @@
 import heroImg from "../assets/images/hero2.jpg";
 import { FloatingWhatsApp } from "react-floating-whatsapp";
 
-const Hero = () => {
+export function Hero() {
   return (
     <>
       {/* <!-- Section 2 --> */}
@@ -48,29 +48,24 @@ const Hero = () => {
                     className="
     flex items-center px-6 py-3 text-lg text-orange-500 dark:text-white border hover:bg-orange-500 border-orange-500 dark:hover:bg-gray-200 hover:text-white rounded-md w-full sm:w-auto justify-center "
                   >
-                    Solicita una demo
+                    Contacto
                   </a>
                 </div>
               </div>
             </div>
             <div className="w-full md:w-1/2">
-              <div className="w-full h-auto overflow-hidden rounded-md shadow-xl sm:rounded-xl">
-                <img src={heroImg} alt="Hero Image" />
+              <div className="w-full h-auto rounded-lg shadow-xl sm:rounded-lg">
+                <img className="rounded-lg" src={heroImg} alt="" />
               </div>
             </div>
           </div>
         </div>
-        <FloatingWhatsApp
-          phoneNumber="+34637141076"
-          accountName="MetricGate"
-          statusMessage="Preparado para ayudarle"
-          chatMessage="Hola! ¿Como puedo ayudarte?"
-          avatar="../public/fav_icon_metricGates.svg"
-          allowClickAway={true}
-          darkMode={true}
-        />
       </section>
+      <FloatingWhatsApp
+        phoneNumber="1234567890"
+        accountName="MetricGate"
+        allowClickAway
+      />
     </>
   );
-};
-export default Hero;
+}

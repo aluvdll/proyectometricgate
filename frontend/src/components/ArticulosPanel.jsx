@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { NotificationModal } from "./NotificationModal";
-import { UserSearch } from "./UserSearch";
+import { UserSearch } from "./UserSearch.jsx";
 import { useAuth } from "../context/AuthContext";
 import { obtenerArticulosEmpresa } from "../services/articulos";
 

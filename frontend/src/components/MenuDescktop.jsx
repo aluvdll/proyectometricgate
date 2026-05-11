@@ -4,9 +4,6 @@ export function MenuDescktop() {
       <a href="/" className="text-gray-900 hover:text-orange-500">
         Inicio
       </a>
-      {/* <a href="#" className="text-gray-900 hover:text-orange-500">
-        Demo
-      </a> */}
       <a href="/tarifas" className="text-gray-900 hover:text-orange-500">
         Tarifas
       </a>

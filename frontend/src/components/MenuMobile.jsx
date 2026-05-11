@@ -1,15 +1,11 @@
 import { useAuth } from "../context/AuthContext";
 import { BtnUserMenu } from "./BtnUserMenu";
 
-interface MenuMobileProps {
-  open: boolean;
-}
-
-export function MenuMobile({ open }: MenuMobileProps) {
+export function MenuMobile({ open }) {
   const { isLogged } = useAuth();
-  
+
   return (
-    <div className={`md:hidden rounded-lg ${open ? "block" : "hidden"}`} >
+    <div className={`md:hidden rounded-lg ${open ? "block" : "hidden"}`}>
       <div className="px-4 pt-2 pb-4 space-y-2 border-t border-gray-200 block w-full text-center bg-yellow-200 rounded-lg">
         <a
           href="/"
@@ -47,12 +43,6 @@ export function MenuMobile({ open }: MenuMobileProps) {
             >
               Login
             </a>
-            {/* <a
-              href="/register"
-              className="block w-full text-center px-3 py-2 rounded-md bg-orange-500 text-gray-900 font-bold hover:bg-orange-700"
-            >
-              Registrate
-            </a> */}
           </div>
         )}
       </div>

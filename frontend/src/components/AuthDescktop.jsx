@@ -1,7 +1,4 @@
-import type { JSX } from "react";
-// import BtnRegis from "./BtnRegis";
-
-export function AuthDescktop(): JSX.Element {
+export function AuthDescktop() {
   return (
     <div className="hidden md:flex ml-auto space-x-8">
       <a
@@ -19,7 +16,6 @@ export function AuthDescktop(): JSX.Element {
       >
         Login
       </a>
-      {/* <BtnRegis texto="Regístrate" /> */}
     </div>
   );
 }

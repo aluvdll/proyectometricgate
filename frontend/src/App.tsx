@@ -14,8 +14,8 @@ import { PoliticaCookies } from "./pages/PoliticaCookies";
 // Páginas privadas (Admin)
 import { AdminPanel } from "./pages/AdminPanel";
 import { UsersPanel } from "./pages/UsersPanel.jsx";
-import { FormNuevoUsuario } from "./components/FormNuevoUsuario";
-import { Dashboard } from "./components/Dashboard";
+import { FormUsuario } from "./components/FormUsuario";
+import { Dashboard } from "./components/Dashboard.jsx";
 
 // Componentes
 import { Nav } from "./components/nav";
@@ -25,7 +25,7 @@ import { CookieBanner } from "./components/CookieBanner";
 // Context
 import { useAuth } from "./context/AuthContext";
 import type { ReactNode } from "react";
-import { VerEditarUsuario } from "./components/VerEditarUsuario";
+import { VerEditarUsuario } from "./components/VerEditarUsuario.jsx";
 import { PresupuestosPanel } from "./components/PresupuestoPanel.jsx";
 import { FormPresupuesto } from "./components/FormPresupuesto.jsx";
 import { VerEditarPresupuesto } from "./components/VerEditarPresupuesto.jsx";
@@ -192,7 +192,10 @@ export default function App() {
             path="presupuestos/nuevopresupuesto"
             element={<FormPresupuesto mode="create" />}
           />
-          <Route path="usuarios/nuevouser" element={<FormNuevoUsuario />} />
+          <Route
+            path="usuarios/nuevouser"
+            element={<FormUsuario mode="create" userId={undefined} />}
+          />
           <Route
             path="usuarios/vereditarusuario/:id"
             element={<VerEditarUsuario />}
