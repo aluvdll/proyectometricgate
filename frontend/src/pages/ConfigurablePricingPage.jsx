@@ -97,7 +97,9 @@ export default function ConfigurablePricingPage() {
         const parsed = Number(value);
 
         if (value === "" || !Number.isFinite(parsed) || parsed < 0) {
-          setError("Todos los precios deben ser numéricos y mayores o iguales a 0.");
+          setError(
+            "Todos los precios deben ser numéricos y mayores o iguales a 0.",
+          );
           return;
         }
 
@@ -135,14 +137,20 @@ export default function ConfigurablePricingPage() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-orange-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-        <h1 className="text-xl font-semibold dark:text-white">Tarifas configurables</h1>
+        <h1 className="text-xl font-semibold dark:text-white">
+          Tarifas configurables
+        </h1>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-          Edita los precios por empresa para cajón, mecanismo, cristal (m2), ml y conceptos fijos.
+          Edita los precios por empresa para cajón, mecanismo, cristal (m2), ml
+          y conceptos fijos.
         </p>
       </div>
 
       <div className="rounded-lg border border-orange-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-        <label className="mb-1 block text-sm font-medium dark:text-gray-200" htmlFor="articulo-configurable-select">
+        <label
+          className="mb-1 block text-sm font-medium dark:text-gray-200"
+          htmlFor="articulo-configurable-select"
+        >
           Artículo configurable
         </label>
         <select
@@ -152,7 +160,9 @@ export default function ConfigurablePricingPage() {
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           disabled={cargando || articulos.length === 0}
         >
-          {articulos.length === 0 && <option value="">Sin artículos configurables</option>}
+          {articulos.length === 0 && (
+            <option value="">Sin artículos configurables</option>
+          )}
           {articulos.map((art) => (
             <option key={art.id} value={art.id}>
               {art.code} - {art.name}
@@ -180,15 +190,23 @@ export default function ConfigurablePricingPage() {
           </h2>
 
           {(pricing.parts ?? []).map((part) => (
-            <div key={part.part_id} className="rounded border border-gray-200 dark:border-gray-700">
+            <div
+              key={part.part_id}
+              className="rounded border border-gray-200 dark:border-gray-700"
+            >
               <div className="border-b border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                 {part.part_name} ({part.unit})
               </div>
 
               <div className="space-y-2 p-3">
                 {(part.options ?? []).map((opt) => (
-                  <div key={opt.option_id} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_120px_120px_160px] md:items-center">
-                    <div className="text-sm dark:text-gray-200">{opt.label}</div>
+                  <div
+                    key={opt.option_id}
+                    className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_120px_120px_160px] md:items-center"
+                  >
+                    <div className="text-sm dark:text-gray-200">
+                      {opt.label}
+                    </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       Base: {Number(opt.base_price).toFixed(2)}
                     </div>
@@ -200,7 +218,9 @@ export default function ConfigurablePricingPage() {
                       min="0"
                       step="0.01"
                       value={draftPrices[opt.option_id] ?? ""}
-                      onChange={(e) => onChangePrecio(opt.option_id, e.target.value)}
+                      onChange={(e) =>
+                        onChangePrecio(opt.option_id, e.target.value)
+                      }
                       className="rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                     />
                   </div>

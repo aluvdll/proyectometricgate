@@ -27,7 +27,7 @@ function waitForImagesLoaded(container) {
         img.addEventListener("load", finish, { once: true });
         img.addEventListener("error", finish, { once: true });
       });
-    })
+    }),
   );
 }
 
@@ -110,7 +110,11 @@ export default function BudgetPrintPage() {
   }
 
   if (loading) {
-    return <div className="mx-auto max-w-4xl p-6 text-[#111827]">Cargando presupuesto...</div>;
+    return (
+      <div className="mx-auto max-w-4xl p-6 text-[#111827]">
+        Cargando presupuesto...
+      </div>
+    );
   }
 
   if (error || !budget) {
@@ -139,34 +143,67 @@ export default function BudgetPrintPage() {
         <div className="mb-8 flex items-start justify-between gap-4 border-b pb-4">
           <div className="flex flex-col items-start">
             <img src={LOGO_SRC} alt="MetricGate" className="h-32 w-auto" />
-            <h1 className="mt-2 text-base font-bold text-[#111827]">Presupuesto</h1>
+            <h1 className="mt-2 text-base font-bold text-[#111827]">
+              Presupuesto
+            </h1>
           </div>
           <div className="text-right text-sm text-[#374151]">
-            <div><strong>Número:</strong> {budget.budget_number}</div>
-            <div><strong>Fecha:</strong> {formatDate(budget.budget_date)}</div>
-            <div><strong>Estado:</strong> {budget.status}</div>
+            <div>
+              <strong>Número:</strong> {budget.budget_number}
+            </div>
+            <div>
+              <strong>Fecha:</strong> {formatDate(budget.budget_date)}
+            </div>
+            <div>
+              <strong>Estado:</strong> {budget.status}
+            </div>
           </div>
         </div>
 
         <section className="mb-8 grid gap-4 md:grid-cols-2">
           <div className="rounded border p-4">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#6b7280]">Cliente</h2>
-            <div className="text-lg font-semibold text-[#111827]">{clientName}</div>
-            <div className="text-sm text-[#374151]">{budget.client?.dni || ""}</div>
-            <div className="text-sm text-[#374151]">{budget.client?.telefono || ""}</div>
-            <div className="text-sm text-[#374151]">{budget.client?.direccion || ""}</div>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#6b7280]">
+              Cliente
+            </h2>
+            <div className="text-lg font-semibold text-[#111827]">
+              {clientName}
+            </div>
             <div className="text-sm text-[#374151]">
-              {[budget.client?.codigo_postal, budget.client?.poblacion, budget.client?.provincia]
+              {budget.client?.dni || ""}
+            </div>
+            <div className="text-sm text-[#374151]">
+              {budget.client?.telefono || ""}
+            </div>
+            <div className="text-sm text-[#374151]">
+              {budget.client?.direccion || ""}
+            </div>
+            <div className="text-sm text-[#374151]">
+              {[
+                budget.client?.codigo_postal,
+                budget.client?.poblacion,
+                budget.client?.provincia,
+              ]
                 .filter(Boolean)
                 .join(" ")}
             </div>
           </div>
 
           <div className="rounded border p-4">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#6b7280]">Resumen</h2>
-            <div className="flex justify-between text-sm text-[#374151]"><span>Base imponible</span><span>{formatCurrency(budget.base_amount)}</span></div>
-            <div className="flex justify-between text-sm text-[#374151]"><span>IVA</span><span>{formatCurrency(budget.tax_amount)}</span></div>
-            <div className="mt-2 flex justify-between border-t pt-2 text-base font-bold text-[#111827]"><span>Total</span><span>{formatCurrency(budget.total_amount)}</span></div>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#6b7280]">
+              Resumen
+            </h2>
+            <div className="flex justify-between text-sm text-[#374151]">
+              <span>Base imponible</span>
+              <span>{formatCurrency(budget.base_amount)}</span>
+            </div>
+            <div className="flex justify-between text-sm text-[#374151]">
+              <span>IVA</span>
+              <span>{formatCurrency(budget.tax_amount)}</span>
+            </div>
+            <div className="mt-2 flex justify-between border-t pt-2 text-base font-bold text-[#111827]">
+              <span>Total</span>
+              <span>{formatCurrency(budget.total_amount)}</span>
+            </div>
           </div>
         </section>
 
@@ -186,12 +223,24 @@ export default function BudgetPrintPage() {
             <tbody>
               {(budget.lines || []).map((line) => (
                 <tr key={line.id}>
-                  <td className="border px-3 py-2 align-top font-medium">{line.name}</td>
-                  <td className="border px-3 py-2 align-top whitespace-pre-wrap">{line.description || "-"}</td>
-                  <td className="border px-3 py-2 text-center align-top">{Number(line.quantity).toFixed(2)}</td>
-                  <td className="border px-3 py-2 text-right align-top">{formatCurrency(line.unit_price)}</td>
-                  <td className="border px-3 py-2 text-right align-top">{Number(line.discount_percentage || 0).toFixed(2)} %</td>
-                  <td className="border px-3 py-2 text-right align-top">{formatCurrency(line.total_amount)}</td>
+                  <td className="border px-3 py-2 align-top font-medium">
+                    {line.name}
+                  </td>
+                  <td className="border px-3 py-2 align-top whitespace-pre-wrap">
+                    {line.description || "-"}
+                  </td>
+                  <td className="border px-3 py-2 text-center align-top">
+                    {Number(line.quantity).toFixed(2)}
+                  </td>
+                  <td className="border px-3 py-2 text-right align-top">
+                    {formatCurrency(line.unit_price)}
+                  </td>
+                  <td className="border px-3 py-2 text-right align-top">
+                    {Number(line.discount_percentage || 0).toFixed(2)} %
+                  </td>
+                  <td className="border px-3 py-2 text-right align-top">
+                    {formatCurrency(line.total_amount)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -200,8 +249,12 @@ export default function BudgetPrintPage() {
 
         {budget.notes && (
           <section className="mt-8 rounded border p-4">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#6b7280]">Notas</h2>
-            <p className="whitespace-pre-wrap text-sm text-[#374151]">{budget.notes}</p>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#6b7280]">
+              Notas
+            </h2>
+            <p className="whitespace-pre-wrap text-sm text-[#374151]">
+              {budget.notes}
+            </p>
           </section>
         )}
 

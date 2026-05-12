@@ -81,7 +81,7 @@ class ConfigurableArticleController extends Controller
             ->findOrFail($id);
 
         $allowedOptionIds = $article->parts
-            ->flatMap(fn ($part) => $part->options->pluck('id'))
+            ->flatMap(fn($part) => $part->options->pluck('id'))
             ->unique()
             ->values();
 
@@ -103,7 +103,7 @@ class ConfigurableArticleController extends Controller
 
         $now = now();
         $upserts = collect($validated['prices'])
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'company_id' => $companyId,
                 'configurable_article_option_id' => (int) $item['option_id'],
                 'price' => (float) $item['price'],
@@ -243,7 +243,7 @@ class ConfigurableArticleController extends Controller
         $alturaHueco = (float) ($data['alto_hueco'] ?? 0);
 
         $articleOptionIds = $article->parts
-            ->flatMap(fn ($part) => $part->options->pluck('id'))
+            ->flatMap(fn($part) => $part->options->pluck('id'))
             ->unique()
             ->values();
 
@@ -307,7 +307,7 @@ class ConfigurableArticleController extends Controller
     private function construirTarifasRespuesta(ConfigurableArticle $article, int $companyId): array
     {
         $optionIds = $article->parts
-            ->flatMap(fn ($part) => $part->options->pluck('id'))
+            ->flatMap(fn($part) => $part->options->pluck('id'))
             ->unique()
             ->values();
 
