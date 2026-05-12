@@ -4,6 +4,156 @@ import {
   calcularArticuloConfigurable,
 } from "../services/articulosConfigurables";
 
+function parseRuleParams(params) {
+  if (!params) return {};
+  if (typeof params === "object") return params;
+  try {
+    return JSON.parse(params);
+  } catch {
+    return {};
+  }
+}
+
+function validarMedidasConReglas(medidas, rules = [], touched = {}) {
+  const errors = {};
+
+  const addError = (field, message) => {
+    if (!touched[field]) return;
+    if (!errors[field]) errors[field] = [];
+    if (errors[field].includes(message)) return;
+    errors[field].push(message);
+  };
+
+  const toNumber = (value) => {
+    if (value === "" || value === null || value === undefined) return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  };
+
+  rules.forEach((rule) => {
+    const field = rule?.field;
+    const params = parseRuleParams(rule?.params);
+    const value = toNumber(medidas[field]);
+
+    if (!field) return;
+
+    switch (rule.type) {
+      case "required": {
+        if (
+          medidas[field] === "" ||
+          medidas[field] === null ||
+          medidas[field] === undefined
+        ) {
+          addError(field, rule.message);
+        }
+        break;
+      }
+      case "min_value": {
+        const minValue = Number(params?.value);
+        if (value !== null && Number.isFinite(minValue) && value < minValue) {
+          addError(field, rule.message);
+        }
+        break;
+      }
+      case "max_value": {
+        const maxValue = Number(params?.value);
+        if (value !== null && Number.isFinite(maxValue) && value > maxValue) {
+          addError(field, rule.message);
+        }
+        break;
+      }
+      case "min_diff": {
+        const aField = params?.field_a;
+        const bField = params?.field_b;
+        const minDiff = Number(params?.min);
+        const aValue = toNumber(medidas[aField]);
+        const bValue = toNumber(medidas[bField]);
+        if (
+          aField &&
+          bField &&
+          Number.isFinite(minDiff) &&
+          aValue !== null &&
+          bValue !== null &&
+          aValue - bValue < minDiff
+        ) {
+          addError(field, rule.message);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  });
+
+  // Fallback de seguridad en frontend para PTA2H2FSP:
+  // aunque falte alguna regla dinámica en BD, mantenemos estas reglas clave en UI.
+  const dValue = toNumber(medidas.alto_hueco);
+  if (touched.alto_hueco && dValue !== null && dValue > 3000) {
+    addError("alto_hueco", "La medida D no puede ser superior a 3000mm.");
+  }
+
+  const aValue = toNumber(medidas.alto_obra);
+  if (
+    touched.alto_obra &&
+    aValue !== null &&
+    dValue !== null &&
+    aValue - dValue < 140
+  ) {
+    addError(
+      "alto_obra",
+      "La medida A debe ser al menos 140mm mayor que la medida D.",
+    );
+  }
+
+  return errors;
+}
+
+function calcularMedidasFabricacionLive(medidas) {
+  const c = Number(medidas.ancho_hueco);
+  const d = Number(medidas.alto_hueco);
+  const hasC = Number.isFinite(c) && medidas.ancho_hueco !== "";
+  const hasD = Number.isFinite(d) && medidas.alto_hueco !== "";
+
+  const valueOrNull = (calc, ready) => (ready ? Number(calc.toFixed(2)) : null);
+
+  return {
+    ancho_cristal_fijos_laterales: {
+      label: "Ancho cristal de fijos laterales",
+      formula: "(C/4) + 45",
+      value_mm: valueOrNull(c / 4 + 45, hasC),
+    },
+    alto_cristal_fijos_laterales: {
+      label: "Alto cristal de los fijos laterales",
+      formula: "D",
+      value_mm: valueOrNull(d, hasD),
+    },
+    ancho_cristal_hojas_moviles: {
+      label: "Ancho cristal de las hojas moviles",
+      formula: "(C/4) - 5",
+      value_mm: valueOrNull(c / 4 - 5, hasC),
+    },
+    alto_cristal_hojas_moviles_sin_perfil_plinton: {
+      label: "Alto cristal de las hojas moviles (sin perfil plinton)",
+      formula: "D - 50",
+      value_mm: valueOrNull(d - 50, hasD),
+    },
+    ancho_hueco_paso_libre_final: {
+      label: "Ancho hueco de paso libre final",
+      formula: "C - ((C/4) + 45) * 2",
+      value_mm: valueOrNull(c - (c / 4 + 45) * 2, hasC),
+    },
+    alto_hueco_paso_libre: {
+      label: "Alto hueco de paso libre",
+      formula: "D",
+      value_mm: valueOrNull(d, hasD),
+    },
+  };
+}
+
+const COTAS_IMAGE_BY_CODE = {
+  PTA2H2FSP: "/cotas/PTA2H2FSP-cotas.svg",
+};
+
 /**
  * Modal para configurar un artículo configurable antes de añadirlo al presupuesto.
  *
@@ -17,6 +167,7 @@ export function ModalArticuloConfigurable({
   initialConfiguration = null,
   onConfirmar,
   onCerrar,
+  asPage = false,
 }) {
   const [articulo, setArticulo] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -27,7 +178,6 @@ export function ModalArticuloConfigurable({
     alto_hueco: "",
     ancho_obra: "",
     alto_obra: "",
-    paso_deseado: "",
   });
 
   // Opciones elegidas por parte: { cajon: "ral_premium", hojas_moviles: "incoloro", ... }
@@ -37,6 +187,15 @@ export function ModalArticuloConfigurable({
   const [resultado, setResultado] = useState(null);
   const [errores, setErrores] = useState({});
   const [calculando, setCalculando] = useState(false);
+  const [touched, setTouched] = useState({});
+
+  const touchedAll = {
+    ancho_hueco: true,
+    alto_hueco: true,
+    ancho_obra: true,
+    alto_obra: true,
+
+  };
 
   // ── Cargar artículo al abrir ────────────────────────────────────
   useEffect(() => {
@@ -48,11 +207,12 @@ export function ModalArticuloConfigurable({
       alto_hueco: "",
       ancho_obra: "",
       alto_obra: "",
-      paso_deseado: "",
+
     });
     setOpciones({});
     setResultado(null);
     setErrores({});
+    setTouched({});
 
     setCargando(true);
     obtenerArticuloConfigurable(articuloId)
@@ -75,7 +235,7 @@ export function ModalArticuloConfigurable({
             alto_hueco: initialConfiguration.alto_hueco ?? "",
             ancho_obra: initialConfiguration.ancho_obra ?? "",
             alto_obra: initialConfiguration.alto_obra ?? "",
-            paso_deseado: initialConfiguration.paso_deseado ?? "",
+
           });
 
           const breakdown = initialConfiguration.price_breakdown ?? null;
@@ -98,7 +258,15 @@ export function ModalArticuloConfigurable({
 
   // ── Handlers ────────────────────────────────────────────────────
   function handleMedida(e) {
-    setMedidas((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    const nextTouched = { ...touched, [name]: true };
+    const nextMedidas = { ...medidas, [name]: value };
+
+    setTouched(nextTouched);
+    setMedidas(nextMedidas);
+    setErrores(
+      validarMedidasConReglas(nextMedidas, articulo?.rules, nextTouched),
+    );
     setResultado(null);
   }
 
@@ -107,29 +275,60 @@ export function ModalArticuloConfigurable({
     setResultado(null);
   }
 
-  async function handleCalcular() {
-    setCalculando(true);
-    setErrores({});
-    try {
-      const payload = {
-        ...Object.fromEntries(
-          Object.entries(medidas).filter(([, v]) => v !== ""),
-        ),
-        options: opciones,
-      };
-      const res = await calcularArticuloConfigurable(articuloId, payload);
-      setResultado(res);
-    } catch (err) {
-      if (err.response?.status === 422) {
-        setErrores(err.response.data.errors ?? {});
-      }
-    } finally {
-      setCalculando(false);
+  // Recalcula precio automáticamente al cambiar medidas u opciones.
+  useEffect(() => {
+    if (!articuloId || !articulo) return;
+
+    const rules = articulo.rules ?? [];
+    const requiredFields = [
+      ...new Set(
+        rules
+          .filter((rule) => rule.type === "required")
+          .map((rule) => rule.field),
+      ),
+    ];
+
+    const hasRequiredValues = requiredFields.every((field) => {
+      const value = medidas[field];
+      return value !== "" && value !== null && value !== undefined;
+    });
+
+    const frontErrors = validarMedidasConReglas(medidas, rules, touchedAll);
+    if (!hasRequiredValues || Object.keys(frontErrors).length > 0) {
+      setResultado(null);
+      return;
     }
-  }
+
+    const timerId = setTimeout(async () => {
+      setCalculando(true);
+      try {
+        const payload = {
+          ...Object.fromEntries(
+            Object.entries(medidas).filter(([, v]) => v !== ""),
+          ),
+          options: opciones,
+        };
+        const res = await calcularArticuloConfigurable(articuloId, payload);
+        setResultado(res);
+      } catch (err) {
+        setResultado(null);
+        if (err.response?.status === 422) {
+          setErrores(err.response.data.errors ?? {});
+        }
+      } finally {
+        setCalculando(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timerId);
+  }, [articuloId, articulo, medidas, opciones]);
 
   function handleConfirmar() {
     if (!resultado?.valid) return;
+
+    const medidasFabricacion =
+      resultado?.fabrication_measures ??
+      calcularMedidasFabricacionLive(medidas);
 
     onConfirmar({
       configurable_article_id: articulo.id,
@@ -141,6 +340,7 @@ export function ModalArticuloConfigurable({
         ...medidas,
         options_chosen: opciones,
         price_breakdown: resultado.breakdown,
+        fabrication_measures: medidasFabricacion,
       },
     });
   }
@@ -161,9 +361,23 @@ export function ModalArticuloConfigurable({
   // ── Render ───────────────────────────────────────────────────────
   if (!articuloId) return null;
 
+  const cotasImageUrl = articulo?.code
+    ? (COTAS_IMAGE_BY_CODE[articulo.code] ?? "")
+    : "";
+
+  const shellClasses = asPage
+    ? "min-h-[calc(100vh-96px)] w-full bg-white px-4 py-4 dark:bg-gray-950 md:px-6"
+    : "fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4";
+
+  const cardClasses = asPage
+    ? "mx-auto w-full max-w-7xl rounded-xl border border-orange-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
+    : "w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl dark:bg-gray-900";
+
+  const medidasFabricacionLive = calcularMedidasFabricacionLive(medidas);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className={shellClasses}>
+      <div className={cardClasses}>
         {/* Cabecera */}
         <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700">
           <h2 className="text-lg font-bold dark:text-white">
@@ -175,9 +389,9 @@ export function ModalArticuloConfigurable({
           </h2>
           <button
             onClick={onCerrar}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold"
+            className="rounded-md border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
           >
-            ×
+            {asPage ? "Volver" : "Cerrar"}
           </button>
         </div>
 
@@ -189,6 +403,19 @@ export function ModalArticuloConfigurable({
 
         {!cargando && articulo && (
           <div className="p-6 space-y-6">
+            {cotasImageUrl && (
+              <section>
+                <h3 className="font-semibold mb-3 dark:text-white">
+                  Guía de cotas ({articulo.code})
+                </h3>
+                <img
+                  src={cotasImageUrl}
+                  alt={`Cotas de instalación para ${articulo.code}`}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
+                />
+              </section>
+            )}
+
             {/* Medidas de entrada */}
             <section>
               <h3 className="font-semibold mb-3 dark:text-white">
@@ -196,11 +423,11 @@ export function ModalArticuloConfigurable({
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { key: "ancho_hueco", label: "Ancho hueco libre *" },
-                  { key: "alto_hueco", label: "Alto hueco libre *" },
-                  { key: "ancho_obra", label: "Ancho obra total" },
-                  { key: "alto_obra", label: "Alto obra total" },
-                  { key: "paso_deseado", label: "Paso deseado" },
+                  { key: "ancho_hueco", label: "C — Ancho hueco libre *" },
+                  { key: "alto_hueco", label: "D — Alto hueco libre *" },
+                  { key: "ancho_obra", label: "B — Ancho obra total" },
+                  { key: "alto_obra", label: "A — Alto obra total *" },
+   
                 ].map(({ key, label }) => (
                   <div key={key}>
                     <label className="block text-sm mb-1 dark:text-gray-300">
@@ -255,37 +482,70 @@ export function ModalArticuloConfigurable({
               </div>
             </section>
 
-            {/* Botón calcular */}
-            <button
-              type="button"
-              onClick={handleCalcular}
-              disabled={calculando}
-              className="w-full py-2 rounded bg-orange-500 hover:bg-orange-600 text-white font-semibold disabled:opacity-50"
-            >
-              {calculando ? "Calculando…" : "Calcular precio"}
-            </button>
-
-            {/* Resultado desglosado */}
-            {resultado?.valid && (
-              <section className="border rounded-lg p-4 dark:border-gray-700 space-y-2">
-                <h3 className="font-semibold dark:text-white">Desglose</h3>
-                {Object.entries(resultado.breakdown).map(([key, val]) => (
+            <section className="border rounded-lg p-4 dark:border-gray-700">
+              <h3 className="font-semibold mb-3 dark:text-white">
+                Medidas de fabricación
+              </h3>
+              <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                Se actualizan al escribir C y D. Se guardan en la configuración
+                para usarlas después al generar pedido.
+              </p>
+              <div className="space-y-2">
+                {Object.entries(medidasFabricacionLive).map(([key, item]) => (
                   <div
                     key={key}
-                    className="flex justify-between text-sm dark:text-gray-300"
+                    className="grid grid-cols-1 gap-1 rounded border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 md:grid-cols-[1fr_auto]"
                   >
-                    <span>{val.label}</span>
-                    <span className="font-mono">{val.price.toFixed(2)} €</span>
+                    <div className="dark:text-gray-300">
+                      <span className="font-medium">{item.label}</span>
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                        ({item.formula})
+                      </span>
+                    </div>
+                    <div className="font-mono dark:text-gray-200">
+                      {item.value_mm === null ? "-" : `${item.value_mm} mm`}
+                    </div>
                   </div>
                 ))}
-                <div className="flex justify-between font-bold pt-2 border-t dark:border-gray-600 dark:text-white">
-                  <span>Total</span>
-                  <span className="font-mono">
-                    {resultado.total.toFixed(2)} €
-                  </span>
-                </div>
-              </section>
-            )}
+              </div>
+            </section>
+
+            {/* Resultado desglosado */}
+            <section className="border rounded-lg p-4 dark:border-gray-700 space-y-2">
+              <h3 className="font-semibold dark:text-white">Desglose</h3>
+              {calculando && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Recalculando precio...
+                </p>
+              )}
+              {!calculando && resultado?.valid && (
+                <>
+                  {Object.entries(resultado.breakdown).map(([key, val]) => (
+                    <div
+                      key={key}
+                      className="flex justify-between text-sm dark:text-gray-300"
+                    >
+                      <span>{val.label}</span>
+                      <span className="font-mono">
+                        {val.price.toFixed(2)} €
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-bold pt-2 border-t dark:border-gray-600 dark:text-white">
+                    <span>Total</span>
+                    <span className="font-mono">
+                      {resultado.total.toFixed(2)} €
+                    </span>
+                  </div>
+                </>
+              )}
+              {!calculando && !resultado?.valid && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Completa las medidas obligatorias y corrige errores para ver
+                  el precio en tiempo real.
+                </p>
+              )}
+            </section>
           </div>
         )}
 

@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { NotificationModal } from "./NotificationModal";
 import { UserSearch } from "./UserSearch.jsx";
 import { obtenerArticulosEmpresa } from "../services/articulos";
 import { obtenerClientesEmpresa } from "../services/clientes";
 import { listarArticulosConfigurables } from "../services/articulosConfigurables";
-import { ModalArticuloConfigurable } from "./ModalArticuloConfigurable";
 import {
   actualizarPresupuestoEmpresa,
   crearPresupuestoEmpresa,
@@ -71,6 +70,7 @@ function obtenerUrlImagenArticulo(articulo) {
 
 export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const isEdit = mode === "edit";
 
   const [clientes, setClientes] = useState([]);
@@ -83,9 +83,6 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   const [articleSearch, setArticleSearch] = useState("");
   const [configSearch, setConfigSearch] = useState("");
   const [activeLineIndex, setActiveLineIndex] = useState(null);
-  // Modal artículo configurable
-  const [modalConfigArticuloId, setModalConfigArticuloId] = useState(null);
-  const [modalConfigInitialData, setModalConfigInitialData] = useState(null);
   const [clientSearch, setClientSearch] = useState("");
   const [budgetNumber, setBudgetNumber] = useState("");
   const [loadingForm, setLoadingForm] = useState(true);
@@ -333,22 +330,21 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     cerrarModalArticulos();
   };
 
-  // Maneja la confirmación del artículo configurable desde el modal
-  const handleConfirmarArticuloConfigurable = (config) => {
-    if (activeLineIndex === null) {
+  const aplicarConfiguracionEnLinea = (index, config) => {
+    if (index === null || index === undefined) {
       return;
     }
 
     setLines((prev) => {
       const copy = [...prev];
       const lineaConfigurable = {
-        ...copy[activeLineIndex],
+        ...copy[index],
         standard_article_id: "", // No hay ID de artículo estándar
         name: config.name,
         description: config.description,
-        quantity: copy[activeLineIndex]?.quantity || "1",
+        quantity: copy[index]?.quantity || "1",
         unit_price: String(config.unit_price),
-        discount_percentage: copy[activeLineIndex]?.discount_percentage || "0",
+        discount_percentage: copy[index]?.discount_percentage || "0",
         tax_percentage: String(config.tax_percentage),
         // Guardamos la configuración en un campo especial
         _configurable_article_id: config.configurable_article_id,
@@ -357,18 +353,29 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       };
 
       // Si el índice activo no existe aún, añadimos una línea nueva.
-      if (activeLineIndex >= copy.length) {
+      if (index >= copy.length) {
         copy.push(lineaConfigurable);
       } else {
-        copy[activeLineIndex] = lineaConfigurable;
+        copy[index] = lineaConfigurable;
       }
 
       return copy;
     });
+  };
 
-    setModalConfigArticuloId(null);
-    setModalConfigInitialData(null);
-    setActiveLineIndex(null);
+  const abrirPaginaConfigurable = (
+    articuloId,
+    lineIndex,
+    initialConfiguration = null,
+  ) => {
+    navigate("/adminPanel/presupuestos/configurar-articulo", {
+      state: {
+        articuloId,
+        lineIndex,
+        initialConfiguration,
+        returnTo: location.pathname,
+      },
+    });
   };
 
   const abrirEdicionConfigurable = (index) => {
@@ -377,10 +384,42 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       return;
     }
 
-    setActiveLineIndex(index);
-    setModalConfigInitialData(line._configuration || null);
-    setModalConfigArticuloId(line._configurable_article_id);
+    abrirPaginaConfigurable(
+      line._configurable_article_id,
+      index,
+      line._configuration || null,
+    );
   };
+
+  const abrirNuevoConfigurable = () => {
+    const primerConfigurable = articulosConfigurables[0];
+    if (!primerConfigurable) {
+      showNotification(
+        "Sin configurables",
+        "No hay artículos configurables disponibles.",
+        "error",
+      );
+      return;
+    }
+
+    abrirPaginaConfigurable(primerConfigurable.id, lines.length, null);
+  };
+
+  useEffect(() => {
+    const result = location.state?.configurableResult;
+    const lineIndex = location.state?.lineIndex;
+
+    if (!result || lineIndex === null || lineIndex === undefined) {
+      return;
+    }
+
+    aplicarConfiguracionEnLinea(lineIndex, result);
+
+    navigate(location.pathname, {
+      replace: true,
+      state: {},
+    });
+  }, [location.state, location.pathname, navigate]);
 
   const addLinea = () => {
     setLines((prev) => [...prev, crearLinea()]);
@@ -824,8 +863,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                         <button
                           type="button"
                           onClick={() => {
-                            setActiveLineIndex(lines.length);
-                            setModalConfigArticuloId(art.id);
+                            abrirPaginaConfigurable(art.id, lines.length, null);
                             setIsConfigListModalOpen(false);
                           }}
                           className="rounded-md bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700"
@@ -1077,18 +1115,13 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
           {articulosConfigurables.length > 0 && (
             <button
               type="button"
-              onClick={() => {
-                setConfigSearch("");
-                setModalConfigInitialData(null);
-                setIsConfigListModalOpen(true);
-              }}
+              onClick={abrirNuevoConfigurable}
               className="rounded-md bg-purple-500 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-600"
             >
               + Artículo Configurable
             </button>
           )}
         </div>
-        setModalConfigInitialData(null);
         <div className="mt-6 rounded-md border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-gray-800">
           <div>
             Base imponible: <strong>{resumen.base.toFixed(2)} €</strong>
@@ -1118,20 +1151,6 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
           title={notifyTitle}
           message={notifyMessage}
           type={notifyType}
-        />
-      )}
-
-      {/* Modal de artículo configurable */}
-      {modalConfigArticuloId !== null && (
-        <ModalArticuloConfigurable
-          articuloId={modalConfigArticuloId}
-          initialConfiguration={modalConfigInitialData}
-          onConfirmar={handleConfirmarArticuloConfigurable}
-          onCerrar={() => {
-            setModalConfigArticuloId(null);
-            setModalConfigInitialData(null);
-            setActiveLineIndex(null);
-          }}
         />
       )}
     </div>
