@@ -44,9 +44,15 @@ class BudgetLine extends Model
         return $this->belongsTo(StandardArticle::class);
     }
 
-    // 📦 Una línea puede apuntar a un artículo configurable (nullable) - 🚧 pendiente
+    // 📦 Una línea puede apuntar a un artículo configurable (nullable)
     public function configurableArticle()
     {
         return $this->belongsTo(ConfigurableArticle::class);
+    }
+
+    // ⚙️ Configuración elegida (solo si article_type = 'configurable')
+    public function configuration()
+    {
+        return $this->hasOne(BudgetLineConfiguration::class);
     }
 }

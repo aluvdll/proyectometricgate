@@ -30,11 +30,9 @@ return new class extends Migration
                 ->constrained('standard_articles')
                 ->nullOnDelete();
 
-            // 📦 ARTÍCULO CONFIGURABLE (null si es estándar o manual) - 🚧 pendiente de implementar
-            $table->foreignId('configurable_article_id')
-                ->nullable()
-                ->constrained('configurable_articles')
-                ->nullOnDelete();
+            // 📦 ARTÍCULO CONFIGURABLE (null si es estándar o manual)
+            // La FK se agregará en la migración de configurable_articles para evitar orden circular
+            $table->unsignedBigInteger('configurable_article_id')->nullable();
 
             // 📝 SNAPSHOT HISTÓRICO - se copia del artículo al añadirlo y no cambia nunca
             $table->string('name');             // Nombre en el momento de crear la línea

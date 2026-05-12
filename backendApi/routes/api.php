@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ArticleFamilyController;
 use App\Http\Controllers\Api\BudgetController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\ConfigurableArticleController;
 use App\Http\Controllers\Api\PanelEmpresasController;
 use App\Http\Controllers\Api\StandardArticleController;
 use App\Http\Controllers\Api\UserController;
@@ -104,6 +105,11 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
         // Crear y editar (solo admin)
         Route::post('/company/articles', [StandardArticleController::class, 'store']);
         Route::put('/company/articles/{id}', [StandardArticleController::class, 'update']);
+
+        // Artículos configurables
+        Route::get('/company/configurable-articles', [ConfigurableArticleController::class, 'index']);
+        Route::get('/company/configurable-articles/{id}', [ConfigurableArticleController::class, 'show']);
+        Route::post('/company/configurable-articles/{id}/calculate', [ConfigurableArticleController::class, 'calculate']);
 
         Route::get('/products', function () {
             return 'productos de la empresa';
