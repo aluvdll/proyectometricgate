@@ -4,6 +4,7 @@ import { NotificationModal } from "./NotificationModal";
 import { UserSearch } from "./UserSearch.jsx";
 import { useAuth } from "../context/AuthContext";
 import { obtenerArticulosEmpresa } from "../services/articulos";
+import { listarArticulosConfigurables } from "../services/articulosConfigurables";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -13,8 +14,10 @@ export function ArticulosPanel() {
   const esAdmin = user?.role === "admin";
 
   const [articulos, setArticulos] = useState([]);
+  const [articulosConfigurables, setArticulosConfigurables] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [textoBusqueda, setTextoBusqueda] = useState("");
+  const [tabActiva, setTabActiva] = useState("standard");
   const [notifyVisible, setNotifyVisible] = useState(false);
   const [notifyTitle, setNotifyTitle] = useState("");
   const [notifyMessage, setNotifyMessage] = useState("");
@@ -29,9 +32,10 @@ export function ArticulosPanel() {
   };
 
   useEffect(() => {
-    obtenerArticulosEmpresa()
-      .then((data) => {
-        setArticulos(data);
+    Promise.all([obtenerArticulosEmpresa(), listarArticulosConfigurables()])
+      .then(([articulosData, configurablesData]) => {
+        setArticulos(articulosData);
+        setArticulosConfigurables(configurablesData);
       })
       .catch((error) => {
         showNotification(
@@ -64,6 +68,24 @@ export function ArticulosPanel() {
     });
   }, [articulos, textoBusqueda]);
 
+  const configurablesFiltrados = useMemo(() => {
+    if (!textoBusqueda.trim()) return articulosConfigurables;
+
+    const filtro = textoBusqueda.toLowerCase();
+    return articulosConfigurables.filter((a) => {
+      const fuente = [
+        a.code,
+        a.name,
+        a.description,
+        a.active ? "activo" : "inactivo",
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return fuente.includes(filtro);
+    });
+  }, [articulosConfigurables, textoBusqueda]);
+
   if (cargando) {
     return <div className="container w-full mt-1">Cargando artículos...</div>;
   }
@@ -92,84 +114,184 @@ export function ArticulosPanel() {
           </div>
         </div>
 
-        <table className="min-w-full rounded-md border border-orange-400">
-          <thead className="border border-orange-400 bg-orange-500">
-            <tr>
-              <th className="px-3 py-2 text-left text-gray-800">Imagen</th>
-              <th className="px-3 py-2 text-left text-gray-800">Código</th>
-              <th className="px-3 py-2 text-left text-gray-800">Familia</th>
-              <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
-              <th className="px-3 py-2 text-left text-gray-800">Descripción</th>
-              <th className="px-3 py-2 text-center text-gray-800">Base</th>
-              <th className="px-3 py-2 text-center text-gray-800">IVA</th>
-              <th className="px-3 py-2 text-center text-gray-800">Estado</th>
-              <th className="px-3 py-2 text-center text-gray-800">Acciones</th>
-            </tr>
-          </thead>
+        <div className="mb-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setTabActiva("standard")}
+            className={`rounded-md px-3 py-2 text-sm font-semibold ${
+              tabActiva === "standard"
+                ? "bg-orange-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            }`}
+          >
+            Estándar ({articulos.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTabActiva("configurable")}
+            className={`rounded-md px-3 py-2 text-sm font-semibold ${
+              tabActiva === "configurable"
+                ? "bg-orange-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            }`}
+          >
+            Configurables ({articulosConfigurables.length})
+          </button>
+        </div>
 
-          <tbody className="border border-orange-400">
-            {articulosFiltrados.map((a, index) => (
-              <tr
-                key={a.id}
-                className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
-              >
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {a.image ? (
-                    <img
-                      src={`${API_URL}/storage/${a.image}`}
-                      alt={a.name}
-                      className="h-12 w-12 rounded object-cover"
-                    />
-                  ) : (
-                    <span className="text-xs text-gray-500">Sin imagen</span>
-                  )}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {a.code}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {a.family?.name || "Sin familia"}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {a.name}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {a.description || "-"}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                  {Number(a.base_price).toFixed(2)} €
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                  {Number(a.tax_percentage).toFixed(2)}%
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                  {a.active ? "Activo" : "Inactivo"}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-center">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        `/adminPanel/articulos/vereditararticulo/${a.id}`,
-                      )
-                    }
-                    className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
-                  >
-                    Ver
-                  </button>
-                </td>
-              </tr>
-            ))}
-
-            {articulosFiltrados.length === 0 && (
+        {tabActiva === "standard" && (
+          <table className="min-w-full rounded-md border border-orange-400">
+            <thead className="border border-orange-400 bg-orange-500">
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-gray-600">
-                  No hay artículos para mostrar
-                </td>
+                <th className="px-3 py-2 text-left text-gray-800">Imagen</th>
+                <th className="px-3 py-2 text-left text-gray-800">Código</th>
+                <th className="px-3 py-2 text-left text-gray-800">Familia</th>
+                <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
+                <th className="px-3 py-2 text-left text-gray-800">
+                  Descripción
+                </th>
+                <th className="px-3 py-2 text-center text-gray-800">Base</th>
+                <th className="px-3 py-2 text-center text-gray-800">IVA</th>
+                <th className="px-3 py-2 text-center text-gray-800">Estado</th>
+                <th className="px-3 py-2 text-center text-gray-800">
+                  Acciones
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody className="border border-orange-400">
+              {articulosFiltrados.map((a, index) => (
+                <tr
+                  key={a.id}
+                  className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
+                >
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {a.image ? (
+                      <img
+                        src={`${API_URL}/storage/${a.image}`}
+                        alt={a.name}
+                        className="h-12 w-12 rounded object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-500">Sin imagen</span>
+                    )}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {a.code}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {a.family?.name || "Sin familia"}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {a.name}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {a.description || "-"}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                    {Number(a.base_price).toFixed(2)} €
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                    {Number(a.tax_percentage).toFixed(2)}%
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                    {a.active ? "Activo" : "Inactivo"}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/adminPanel/articulos/vereditararticulo/${a.id}`,
+                        )
+                      }
+                      className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+                    >
+                      Ver
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {articulosFiltrados.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="px-3 py-6 text-center text-gray-600"
+                  >
+                    No hay artículos para mostrar
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+
+        {tabActiva === "configurable" && (
+          <table className="min-w-full rounded-md border border-orange-400">
+            <thead className="border border-orange-400 bg-orange-500">
+              <tr>
+                <th className="px-3 py-2 text-left text-gray-800">Código</th>
+                <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
+                <th className="px-3 py-2 text-left text-gray-800">
+                  Descripción
+                </th>
+                <th className="px-3 py-2 text-center text-gray-800">IVA</th>
+                <th className="px-3 py-2 text-center text-gray-800">Estado</th>
+                <th className="px-3 py-2 text-center text-gray-800">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+
+            <tbody className="border border-orange-400">
+              {configurablesFiltrados.map((a, index) => (
+                <tr
+                  key={a.id}
+                  className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
+                >
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {a.code}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {a.name}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {a.description || "-"}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                    {Number(a.tax_percentage || 0).toFixed(2)}%
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                    {a.active ? "Activo" : "Inactivo"}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(`/adminPanel/presupuestos/nuevopresupuesto`)
+                      }
+                      className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+                    >
+                      Usar en presupuesto
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {configurablesFiltrados.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-3 py-6 text-center text-gray-600"
+                  >
+                    No hay artículos configurables para mostrar
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {notifyVisible && (

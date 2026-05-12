@@ -4,6 +4,8 @@ import { NotificationModal } from "./NotificationModal";
 import { UserSearch } from "./UserSearch.jsx";
 import { obtenerArticulosEmpresa } from "../services/articulos";
 import { obtenerClientesEmpresa } from "../services/clientes";
+import { listarArticulosConfigurables } from "../services/articulosConfigurables";
+import { ModalArticuloConfigurable } from "./ModalArticuloConfigurable";
 import {
   actualizarPresupuestoEmpresa,
   crearPresupuestoEmpresa,
@@ -73,11 +75,17 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
 
   const [clientes, setClientes] = useState([]);
   const [articulos, setArticulos] = useState([]);
+  const [articulosConfigurables, setArticulosConfigurables] = useState([]);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isClientAccordionOpen, setIsClientAccordionOpen] = useState(false);
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
+  const [isConfigListModalOpen, setIsConfigListModalOpen] = useState(false);
   const [articleSearch, setArticleSearch] = useState("");
+  const [configSearch, setConfigSearch] = useState("");
   const [activeLineIndex, setActiveLineIndex] = useState(null);
+  // Modal artículo configurable
+  const [modalConfigArticuloId, setModalConfigArticuloId] = useState(null);
+  const [modalConfigInitialData, setModalConfigInitialData] = useState(null);
   const [clientSearch, setClientSearch] = useState("");
   const [budgetNumber, setBudgetNumber] = useState("");
   const [loadingForm, setLoadingForm] = useState(true);
@@ -103,10 +111,15 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   };
 
   useEffect(() => {
-    Promise.all([obtenerClientesEmpresa(), obtenerArticulosEmpresa()])
-      .then(([clientesData, articulosData]) => {
+    Promise.all([
+      obtenerClientesEmpresa(),
+      obtenerArticulosEmpresa(),
+      listarArticulosConfigurables(),
+    ])
+      .then(([clientesData, articulosData, articulosConfigData]) => {
         setClientes(clientesData);
         setArticulos(articulosData);
+        setArticulosConfigurables(articulosConfigData);
         return { clientesData, articulosData };
       })
       .then(async ({ clientesData, articulosData }) => {
@@ -155,7 +168,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   }, [isEdit, presupuestoId]);
 
   useEffect(() => {
-    if (!isClientModalOpen && !isArticleModalOpen) {
+    if (!isClientModalOpen && !isArticleModalOpen && !isConfigListModalOpen) {
       return;
     }
 
@@ -164,12 +177,13 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       if (event.key === "Escape") {
         setIsClientModalOpen(false);
         setIsArticleModalOpen(false);
+        setIsConfigListModalOpen(false);
       }
     };
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isClientModalOpen, isArticleModalOpen]);
+  }, [isClientModalOpen, isArticleModalOpen, isConfigListModalOpen]);
 
   const clienteSeleccionado = useMemo(() => {
     return clientes.find(
@@ -204,6 +218,22 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       )
       .slice(0, 20);
   }, [articulos, articleSearch]);
+
+  const configurablesFiltrados = useMemo(() => {
+    const texto = configSearch.trim().toLowerCase();
+
+    if (!texto) {
+      return articulosConfigurables;
+    }
+
+    return articulosConfigurables.filter((articulo) => {
+      const fuente = [articulo.code, articulo.name, articulo.description]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return fuente.includes(texto);
+    });
+  }, [articulosConfigurables, configSearch]);
 
   const resumen = useMemo(() => {
     return lines.reduce(
@@ -303,6 +333,55 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     cerrarModalArticulos();
   };
 
+  // Maneja la confirmación del artículo configurable desde el modal
+  const handleConfirmarArticuloConfigurable = (config) => {
+    if (activeLineIndex === null) {
+      return;
+    }
+
+    setLines((prev) => {
+      const copy = [...prev];
+      const lineaConfigurable = {
+        ...copy[activeLineIndex],
+        standard_article_id: "", // No hay ID de artículo estándar
+        name: config.name,
+        description: config.description,
+        quantity: copy[activeLineIndex]?.quantity || "1",
+        unit_price: String(config.unit_price),
+        discount_percentage: copy[activeLineIndex]?.discount_percentage || "0",
+        tax_percentage: String(config.tax_percentage),
+        // Guardamos la configuración en un campo especial
+        _configurable_article_id: config.configurable_article_id,
+        _configuration: config.configuration,
+        _isConfigurable: true,
+      };
+
+      // Si el índice activo no existe aún, añadimos una línea nueva.
+      if (activeLineIndex >= copy.length) {
+        copy.push(lineaConfigurable);
+      } else {
+        copy[activeLineIndex] = lineaConfigurable;
+      }
+
+      return copy;
+    });
+
+    setModalConfigArticuloId(null);
+    setModalConfigInitialData(null);
+    setActiveLineIndex(null);
+  };
+
+  const abrirEdicionConfigurable = (index) => {
+    const line = lines[index];
+    if (!line?._isConfigurable || !line?._configurable_article_id) {
+      return;
+    }
+
+    setActiveLineIndex(index);
+    setModalConfigInitialData(line._configuration || null);
+    setModalConfigArticuloId(line._configurable_article_id);
+  };
+
   const addLinea = () => {
     setLines((prev) => [...prev, crearLinea()]);
   };
@@ -394,13 +473,11 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
         <h2 className="mb-6 text-xl font-bold text-gray-700 dark:text-gray-200">
           {isEdit ? "Editar presupuesto" : "Nuevo presupuesto"}
         </h2>
-
         {isEdit && budgetNumber && (
           <div className="mb-4 rounded-md border border-orange-300 bg-orange-50 px-3 py-2 text-sm text-orange-800">
             Número de presupuesto: <strong>{budgetNumber}</strong>
           </div>
         )}
-
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-bold text-gray-800 dark:text-gray-100">
@@ -521,7 +598,6 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </div>
           </div>
         </div>
-
         {isClientModalOpen && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-3"
@@ -602,7 +678,6 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </div>
           </div>
         )}
-
         {isArticleModalOpen && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-3"
@@ -703,7 +778,75 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </div>
           </div>
         )}
+        {isConfigListModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-3"
+            onClick={() => setIsConfigListModalOpen(false)}
+          >
+            <div
+              className="w-full max-w-3xl rounded-lg border border-orange-300 bg-white shadow-xl dark:border-orange-500 dark:bg-gray-900"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-orange-200 px-4 py-3 dark:border-orange-500/60">
+                <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">
+                  Seleccionar artículo configurable
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsConfigListModalOpen(false)}
+                  className="rounded-md bg-gray-100 px-2 py-1 text-sm text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  Cerrar
+                </button>
+              </div>
 
+              <div className="p-4">
+                <div className="mb-3 w-full">
+                  <UserSearch value={configSearch} onChange={setConfigSearch} />
+                </div>
+
+                <div className="max-h-105 space-y-2 overflow-y-auto pr-1">
+                  {configurablesFiltrados.map((art) => (
+                    <article
+                      key={art.id}
+                      className="rounded-lg border border-orange-200 bg-white px-3 py-2 shadow-sm dark:border-orange-500/40 dark:bg-gray-800"
+                    >
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {art.code} - {art.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {art.description || "Sin descripción"}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveLineIndex(lines.length);
+                            setModalConfigArticuloId(art.id);
+                            setIsConfigListModalOpen(false);
+                          }}
+                          className="rounded-md bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700"
+                        >
+                          Seleccionar
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+
+                  {!configurablesFiltrados.length && (
+                    <div className="rounded-md border border-orange-200 bg-orange-50 px-3 py-4 text-center text-sm text-orange-800 dark:border-orange-500/60 dark:bg-orange-900/20 dark:text-orange-100">
+                      No hay artículos configurables que coincidan con la
+                      búsqueda.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="mb-6">
           <label className="mb-2 block text-sm font-bold">Observaciones</label>
           <textarea
@@ -715,13 +858,11 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             className="w-full rounded-md border border-orange-500 px-3 py-2"
           />
         </div>
-
         <div className="mb-4">
           <h3 className="text-lg font-bold text-gray-700 dark:text-gray-100">
             Líneas
           </h3>
         </div>
-
         <div className="space-y-4">
           {lines.map((line, index) => (
             <div
@@ -753,9 +894,11 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                   onClick={() => abrirModalArticulos(index)}
                   className="w-full rounded-md border border-orange-500 bg-white px-3 py-2 text-left text-sm text-gray-900 hover:bg-orange-50 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
                 >
-                  {line.standard_article_id
-                    ? `Artículo seleccionado: ${line.name || "Sin nombre"}`
-                    : "Buscar y seleccionar artículo"}
+                  {line._isConfigurable
+                    ? `Artículo configurable: ${line.name || "Sin nombre"}`
+                    : line.standard_article_id
+                      ? `Artículo seleccionado: ${line.name || "Sin nombre"}`
+                      : "Buscar y seleccionar artículo"}
                 </button>
 
                 {line.standard_article_id && (
@@ -805,9 +948,22 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                     })()}
                   </div>
                 )}
+
+                {line._isConfigurable && (
+                  <div className="mt-2 rounded-md border border-purple-200 bg-purple-50 px-3 py-2 text-xs text-purple-900 dark:border-purple-500/50 dark:bg-purple-900/20 dark:text-purple-100">
+                    <div className="mb-2 font-semibold">Línea configurable</div>
+                    <button
+                      type="button"
+                      onClick={() => abrirEdicionConfigurable(index)}
+                      className="rounded-md bg-purple-600 px-3 py-1 text-xs font-semibold text-white hover:bg-purple-700"
+                    >
+                      Editar configuración
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {!line.standard_article_id && (
+              {!line.standard_article_id && !line._isConfigurable && (
                 <div className="mb-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* Estos campos solo se usan cuando la línea es manual (sin artículo seleccionado). */}
                   <div>
@@ -908,8 +1064,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </div>
           ))}
         </div>
-
-        <div className="mt-4">
+        <div className="mt-4 flex gap-2">
           <button
             type="button"
             onClick={addLinea}
@@ -917,8 +1072,23 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
           >
             Añadir línea
           </button>
-        </div>
 
+          {/* Botón para agregar artículo configurable */}
+          {articulosConfigurables.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setConfigSearch("");
+                setModalConfigInitialData(null);
+                setIsConfigListModalOpen(true);
+              }}
+              className="rounded-md bg-purple-500 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-600"
+            >
+              + Artículo Configurable
+            </button>
+          )}
+        </div>
+        setModalConfigInitialData(null);
         <div className="mt-6 rounded-md border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-gray-800">
           <div>
             Base imponible: <strong>{resumen.base.toFixed(2)} €</strong>
@@ -930,7 +1100,6 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             Total: <strong>{resumen.total.toFixed(2)} €</strong>
           </div>
         </div>
-
         <button
           type="submit"
           disabled={saving}
@@ -949,6 +1118,20 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
           title={notifyTitle}
           message={notifyMessage}
           type={notifyType}
+        />
+      )}
+
+      {/* Modal de artículo configurable */}
+      {modalConfigArticuloId !== null && (
+        <ModalArticuloConfigurable
+          articuloId={modalConfigArticuloId}
+          initialConfiguration={modalConfigInitialData}
+          onConfirmar={handleConfirmarArticuloConfigurable}
+          onCerrar={() => {
+            setModalConfigArticuloId(null);
+            setModalConfigInitialData(null);
+            setActiveLineIndex(null);
+          }}
         />
       )}
     </div>
