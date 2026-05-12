@@ -35,3 +35,21 @@ export async function calcularArticuloConfigurable(id, payload) {
   });
   return res.data;
 }
+
+// Obtener tarifas efectivas (base + override empresa) de un configurable
+export async function obtenerPricingArticuloConfigurable(id) {
+  const res = await axios.get(`${BASE}/${id}/pricing`, {
+    headers: headersJson(),
+  });
+  return res.data;
+}
+
+// Guardar precios por empresa para opciones de un configurable
+export async function guardarPricingArticuloConfigurable(id, prices) {
+  const res = await axios.put(
+    `${BASE}/${id}/pricing`,
+    { prices },
+    { headers: headersJson() },
+  );
+  return res.data;
+}

@@ -109,6 +109,8 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
         // Artículos configurables
         Route::get('/company/configurable-articles', [ConfigurableArticleController::class, 'index']);
         Route::get('/company/configurable-articles/{id}', [ConfigurableArticleController::class, 'show']);
+        Route::get('/company/configurable-articles/{id}/pricing', [ConfigurableArticleController::class, 'pricing']);
+        Route::put('/company/configurable-articles/{id}/pricing', [ConfigurableArticleController::class, 'updatePricing']);
         Route::post('/company/configurable-articles/{id}/calculate', [ConfigurableArticleController::class, 'calculate']);
 
         Route::get('/products', function () {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ConfigurableArticle;
+use App\Models\ConfigurableArticleOptionPrice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -47,6 +48,84 @@ class ConfigurableArticleController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────
+    //  GET /api/company/configurable-articles/{id}/pricing
+    //  Tarifas efectivas por opción para la empresa actual
+    // ─────────────────────────────────────────────────────────────────
+    public function pricing(int $id)
+    {
+        $companyId = Auth::user()->company_id;
+
+        $article = ConfigurableArticle::where('company_id', $companyId)
+            ->with(['parts.options'])
+            ->findOrFail($id);
+
+        return response()->json($this->construirTarifasRespuesta($article, $companyId));
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  PUT /api/company/configurable-articles/{id}/pricing
+    //  Guardar override de precios por opción para la empresa
+    // ─────────────────────────────────────────────────────────────────
+    public function updatePricing(Request $request, int $id)
+    {
+        $companyId = Auth::user()->company_id;
+
+        $validated = $request->validate([
+            'prices' => ['required', 'array', 'min:1'],
+            'prices.*.option_id' => ['required', 'integer'],
+            'prices.*.price' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $article = ConfigurableArticle::where('company_id', $companyId)
+            ->with(['parts.options'])
+            ->findOrFail($id);
+
+        $allowedOptionIds = $article->parts
+            ->flatMap(fn ($part) => $part->options->pluck('id'))
+            ->unique()
+            ->values();
+
+        $requestedOptionIds = collect($validated['prices'])
+            ->pluck('option_id')
+            ->unique()
+            ->values();
+
+        $invalidOptionIds = $requestedOptionIds
+            ->diff($allowedOptionIds)
+            ->values();
+
+        if ($invalidOptionIds->isNotEmpty()) {
+            return response()->json([
+                'message' => 'Hay opciones que no pertenecen al artículo configurable.',
+                'invalid_option_ids' => $invalidOptionIds,
+            ], 422);
+        }
+
+        $now = now();
+        $upserts = collect($validated['prices'])
+            ->map(fn ($item) => [
+                'company_id' => $companyId,
+                'configurable_article_option_id' => (int) $item['option_id'],
+                'price' => (float) $item['price'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->values()
+            ->all();
+
+        ConfigurableArticleOptionPrice::upsert(
+            $upserts,
+            ['company_id', 'configurable_article_option_id'],
+            ['price', 'updated_at']
+        );
+
+        return response()->json([
+            'message' => 'Tarifas guardadas correctamente.',
+            'pricing' => $this->construirTarifasRespuesta($article->fresh(['parts.options']), $companyId),
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
     //  POST /api/company/configurable-articles/{id}/calculate
     //  Valida las medidas y devuelve el precio desglosado
     // ─────────────────────────────────────────────────────────────────
@@ -79,7 +158,7 @@ class ConfigurableArticleController extends Controller
         }
 
         // ── Calcular precio por parte ───────────────────────────────
-        $breakdown = $this->calcularDesglose($article, $data);
+        $breakdown = $this->calcularDesglose($article, $data, $companyId);
 
         // Medidas técnicas derivadas para fabricación y explicación comercial
         $fabricationMeasures = $this->calcularMedidasFabricacion($data);
@@ -148,7 +227,7 @@ class ConfigurableArticleController extends Controller
     // ─────────────────────────────────────────────────────────────────
     //  LÓGICA DE CÁLCULO
     // ─────────────────────────────────────────────────────────────────
-    private function calcularDesglose(ConfigurableArticle $article, array $data): array
+    private function calcularDesglose(ConfigurableArticle $article, array $data, int $companyId): array
     {
         // Resultado por parte: clave => detalle de precio
         $breakdown     = [];
@@ -162,6 +241,15 @@ class ConfigurableArticleController extends Controller
         );
         // Altura útil para cálculos de m2
         $alturaHueco = (float) ($data['alto_hueco'] ?? 0);
+
+        $articleOptionIds = $article->parts
+            ->flatMap(fn ($part) => $part->options->pluck('id'))
+            ->unique()
+            ->values();
+
+        $companyOptionPrices = ConfigurableArticleOptionPrice::where('company_id', $companyId)
+            ->whereIn('configurable_article_option_id', $articleOptionIds)
+            ->pluck('price', 'configurable_article_option_id');
 
         // Se calcula precio para cada parte configurable del artículo
         foreach ($article->parts as $part) {
@@ -183,18 +271,22 @@ class ConfigurableArticleController extends Controller
                 continue;
             }
 
+            $effectivePrice = $companyOptionPrices->has($option->id)
+                ? (float) $companyOptionPrices[$option->id]
+                : (float) $option->price;
+
             // Cálculo según unidad de negocio definida en la parte
             $price = match ($part->unit) {
                 // Cajón → precio por metro lineal × metros del cajón
-                'ml' => $option->price * ($anchoCajon / 1000),
+                'ml' => $effectivePrice * ($anchoCajon / 1000),
 
                 // Hojas → precio por m² × (ancho × alto en metros)
-                'm2' => $option->price * (($anchoCajon / 1000) * ($alturaHueco / 1000)),
+                'm2' => $effectivePrice * (($anchoCajon / 1000) * ($alturaHueco / 1000)),
 
                 // Precio fijo (fabricación)
-                'fixed', 'units' => $option->price,
+                'fixed', 'units' => $effectivePrice,
 
-                default => $option->price,
+                default => $effectivePrice,
             };
 
             // Se guarda el concepto en el desglose final
@@ -202,12 +294,54 @@ class ConfigurableArticleController extends Controller
                 'label'      => $part->name . ' — ' . $option->label,
                 'unit'       => $part->unit,
                 'option_key' => $option->key,
+                'base_price' => round((float) $option->price, 2),
+                'effective_price' => round($effectivePrice, 2),
                 'price'      => round($price, 2),
             ];
         }
 
         // El controlador calculate() suma este desglose para obtener el total
         return $breakdown;
+    }
+
+    private function construirTarifasRespuesta(ConfigurableArticle $article, int $companyId): array
+    {
+        $optionIds = $article->parts
+            ->flatMap(fn ($part) => $part->options->pluck('id'))
+            ->unique()
+            ->values();
+
+        $companyOptionPrices = ConfigurableArticleOptionPrice::where('company_id', $companyId)
+            ->whereIn('configurable_article_option_id', $optionIds)
+            ->pluck('price', 'configurable_article_option_id');
+
+        return [
+            'article_id' => $article->id,
+            'article_code' => $article->code,
+            'parts' => $article->parts->map(function ($part) use ($companyOptionPrices) {
+                return [
+                    'part_id' => $part->id,
+                    'part_key' => $part->key,
+                    'part_name' => $part->name,
+                    'unit' => $part->unit,
+                    'options' => $part->options->map(function ($option) use ($companyOptionPrices) {
+                        $companyPrice = $companyOptionPrices->has($option->id)
+                            ? (float) $companyOptionPrices[$option->id]
+                            : null;
+
+                        return [
+                            'option_id' => $option->id,
+                            'option_key' => $option->key,
+                            'label' => $option->label,
+                            'is_default' => (bool) $option->is_default,
+                            'base_price' => round((float) $option->price, 2),
+                            'company_price' => $companyPrice !== null ? round($companyPrice, 2) : null,
+                            'effective_price' => round($companyPrice ?? (float) $option->price, 2),
+                        ];
+                    })->values(),
+                ];
+            })->values(),
+        ];
     }
 
     // ─────────────────────────────────────────────────────────────────

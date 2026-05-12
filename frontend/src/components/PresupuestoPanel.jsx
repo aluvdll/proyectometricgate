@@ -125,17 +125,32 @@ export function PresupuestosPanel() {
                   {Number(presupuesto.total_amount).toFixed(2)} €
                 </td>
                 <td className="border border-orange-400 px-3 py-2 text-center">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        `/adminPanel/presupuestos/vereditarpresupuesto/${presupuesto.id}`,
-                      )
-                    }
-                    className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
-                  >
-                    Ver
-                  </button>
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/adminPanel/presupuestos/vereditarpresupuesto/${presupuesto.id}`,
+                        )
+                      }
+                      className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+                    >
+                      Ver
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.open(
+                          `/adminPanel/presupuestos/imprimir/${presupuesto.id}`,
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                      className="rounded-md bg-gray-700 px-3 py-1 text-white hover:bg-gray-800"
+                    >
+                      Imprimir
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

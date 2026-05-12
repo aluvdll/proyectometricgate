@@ -30,4 +30,9 @@ class ConfigurableArticleOption extends Model
     {
         return $this->belongsTo(ConfigurableArticlePart::class, 'part_id');
     }
+
+    public function companyPrices()
+    {
+        return $this->hasMany(\App\Models\ConfigurableArticleOptionPrice::class, 'configurable_article_option_id');
+    }
 }

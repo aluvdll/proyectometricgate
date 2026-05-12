@@ -41,6 +41,8 @@ import { VerEditarFamiliaArticulo } from "./components/VerEditarFamiliaArticulo.
 import { SuperAdminPanel } from "./pages/SuperAdminPanel";
 import PoliticaPrivacidad from "./pages/PoliticaPrivacidad.jsx";
 import ConfigurarArticuloConfigurablePage from "./pages/ConfigurarArticuloConfigurablePage.jsx";
+import ConfigurablePricingPage from "./pages/ConfigurablePricingPage.jsx";
+import BudgetPrintPage from "./pages/BudgetPrintPage.jsx";
 
 // ----------------------------
 // Componente que protege rutas privadas
@@ -198,6 +200,10 @@ export default function App() {
             element={<ConfigurarArticuloConfigurablePage />}
           />
           <Route
+            path="articulos/tarifas-configurables"
+            element={<ConfigurablePricingPage />}
+          />
+          <Route
             path="usuarios/nuevouser"
             element={<FormUsuario mode="create" userId={undefined} />}
           />
@@ -208,6 +214,10 @@ export default function App() {
           <Route
             path="presupuestos/vereditarpresupuesto/:id"
             element={<VerEditarPresupuesto />}
+          />
+          <Route
+            path="presupuestos/imprimir/:id"
+            element={<BudgetPrintPage />}
           />
           <Route path="clientes/nuevocliente" element={<FormNuevoCliente />} />
           <Route
