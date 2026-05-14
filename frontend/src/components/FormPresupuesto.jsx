@@ -136,15 +136,35 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
           setClientSearch(construirTextoCliente(presupuesto.client));
         }
         setLines(
-          (presupuesto.lines || []).map((linea) => ({
-            standard_article_id: linea.standard_article_id?.toString() || "",
-            name: linea.name || "",
-            description: linea.description || "",
-            quantity: linea.quantity?.toString() || "1",
-            unit_price: linea.unit_price?.toString() || "0",
-            discount_percentage: linea.discount_percentage?.toString() || "0",
-            tax_percentage: linea.tax_percentage?.toString() || "21",
-          })) || [crearLinea()],
+          (presupuesto.lines || []).map((linea) => {
+            const baseLine = {
+              standard_article_id: linea.standard_article_id?.toString() || "",
+              name: linea.name || "",
+              description: linea.description || "",
+              quantity: linea.quantity?.toString() || "1",
+              unit_price: linea.unit_price?.toString() || "0",
+              discount_percentage: linea.discount_percentage?.toString() || "0",
+              tax_percentage: linea.tax_percentage?.toString() || "21",
+            };
+
+            if (linea.configurable_article_id && linea.configuration) {
+              baseLine._isConfigurable = true;
+              baseLine._configurable_article_id = linea.configurable_article_id;
+              baseLine._configuration = {
+                medidas: {
+                  ancho_hueco: linea.configuration.ancho_hueco,
+                  alto_hueco: linea.configuration.alto_hueco,
+                  ancho_obra: linea.configuration.ancho_obra,
+                  alto_obra: linea.configuration.alto_obra,
+                  paso_deseado: linea.configuration.paso_deseado,
+                },
+                opciones: linea.configuration.options_chosen || {},
+                desglose: linea.configuration.price_breakdown || [],
+              };
+            }
+
+            return baseLine;
+          }) || [crearLinea()],
         );
 
         if (!clientesData.length) {
@@ -374,6 +394,9 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
         lineIndex,
         initialConfiguration,
         returnTo: location.pathname,
+        // Guardar datos actuales del formulario para no perderlos
+        formData,
+        lines,
       },
     });
   };
@@ -408,12 +431,32 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   useEffect(() => {
     const result = location.state?.configurableResult;
     const lineIndex = location.state?.lineIndex;
+    const savedFormData = location.state?.formData;
+    const savedLines = location.state?.lines;
+
+    // Restaurar datos del formulario si vienen guardados
+    if (savedFormData) {
+      setFormData(savedFormData);
+    }
 
     if (!result || lineIndex === null || lineIndex === undefined) {
       return;
     }
 
-    aplicarConfiguracionEnLinea(lineIndex, result);
+    // Si hay líneas guardadas, usarlas como base
+    if (savedLines) {
+      setLines(savedLines);
+      // Aplicar la configuración en la línea correcta
+      setTimeout(() => {
+        setLines((prev) => {
+          const copy = [...prev];
+          aplicarConfiguracionEnLinea(lineIndex, result);
+          return copy;
+        });
+      }, 0);
+    } else {
+      aplicarConfiguracionEnLinea(lineIndex, result);
+    }
 
     navigate(location.pathname, {
       replace: true,
@@ -464,18 +507,29 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       budget_date: formData.budget_date,
       status: formData.status,
       notes: formData.notes,
-      lines: lines.map((line, index) => ({
-        standard_article_id: line.standard_article_id
-          ? Number(line.standard_article_id)
-          : null,
-        name: line.name,
-        description: line.description,
-        quantity: Number(line.quantity || 0),
-        unit_price: Number(line.unit_price || 0),
-        discount_percentage: Number(line.discount_percentage || 0),
-        tax_percentage: Number(line.tax_percentage || 21),
-        position: index,
-      })),
+      lines: lines.map((line, index) => {
+        const baseLine = {
+          standard_article_id: line.standard_article_id
+            ? Number(line.standard_article_id)
+            : null,
+          name: line.name,
+          description: line.description,
+          quantity: Number(line.quantity || 0),
+          unit_price: Number(line.unit_price || 0),
+          discount_percentage: Number(line.discount_percentage || 0),
+          tax_percentage: Number(line.tax_percentage || 21),
+          position: index,
+        };
+
+        if (line._isConfigurable) {
+          baseLine.configurable_article_id = line._configurable_article_id
+            ? Number(line._configurable_article_id)
+            : null;
+          baseLine.configuration = line._configuration || null;
+        }
+
+        return baseLine;
+      }),
     };
 
     setSaving(true);

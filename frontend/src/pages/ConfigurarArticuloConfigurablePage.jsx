@@ -9,6 +9,8 @@ export default function ConfigurarArticuloConfigurablePage() {
   const articuloId = location.state?.articuloId ?? null;
   const lineIndex = location.state?.lineIndex ?? null;
   const initialConfiguration = location.state?.initialConfiguration ?? null;
+  const formData = location.state?.formData ?? null;
+  const lines = location.state?.lines ?? null;
 
   const returnTo = useMemo(() => {
     return (
@@ -25,6 +27,9 @@ export default function ConfigurarArticuloConfigurablePage() {
       state: {
         configurableResult: config,
         lineIndex,
+        // Devolver datos guardados para restaurarlos en FormPresupuesto
+        formData,
+        lines,
       },
     });
   };

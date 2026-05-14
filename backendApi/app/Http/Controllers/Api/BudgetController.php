@@ -62,8 +62,7 @@ class BudgetController extends Controller
                 Rule::exists('standard_articles', 'id')->where(function ($query) use ($companyId) {
                     return $query->where('company_id', $companyId);
                 }),
-            ],
-            'lines.*.name' => 'required|string|max:255',
+            ],            'lines.*.configuration' => 'nullable|array',            'lines.*.name' => 'required|string|max:255',
             'lines.*.description' => 'nullable|string',
             'lines.*.quantity' => 'required|numeric|gt:0',
             'lines.*.unit_price' => 'required|numeric|min:0',
@@ -124,13 +123,15 @@ class BudgetController extends Controller
             ->keyBy('id');
 
         $preparedLines = [];
+        $configurationsToSave = [];
         $baseAmount = 0;
         $taxAmount = 0;
         $totalAmount = 0;
 
         foreach ($lines as $index => $line) {
-            $articleId = !empty($line['standard_article_id']) ? (int) $line['standard_article_id'] : null;
-            $article = $articleId ? ($articles[$articleId] ?? null) : null;
+            $standardArticleId = !empty($line['standard_article_id']) ? (int) $line['standard_article_id'] : null;
+            $configurableArticleId = !empty($line['configurable_article_id']) ? (int) $line['configurable_article_id'] : null;
+            $article = $standardArticleId ? ($articles[$standardArticleId] ?? null) : null;
 
             $quantity = round((float) $line['quantity'], 2);
             $unitPrice = round((float) $line['unit_price'], 2);
@@ -143,10 +144,10 @@ class BudgetController extends Controller
             $lineTaxAmount = round($netSubtotal * ($taxPercentage / 100), 2);
             $lineTotalAmount = round($netSubtotal + $lineTaxAmount, 2);
 
-            $preparedLines[] = [
-                'article_type' => $articleId ? 'standard' : 'manual',
-                'standard_article_id' => $articleId,
-                'configurable_article_id' => null,
+            $preparedLine = [
+                'article_type' => $configurableArticleId ? 'configurable' : ($standardArticleId ? 'standard' : 'manual'),
+                'standard_article_id' => $standardArticleId,
+                'configurable_article_id' => $configurableArticleId,
                 'name' => trim((string) ($line['name'] ?? ($article?->name ?? ''))),
                 'description' => trim((string) ($line['description'] ?? ($article?->description ?? ''))),
                 'quantity' => $quantity,
@@ -161,6 +162,12 @@ class BudgetController extends Controller
                 'position' => isset($line['position']) ? (int) $line['position'] : $index,
             ];
 
+            if ($configurableArticleId && !empty($line['configuration'])) {
+                $configurationsToSave[$index] = $line['configuration'];
+            }
+
+            $preparedLines[] = $preparedLine;
+
             $baseAmount += $netSubtotal;
             $taxAmount += $lineTaxAmount;
             $totalAmount += $lineTotalAmount;
@@ -168,6 +175,7 @@ class BudgetController extends Controller
 
         return [
             'lines' => $preparedLines,
+            'configurations' => $configurationsToSave,
             'base_amount' => round($baseAmount, 2),
             'tax_amount' => round($taxAmount, 2),
             'total_amount' => round($totalAmount, 2),
@@ -199,7 +207,7 @@ class BudgetController extends Controller
             return $authError;
         }
 
-        $budget = Budget::with(['client', 'createdBy', 'lines.standardArticle'])
+        $budget = Budget::with(['client', 'createdBy', 'lines.standardArticle', 'lines.configuration', 'lines.configurableArticle'])
             ->where('company_id', $request->user()->company_id)
             ->where('id', $id)
             ->first();
@@ -224,9 +232,10 @@ class BudgetController extends Controller
 
         $companyId = $request->user()->company_id;
         $validated = $request->validate($this->rules($companyId), $this->messages());
-        $totals = $this->buildLines($validated['lines'], $companyId);
+        $buildResult = $this->buildLines($validated['lines'], $companyId);
+        $configurations = $buildResult['configurations'];
 
-        $budget = DB::transaction(function () use ($validated, $totals, $companyId, $request) {
+        $budget = DB::transaction(function () use ($validated, $buildResult, $configurations, $companyId, $request) {
             $budget = Budget::create([
                 'company_id' => $companyId,
                 'client_id' => (int) $validated['client_id'],
@@ -234,20 +243,38 @@ class BudgetController extends Controller
                 'budget_number' => $this->generateBudgetNumber($companyId, $validated['budget_date']),
                 'budget_date' => $validated['budget_date'],
                 'status' => $validated['status'],
-                'base_amount' => $totals['base_amount'],
-                'tax_amount' => $totals['tax_amount'],
-                'total_amount' => $totals['total_amount'],
+                'base_amount' => $buildResult['base_amount'],
+                'tax_amount' => $buildResult['tax_amount'],
+                'total_amount' => $buildResult['total_amount'],
                 'notes' => $validated['notes'] ?? null,
             ]);
 
-            $budget->lines()->createMany($totals['lines']);
+            $budget->lines()->createMany($buildResult['lines']);
+
+            if (!empty($configurations)) {
+                $lines = $budget->lines()->get();
+                foreach ($configurations as $lineIndex => $config) {
+                    $line = $lines[$lineIndex] ?? null;
+                    if ($line && $line->configurable_article_id) {
+                        $line->configuration()->create([
+                            'ancho_hueco' => $config['medidas']['ancho_hueco'] ?? null,
+                            'alto_hueco' => $config['medidas']['alto_hueco'] ?? null,
+                            'ancho_obra' => $config['medidas']['ancho_obra'] ?? null,
+                            'alto_obra' => $config['medidas']['alto_obra'] ?? null,
+                            'paso_deseado' => $config['medidas']['paso_deseado'] ?? null,
+                            'options_chosen' => $config['opciones'] ?? [],
+                            'price_breakdown' => $config['desglose'] ?? [],
+                        ]);
+                    }
+                }
+            }
 
             return $budget;
         });
 
         return response()->json([
             'message' => 'Presupuesto creado correctamente.',
-            'budget' => $budget->load(['client', 'createdBy', 'lines.standardArticle']),
+            'budget' => $budget->load(['client', 'createdBy', 'lines.standardArticle', 'lines.configuration']),
         ], 201);
     }
 
@@ -270,26 +297,45 @@ class BudgetController extends Controller
         }
 
         $validated = $request->validate($this->rules($companyId, true), $this->messages());
-        $totals = $this->buildLines($validated['lines'], $companyId);
+        $buildResult = $this->buildLines($validated['lines'], $companyId);
+        $configurations = $buildResult['configurations'];
 
-        DB::transaction(function () use ($budget, $validated, $totals) {
+        DB::transaction(function () use ($budget, $validated, $buildResult, $configurations) {
             $budget->update([
                 'client_id' => (int) $validated['client_id'],
                 'budget_date' => $validated['budget_date'],
                 'status' => $validated['status'],
-                'base_amount' => $totals['base_amount'],
-                'tax_amount' => $totals['tax_amount'],
-                'total_amount' => $totals['total_amount'],
+                'base_amount' => $buildResult['base_amount'],
+                'tax_amount' => $buildResult['tax_amount'],
+                'total_amount' => $buildResult['total_amount'],
                 'notes' => $validated['notes'] ?? null,
             ]);
 
             $budget->lines()->delete();
-            $budget->lines()->createMany($totals['lines']);
+            $budget->lines()->createMany($buildResult['lines']);
+
+            if (!empty($configurations)) {
+                $lines = $budget->lines()->get();
+                foreach ($configurations as $lineIndex => $config) {
+                    $line = $lines[$lineIndex] ?? null;
+                    if ($line && $line->configurable_article_id) {
+                        $line->configuration()->create([
+                            'ancho_hueco' => $config['medidas']['ancho_hueco'] ?? null,
+                            'alto_hueco' => $config['medidas']['alto_hueco'] ?? null,
+                            'ancho_obra' => $config['medidas']['ancho_obra'] ?? null,
+                            'alto_obra' => $config['medidas']['alto_obra'] ?? null,
+                            'paso_deseado' => $config['medidas']['paso_deseado'] ?? null,
+                            'options_chosen' => $config['opciones'] ?? [],
+                            'price_breakdown' => $config['desglose'] ?? [],
+                        ]);
+                    }
+                }
+            }
         });
 
         return response()->json([
             'message' => 'Presupuesto actualizado correctamente.',
-            'budget' => $budget->fresh()->load(['client', 'createdBy', 'lines.standardArticle']),
+            'budget' => $budget->fresh()->load(['client', 'createdBy', 'lines.standardArticle', 'lines.configuration', 'lines.configurableArticle']),
         ]);
     }
 }
