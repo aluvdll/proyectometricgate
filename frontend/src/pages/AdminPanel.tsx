@@ -6,7 +6,7 @@ export function AdminPanel() {
   const userRole = user?.role; // Admin | comercial | Tecnico
   const isAdmin = userRole === "admin";
   const isCommercial = userRole === "commercial";
-  const isTechnician = userRole === "tecnician";
+  const isTechnician = userRole === "technician" || userRole === "tecnician";
   console.log("USER EN CONTEXTO:", user);
   console.log("ROL:", user?.role);
 
@@ -97,7 +97,7 @@ export function AdminPanel() {
             </Link>
           )}
 
-          {(isAdmin || isCommercial) && (
+          {(isAdmin || isCommercial || isTechnician) && (
             <Link
               to="/adminPanel/articulos"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
@@ -106,7 +106,7 @@ export function AdminPanel() {
             </Link>
           )}
 
-          {isAdmin && (
+          {(isAdmin || isCommercial) && (
             <Link
               to="/adminPanel/articulos/tarifas-configurables"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"

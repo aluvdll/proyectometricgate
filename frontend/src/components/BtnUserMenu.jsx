@@ -95,7 +95,7 @@ export function BtnUserMenu() {
               ? "AdminPanel"
               : auth.user?.role === "commercial"
                 ? "ComerPanel"
-                : auth.user?.role === "tecnician"
+                : auth.user?.role === "technician" || auth.user?.role === "tecnician"
                   ? "TecniPanel"
                   : ""}
         </a>

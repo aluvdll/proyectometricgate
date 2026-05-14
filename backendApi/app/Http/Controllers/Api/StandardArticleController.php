@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 
 class StandardArticleController extends Controller
 {
-    private function authorizeAdminOrCommercial(Request $request)
+    private function authorizeReadAccess(Request $request)
     {
         $user = $request->user();
 
@@ -21,9 +21,9 @@ class StandardArticleController extends Controller
             ], 401);
         }
 
-        if (!in_array($user->role, ['admin', 'commercial'], true)) {
+        if (!in_array($user->role, ['admin', 'commercial', 'technician'], true)) {
             return response()->json([
-                'error' => 'No autorizado. Solo admin o commercial.',
+                'error' => 'No autorizado. Solo admin, commercial o technician.',
             ], 403);
         }
 
@@ -61,10 +61,10 @@ class StandardArticleController extends Controller
         return null;
     }
 
-    // Listar artículos de la empresa (admin/commercial)
+    // Listar artículos de la empresa (admin/commercial/technician)
     public function index(Request $request)
     {
-        $authError = $this->authorizeAdminOrCommercial($request);
+        $authError = $this->authorizeReadAccess($request);
         if ($authError) {
             return $authError;
         }
@@ -81,10 +81,10 @@ class StandardArticleController extends Controller
         ]);
     }
 
-    // Ver artículo de la empresa (admin/commercial)
+    // Ver artículo de la empresa (admin/commercial/technician)
     public function show(Request $request, int $id)
     {
-        $authError = $this->authorizeAdminOrCommercial($request);
+        $authError = $this->authorizeReadAccess($request);
         if ($authError) {
             return $authError;
         }

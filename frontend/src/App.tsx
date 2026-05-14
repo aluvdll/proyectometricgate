@@ -79,6 +79,33 @@ function SuperAdminRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function RoleRoute({
+  children,
+  allowedRoles,
+  redirectTo = "/adminPanel",
+}: {
+  children: ReactNode;
+  allowedRoles: string[];
+  redirectTo?: string;
+}) {
+  const { isLogged, loading, role, user, token } = useAuth();
+
+  const rolSesion = role ?? user?.role ?? localStorage.getItem("role");
+  const tokenSesion = token ?? localStorage.getItem("token");
+  const usuarioSesion = user ?? localStorage.getItem("usuario");
+  const autenticado = isLogged || (!!tokenSesion && !!usuarioSesion);
+
+  if (loading) return <div>Cargando...</div>;
+
+  if (!autenticado) return <Navigate to="/login" replace />;
+
+  if (!rolSesion || !allowedRoles.includes(rolSesion)) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  return <>{children}</>;
+}
+
 // ----------------------------
 // Layout para páginas públicas (landing)
 // ----------------------------
@@ -191,23 +218,69 @@ export default function App() {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="usuarios" index element={<UsersPanel />} />
-          <Route path="presupuestos" element={<PresupuestosPanel />} />
+          <Route
+            path="usuarios"
+            index
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <UsersPanel />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="presupuestos"
+            element={
+              <RoleRoute
+                allowedRoles={["admin", "commercial"]}
+                redirectTo="/adminPanel/pedidos"
+              >
+                <PresupuestosPanel />
+              </RoleRoute>
+            }
+          />
           <Route
             path="presupuestos/nuevopresupuesto"
-            element={<FormPresupuesto mode="create" />}
+            element={
+              <RoleRoute
+                allowedRoles={["admin", "commercial"]}
+                redirectTo="/adminPanel/pedidos"
+              >
+                <FormPresupuesto mode="create" />
+              </RoleRoute>
+            }
           />
           <Route
             path="presupuestos/configurar-articulo"
-            element={<ConfigurarArticuloConfigurablePage />}
+            element={
+              <RoleRoute
+                allowedRoles={["admin", "commercial"]}
+                redirectTo="/adminPanel/pedidos"
+              >
+                <ConfigurarArticuloConfigurablePage />
+              </RoleRoute>
+            }
           />
           <Route
             path="presupuestos/vereditarpresupuesto/:id"
-            element={<VerEditarPresupuesto />}
+            element={
+              <RoleRoute
+                allowedRoles={["admin", "commercial"]}
+                redirectTo="/adminPanel/pedidos"
+              >
+                <VerEditarPresupuesto />
+              </RoleRoute>
+            }
           />
           <Route
             path="presupuestos/imprimir/:id"
-            element={<BudgetPrintPage />}
+            element={
+              <RoleRoute
+                allowedRoles={["admin", "commercial"]}
+                redirectTo="/adminPanel/pedidos"
+              >
+                <BudgetPrintPage />
+              </RoleRoute>
+            }
           />
 
           {/* RUTAS DE PEDIDOS */}
@@ -216,41 +289,105 @@ export default function App() {
 
           <Route
             path="articulos/tarifas-configurables"
-            element={<ConfigurablePricingPage />}
+            element={
+              <RoleRoute allowedRoles={["admin", "commercial"]}>
+                <ConfigurablePricingPage />
+              </RoleRoute>
+            }
           />
           <Route
             path="usuarios/nuevouser"
-            element={<FormUsuario mode="create" userId={undefined} />}
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <FormUsuario mode="create" userId={undefined} />
+              </RoleRoute>
+            }
           />
           <Route
             path="usuarios/vereditarusuario/:id"
-            element={<VerEditarUsuario />}
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <VerEditarUsuario />
+              </RoleRoute>
+            }
           />
-          <Route path="clientes/nuevocliente" element={<FormNuevoCliente />} />
+          <Route
+            path="clientes/nuevocliente"
+            element={
+              <RoleRoute allowedRoles={["admin", "commercial"]}>
+                <FormNuevoCliente />
+              </RoleRoute>
+            }
+          />
           <Route
             path="clientes/vereditarcliente/:id"
-            element={<VerEditarCliente />}
+            element={
+              <RoleRoute allowedRoles={["admin", "commercial"]}>
+                <VerEditarCliente />
+              </RoleRoute>
+            }
           />
-          <Route path="clientes" element={<ClientesPanel />} />
+          <Route
+            path="clientes"
+            element={
+              <RoleRoute allowedRoles={["admin", "commercial"]}>
+                <ClientesPanel />
+              </RoleRoute>
+            }
+          />
 
-          <Route path="familias" element={<FamiliasArticulosPanel />} />
+          <Route
+            path="familias"
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <FamiliasArticulosPanel />
+              </RoleRoute>
+            }
+          />
           <Route
             path="familias/nuevafamilia"
-            element={<FormFamiliaArticulo mode="create" />}
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <FormFamiliaArticulo mode="create" />
+              </RoleRoute>
+            }
           />
           <Route
             path="familias/vereditarfamilia/:id"
-            element={<VerEditarFamiliaArticulo />}
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <VerEditarFamiliaArticulo />
+              </RoleRoute>
+            }
           />
 
-          <Route path="articulos" element={<ArticulosPanel />} />
+          <Route
+            path="articulos"
+            element={
+              <RoleRoute
+                allowedRoles={["admin", "commercial", "technician", "tecnician"]}
+              >
+                <ArticulosPanel />
+              </RoleRoute>
+            }
+          />
           <Route
             path="articulos/nuevoarticulo"
-            element={<FormArticulo mode="create" articuloId={undefined} />}
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <FormArticulo mode="create" articuloId={undefined} />
+              </RoleRoute>
+            }
           />
           <Route
             path="articulos/vereditararticulo/:id"
-            element={<VerEditarArticulo />}
+            element={
+              <RoleRoute
+                allowedRoles={["admin", "commercial", "technician", "tecnician"]}
+              >
+                <VerEditarArticulo />
+              </RoleRoute>
+            }
           />
         </Route>
 
