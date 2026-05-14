@@ -5,11 +5,8 @@ import { UserSearch } from "./UserSearch";
 import { obtenerPresupuestosEmpresa } from "../services/presupuestos";
 
 const estadosTexto = {
-  draft: "Borrador",
-  sent: "Enviado",
-  accepted: "Aceptado",
-  rejected: "Rechazado",
-  invoiced: "Facturado",
+  pendiente: "Pendiente",
+  aceptado: "Aceptado",
 };
 
 export function PresupuestosPanel() {

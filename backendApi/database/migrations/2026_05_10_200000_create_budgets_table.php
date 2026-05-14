@@ -35,14 +35,11 @@ return new class extends Migration
             // 📅 FECHA DEL PRESUPUESTO
             $table->date('budget_date');
 
-            // 📌 ESTADO
+            // 📌 ESTADO (Pendiente o Aceptado)
             $table->enum('status', [
-                'draft',      // Borrador
-                'sent',       // Enviado al cliente
-                'accepted',   // Aceptado por el cliente
-                'rejected',   // Rechazado por el cliente
-                'invoiced',   // Facturado
-            ])->default('draft');
+                'pendiente',  // Pendiente de aceptación
+                'aceptado',   // Aceptado → genera pedido automáticamente
+            ])->default('pendiente');
 
             // 💰 TOTALES (se calculan sumando las líneas, nunca se editan directamente)
             $table->decimal('base_amount', 15, 2)->default(0);   // Base imponible total

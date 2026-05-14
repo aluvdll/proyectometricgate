@@ -221,28 +221,105 @@ export default function BudgetPrintPage() {
               </tr>
             </thead>
             <tbody>
-              {(budget.lines || []).map((line) => (
-                <tr key={line.id}>
-                  <td className="border px-3 py-2 align-top font-medium">
-                    {line.name}
-                  </td>
-                  <td className="border px-3 py-2 align-top whitespace-pre-wrap">
-                    {line.description || "-"}
-                  </td>
-                  <td className="border px-3 py-2 text-center align-top">
-                    {Number(line.quantity).toFixed(2)}
-                  </td>
-                  <td className="border px-3 py-2 text-right align-top">
-                    {formatCurrency(line.unit_price)}
-                  </td>
-                  <td className="border px-3 py-2 text-right align-top">
-                    {Number(line.discount_percentage || 0).toFixed(2)} %
-                  </td>
-                  <td className="border px-3 py-2 text-right align-top">
-                    {formatCurrency(line.total_amount)}
-                  </td>
-                </tr>
-              ))}
+              {(budget.lines || []).map((line) => {
+                // Detectar si la línea tiene configuración (artículo configurable)
+                const config = line.configuration;
+                const tieneConfig =
+                  (line.article_type === "configurable" ||
+                    line.configurable_article_id != null) &&
+                  config != null &&
+                  (config.ancho_hueco != null || config.alto_hueco != null);
+
+                const C = tieneConfig ? Number(config.ancho_hueco) || 0 : 0;
+                const D = tieneConfig ? Number(config.alto_hueco) || 0 : 0;
+
+                // Usar medidas pre-calculadas si existen; si no, calcularlas como fallback
+                const cotasCalculadas = tieneConfig
+                  ? Array.isArray(config.fabrication_measures) &&
+                    config.fabrication_measures.length > 0
+                    ? config.fabrication_measures
+                    : [
+                        {
+                          label: "Ancho cristal fijos laterales ((C/4) + 45)",
+                          valor: C / 4 + 45,
+                        },
+                        { label: "Alto cristal fijos laterales (D)", valor: D },
+                        {
+                          label: "Ancho cristal hojas móviles ((C/4) - 5)",
+                          valor: C / 4 - 5,
+                        },
+                        {
+                          label:
+                            "Alto cristal hojas móviles sin plintón (D - 50)",
+                          valor: D - 50,
+                        },
+                        {
+                          label:
+                            "Ancho hueco paso libre final (C - ((C/4) + 45) × 2)",
+                          valor: C - (C / 4 + 45) * 2,
+                        },
+                        { label: "Alto hueco de paso libre (D)", valor: D },
+                      ]
+                  : [];
+
+                return (
+                  <>
+                    <tr key={line.id}>
+                      <td className="border px-3 py-2 align-top font-medium">
+                        {line.name}
+                      </td>
+                      <td className="border px-3 py-2 align-top whitespace-pre-wrap">
+                        {line.description || "-"}
+                      </td>
+                      <td className="border px-3 py-2 text-center align-top">
+                        {Number(line.quantity).toFixed(2)}
+                      </td>
+                      <td className="border px-3 py-2 text-right align-top">
+                        {formatCurrency(line.unit_price)}
+                      </td>
+                      <td className="border px-3 py-2 text-right align-top">
+                        {Number(line.discount_percentage || 0).toFixed(2)} %
+                      </td>
+                      <td className="border px-3 py-2 text-right align-top">
+                        {formatCurrency(line.total_amount)}
+                      </td>
+                    </tr>
+
+                    {/* Fila de cotas calculadas para artículos configurables */}
+                    {tieneConfig && (
+                      <tr key={`${line.id}-cotas`} className="bg-[#eff6ff]">
+                        <td colSpan={6} className="border px-3 py-2">
+                          <div className="text-xs font-semibold text-[#1d4ed8] mb-1">
+                            Medidas de fabricación — C (ancho hueco) = {C} mm ·
+                            D (alto hueco) = {D} mm
+                          </div>
+                          <table className="w-full text-xs border-collapse">
+                            <tbody>
+                              {cotasCalculadas.map((cota, i) => (
+                                <tr
+                                  key={i}
+                                  className={
+                                    i % 2 === 0
+                                      ? "bg-[#dbeafe]"
+                                      : "bg-[#eff6ff]"
+                                  }
+                                >
+                                  <td className="py-1 px-2 text-[#1e3a8a]">
+                                    {cota.label}
+                                  </td>
+                                  <td className="py-1 px-2 text-right font-bold text-[#1e3a8a] whitespace-nowrap">
+                                    {Number(cota.valor).toFixed(2)} mm
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
             </tbody>
           </table>
         </section>

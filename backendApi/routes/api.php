@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\BudgetController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ConfigurableArticleController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PanelEmpresasController;
 use App\Http\Controllers\Api\StandardArticleController;
 use App\Http\Controllers\Api\UserController;
@@ -91,6 +92,11 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
         Route::get('/company/budgets/{id}', [BudgetController::class, 'show']);
         Route::post('/company/budgets', [BudgetController::class, 'store']);
         Route::put('/company/budgets/{id}', [BudgetController::class, 'update']);
+
+        // Rutas para pedidos de la empresa (admin, commercial, technician)
+        Route::get('/company/orders', [OrderController::class, 'index']);
+        Route::get('/company/orders/{id}', [OrderController::class, 'show']);
+        Route::put('/company/orders/{id}', [OrderController::class, 'update']);
 
         // Rutas para artículos estándar de la empresa
         // Familias de artículos: ver (admin/commercial), crear/editar (solo admin)

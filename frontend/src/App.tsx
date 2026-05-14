@@ -29,6 +29,8 @@ import { VerEditarUsuario } from "./components/VerEditarUsuario.jsx";
 import { PresupuestosPanel } from "./components/PresupuestoPanel.jsx";
 import { FormPresupuesto } from "./components/FormPresupuesto.jsx";
 import { VerEditarPresupuesto } from "./components/VerEditarPresupuesto.jsx";
+import { PedidosPanel } from "./components/PedidosPanel.jsx";
+import { DetallePedido } from "./components/DetallePedido.jsx";
 import { FormNuevoCliente } from "./FormNuevoCliente";
 import { ClientesPanel } from "./components/ClientesPanel.jsx";
 import { VerEditarCliente } from "./components/VerEditarCliente.jsx";
@@ -200,6 +202,19 @@ export default function App() {
             element={<ConfigurarArticuloConfigurablePage />}
           />
           <Route
+            path="presupuestos/vereditarpresupuesto/:id"
+            element={<VerEditarPresupuesto />}
+          />
+          <Route
+            path="presupuestos/imprimir/:id"
+            element={<BudgetPrintPage />}
+          />
+
+          {/* RUTAS DE PEDIDOS */}
+          <Route path="pedidos" element={<PedidosPanel />} />
+          <Route path="pedidos/:id" element={<DetallePedido />} />
+
+          <Route
             path="articulos/tarifas-configurables"
             element={<ConfigurablePricingPage />}
           />
@@ -210,14 +225,6 @@ export default function App() {
           <Route
             path="usuarios/vereditarusuario/:id"
             element={<VerEditarUsuario />}
-          />
-          <Route
-            path="presupuestos/vereditarpresupuesto/:id"
-            element={<VerEditarPresupuesto />}
-          />
-          <Route
-            path="presupuestos/imprimir/:id"
-            element={<BudgetPrintPage />}
           />
           <Route path="clientes/nuevocliente" element={<FormNuevoCliente />} />
           <Route

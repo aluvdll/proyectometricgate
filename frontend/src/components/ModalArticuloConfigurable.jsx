@@ -194,7 +194,6 @@ export function ModalArticuloConfigurable({
     alto_hueco: true,
     ancho_obra: true,
     alto_obra: true,
-
   };
 
   // ── Cargar artículo al abrir ────────────────────────────────────
@@ -207,7 +206,6 @@ export function ModalArticuloConfigurable({
       alto_hueco: "",
       ancho_obra: "",
       alto_obra: "",
-
     });
     setOpciones({});
     setResultado(null);
@@ -235,7 +233,6 @@ export function ModalArticuloConfigurable({
             alto_hueco: initialConfiguration.alto_hueco ?? "",
             ancho_obra: initialConfiguration.ancho_obra ?? "",
             alto_obra: initialConfiguration.alto_obra ?? "",
-
           });
 
           const breakdown = initialConfiguration.price_breakdown ?? null;
@@ -326,9 +323,15 @@ export function ModalArticuloConfigurable({
   function handleConfirmar() {
     if (!resultado?.valid) return;
 
-    const medidasFabricacion =
-      resultado?.fabrication_measures ??
-      calcularMedidasFabricacionLive(medidas);
+    // Siempre usamos el cálculo local: tiene labels completos y valores actualizados
+    const medidasObj = calcularMedidasFabricacionLive(medidas);
+
+    // Normalizar a array [{label, formula, valor}] para consistencia en toda la app
+    const fabricationMeasuresArray = Object.values(medidasObj).map((m) => ({
+      label: m.label,
+      formula: m.formula,
+      valor: m.value_mm,
+    }));
 
     onConfirmar({
       configurable_article_id: articulo.id,
@@ -340,7 +343,7 @@ export function ModalArticuloConfigurable({
         ...medidas,
         options_chosen: opciones,
         price_breakdown: resultado.breakdown,
-        fabrication_measures: medidasFabricacion,
+        fabrication_measures: fabricationMeasuresArray,
       },
     });
   }
@@ -427,7 +430,6 @@ export function ModalArticuloConfigurable({
                   { key: "alto_hueco", label: "D — Alto hueco libre *" },
                   { key: "ancho_obra", label: "B — Ancho obra total" },
                   { key: "alto_obra", label: "A — Alto obra total *" },
-   
                 ].map(({ key, label }) => (
                   <div key={key}>
                     <label className="block text-sm mb-1 dark:text-gray-300">

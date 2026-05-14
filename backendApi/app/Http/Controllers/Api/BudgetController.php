@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Budget;
 use App\Models\Client;
 use App\Models\StandardArticle;
+use App\Services\CreateOrderFromBudgetService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -52,7 +53,7 @@ class BudgetController extends Controller
             'status' => [
                 $isUpdate ? 'sometimes' : 'required',
                 'required',
-                Rule::in(['draft', 'sent', 'accepted', 'rejected', 'invoiced']),
+                Rule::in(['pendiente', 'aceptado']),
             ],
             'notes' => 'nullable|string',
             'lines' => [$isUpdate ? 'sometimes' : 'required', 'required', 'array', 'min:1'],
@@ -62,7 +63,9 @@ class BudgetController extends Controller
                 Rule::exists('standard_articles', 'id')->where(function ($query) use ($companyId) {
                     return $query->where('company_id', $companyId);
                 }),
-            ],            'lines.*.configuration' => 'nullable|array',            'lines.*.name' => 'required|string|max:255',
+            ],
+            'lines.*.configuration' => 'nullable|array',
+            'lines.*.name' => 'required|string|max:255',
             'lines.*.description' => 'nullable|string',
             'lines.*.quantity' => 'required|numeric|gt:0',
             'lines.*.unit_price' => 'required|numeric|min:0',
@@ -257,13 +260,14 @@ class BudgetController extends Controller
                     $line = $lines[$lineIndex] ?? null;
                     if ($line && $line->configurable_article_id) {
                         $line->configuration()->create([
-                            'ancho_hueco' => $config['medidas']['ancho_hueco'] ?? null,
-                            'alto_hueco' => $config['medidas']['alto_hueco'] ?? null,
-                            'ancho_obra' => $config['medidas']['ancho_obra'] ?? null,
-                            'alto_obra' => $config['medidas']['alto_obra'] ?? null,
-                            'paso_deseado' => $config['medidas']['paso_deseado'] ?? null,
-                            'options_chosen' => $config['opciones'] ?? [],
-                            'price_breakdown' => $config['desglose'] ?? [],
+                            'ancho_hueco'          => $config['ancho_hueco'] ?? null,
+                            'alto_hueco'           => $config['alto_hueco'] ?? null,
+                            'ancho_obra'           => $config['ancho_obra'] ?? null,
+                            'alto_obra'            => $config['alto_obra'] ?? null,
+                            'paso_deseado'         => $config['paso_deseado'] ?? null,
+                            'options_chosen'       => $config['options_chosen'] ?? [],
+                            'price_breakdown'      => $config['price_breakdown'] ?? [],
+                            'fabrication_measures' => $config['fabrication_measures'] ?? [],
                         ]);
                     }
                 }
@@ -300,7 +304,10 @@ class BudgetController extends Controller
         $buildResult = $this->buildLines($validated['lines'], $companyId);
         $configurations = $buildResult['configurations'];
 
-        DB::transaction(function () use ($budget, $validated, $buildResult, $configurations) {
+        $oldStatus = $budget->status;
+        $newStatus = $validated['status'];
+
+        DB::transaction(function () use ($budget, $validated, $buildResult, $configurations, $oldStatus, $newStatus) {
             $budget->update([
                 'client_id' => (int) $validated['client_id'],
                 'budget_date' => $validated['budget_date'],
@@ -320,16 +327,22 @@ class BudgetController extends Controller
                     $line = $lines[$lineIndex] ?? null;
                     if ($line && $line->configurable_article_id) {
                         $line->configuration()->create([
-                            'ancho_hueco' => $config['medidas']['ancho_hueco'] ?? null,
-                            'alto_hueco' => $config['medidas']['alto_hueco'] ?? null,
-                            'ancho_obra' => $config['medidas']['ancho_obra'] ?? null,
-                            'alto_obra' => $config['medidas']['alto_obra'] ?? null,
-                            'paso_deseado' => $config['medidas']['paso_deseado'] ?? null,
-                            'options_chosen' => $config['opciones'] ?? [],
-                            'price_breakdown' => $config['desglose'] ?? [],
+                            'ancho_hueco'          => $config['ancho_hueco'] ?? null,
+                            'alto_hueco'           => $config['alto_hueco'] ?? null,
+                            'ancho_obra'           => $config['ancho_obra'] ?? null,
+                            'alto_obra'            => $config['alto_obra'] ?? null,
+                            'paso_deseado'         => $config['paso_deseado'] ?? null,
+                            'options_chosen'       => $config['options_chosen'] ?? [],
+                            'price_breakdown'      => $config['price_breakdown'] ?? [],
+                            'fabrication_measures' => $config['fabrication_measures'] ?? [],
                         ]);
                     }
                 }
+            }
+
+            // 🎯 CREAR PEDIDO SI PRESUPUESTO PASA A "ACEPTADO"
+            if ($oldStatus !== 'aceptado' && $newStatus === 'aceptado') {
+                CreateOrderFromBudgetService::execute($budget->fresh());
             }
         });
 

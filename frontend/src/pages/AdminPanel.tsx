@@ -35,6 +35,14 @@ export function AdminPanel() {
             Dashboard
           </Link>
 
+          {/* Visible para admin, commercial y technician */}
+          <Link
+            to="/adminPanel/pedidos"
+            className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+          >
+            Pedidos
+          </Link>
+
           {isAdmin && (
             <Link
               to="/adminPanel/usuarios"

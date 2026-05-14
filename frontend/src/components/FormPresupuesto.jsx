@@ -14,11 +14,8 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const estados = [
-  { value: "draft", label: "Borrador" },
-  { value: "sent", label: "Enviado" },
-  { value: "accepted", label: "Aceptado" },
-  { value: "rejected", label: "Rechazado" },
-  { value: "invoiced", label: "Facturado" },
+  { value: "pendiente", label: "Pendiente" },
+  { value: "aceptado", label: "Aceptado" },
 ];
 
 const hoy = new Date().toISOString().slice(0, 10);
@@ -94,7 +91,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   const [formData, setFormData] = useState({
     client_id: "",
     budget_date: hoy,
-    status: "draft",
+    status: "pendiente",
     notes: "",
   });
   const [lines, setLines] = useState([crearLinea()]);
@@ -129,7 +126,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
         setFormData({
           client_id: presupuesto.client_id?.toString() || "",
           budget_date: presupuesto.budget_date || hoy,
-          status: presupuesto.status || "draft",
+          status: presupuesto.status || "pendiente",
           notes: presupuesto.notes || "",
         });
         if (presupuesto.client) {
@@ -151,15 +148,15 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
               baseLine._isConfigurable = true;
               baseLine._configurable_article_id = linea.configurable_article_id;
               baseLine._configuration = {
-                medidas: {
-                  ancho_hueco: linea.configuration.ancho_hueco,
-                  alto_hueco: linea.configuration.alto_hueco,
-                  ancho_obra: linea.configuration.ancho_obra,
-                  alto_obra: linea.configuration.alto_obra,
-                  paso_deseado: linea.configuration.paso_deseado,
-                },
-                opciones: linea.configuration.options_chosen || {},
-                desglose: linea.configuration.price_breakdown || [],
+                ancho_hueco: linea.configuration.ancho_hueco,
+                alto_hueco: linea.configuration.alto_hueco,
+                ancho_obra: linea.configuration.ancho_obra,
+                alto_obra: linea.configuration.alto_obra,
+                paso_deseado: linea.configuration.paso_deseado,
+                options_chosen: linea.configuration.options_chosen || {},
+                price_breakdown: linea.configuration.price_breakdown || [],
+                fabrication_measures:
+                  linea.configuration.fabrication_measures || [],
               };
             }
 
@@ -443,20 +440,29 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       return;
     }
 
-    // Si hay líneas guardadas, usarlas como base
-    if (savedLines) {
-      setLines(savedLines);
-      // Aplicar la configuración en la línea correcta
-      setTimeout(() => {
-        setLines((prev) => {
-          const copy = [...prev];
-          aplicarConfiguracionEnLinea(lineIndex, result);
-          return copy;
-        });
-      }, 0);
+    // Construir la línea configurable con todos sus datos
+    const lineaConfigurable = {
+      ...(savedLines?.[lineIndex] || {}),
+      standard_article_id: "",
+      name: result.name,
+      description: result.description,
+      quantity: savedLines?.[lineIndex]?.quantity || "1",
+      unit_price: String(result.unit_price),
+      discount_percentage: savedLines?.[lineIndex]?.discount_percentage || "0",
+      tax_percentage: String(result.tax_percentage),
+      _configurable_article_id: result.configurable_article_id,
+      _configuration: result.configuration,
+      _isConfigurable: true,
+    };
+
+    // Aplicar la configuración directamente sobre las líneas restauradas
+    const baseLines = savedLines ? [...savedLines] : [];
+    if (lineIndex >= baseLines.length) {
+      baseLines.push(lineaConfigurable);
     } else {
-      aplicarConfiguracionEnLinea(lineIndex, result);
+      baseLines[lineIndex] = lineaConfigurable;
     }
+    setLines(baseLines);
 
     navigate(location.pathname, {
       replace: true,
@@ -521,7 +527,12 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
           position: index,
         };
 
-        if (line._isConfigurable) {
+        const esConfigurable =
+          line._isConfigurable ||
+          line._configurable_article_id ||
+          line._configuration;
+
+        if (esConfigurable) {
           baseLine.configurable_article_id = line._configurable_article_id
             ? Number(line._configurable_article_id)
             : null;
@@ -670,24 +681,34 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
 
             <div className="mt-4">
               <label className="mb-2 block text-sm font-bold">Estado</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, status: e.target.value }))
-                }
-                className="w-full rounded-md border border-orange-500 bg-white px-3 py-2 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-              >
-                {estados.map((estado) => (
-                  <option
-                    key={estado.value}
-                    value={estado.value}
-                    className="bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-                  >
-                    {estado.label}
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, status: "pendiente" }))
+                  }
+                  className={`flex-1 rounded-md px-4 py-2 font-semibold transition ${
+                    formData.status === "pendiente"
+                      ? "border-2 border-orange-500 bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200"
+                      : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  Pendiente
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, status: "aceptado" }))
+                  }
+                  className={`flex-1 rounded-md px-4 py-2 font-semibold transition ${
+                    formData.status === "aceptado"
+                      ? "border-2 border-green-500 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200"
+                      : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  Aceptado
+                </button>
+              </div>
             </div>
           </div>
         </div>

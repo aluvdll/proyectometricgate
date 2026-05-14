@@ -18,16 +18,18 @@ class BudgetLineConfiguration extends Model
         'paso_deseado',
         'options_chosen',
         'price_breakdown',
+        'fabrication_measures',
     ];
 
     protected $casts = [
-        'ancho_hueco'     => 'decimal:2',
-        'alto_hueco'      => 'decimal:2',
-        'ancho_obra'      => 'decimal:2',
-        'alto_obra'       => 'decimal:2',
-        'paso_deseado'    => 'decimal:2',
-        'options_chosen'  => 'array',
-        'price_breakdown' => 'array',
+        'ancho_hueco'           => 'decimal:2',
+        'alto_hueco'            => 'decimal:2',
+        'ancho_obra'            => 'decimal:2',
+        'alto_obra'             => 'decimal:2',
+        'paso_deseado'          => 'decimal:2',
+        'options_chosen'        => 'array',
+        'price_breakdown'       => 'array',
+        'fabrication_measures'  => 'array',
     ];
 
     /*

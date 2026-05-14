@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             ArticleFamilySeeder::class,
             StandardArticleSeeder::class,
             ConfigurableArticleSeeder::class,
+            AcceptedConfigurableBudgetSeeder::class,
         ]);
     }
 }

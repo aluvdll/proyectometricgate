@@ -112,36 +112,10 @@ return new class extends Migration
 
             $table->timestamps();
         });
-
-        // Snapshot de la configuración elegida, ligado a una línea del presupuesto
-        Schema::create('budget_line_configurations', function (Blueprint $table) {
-
-            $table->id();
-
-            $table->foreignId('budget_line_id')
-                ->constrained()
-                ->cascadeOnDelete();
-
-            // Medidas de entrada del cliente (todas opcionales, depende de la fórmula usada)
-            $table->decimal('ancho_hueco', 8, 2)->nullable();   // Ancho hueco de paso libre
-            $table->decimal('alto_hueco', 8, 2)->nullable();    // Alto hueco de paso libre
-            $table->decimal('ancho_obra', 8, 2)->nullable();    // Ancho total superficie obra
-            $table->decimal('alto_obra', 8, 2)->nullable();     // Alto total superficie obra
-            $table->decimal('paso_deseado', 8, 2)->nullable();  // Medida de paso deseada
-
-            // Opciones elegidas por parte: {"cajon": "ral_premium", "hojas_moviles": "incoloro"}
-            $table->json('options_chosen');
-
-            // Desglose del precio calculado por parte
-            $table->json('price_breakdown');
-
-            $table->timestamps();
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('budget_line_configurations');
         Schema::dropIfExists('configurable_article_rules');
         Schema::dropIfExists('configurable_article_options');
         Schema::dropIfExists('configurable_article_parts');
