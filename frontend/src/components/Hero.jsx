@@ -1,7 +1,24 @@
+import { useEffect, useState } from "react";
 import heroImg from "../assets/images/hero2.jpg";
+import logoMetricGate from "../../public/fav_icon_metricGates.svg";
 import { FloatingWhatsApp } from "react-floating-whatsapp";
 
 export function Hero() {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const updateTheme = () => {
+      setIsDarkMode(mediaQuery.matches);
+    };
+
+    updateTheme();
+    mediaQuery.addEventListener("change", updateTheme);
+
+    return () => mediaQuery.removeEventListener("change", updateTheme);
+  }, []);
+
   return (
     <>
       {/* <!-- Section 2 --> */}
@@ -62,10 +79,35 @@ export function Hero() {
         </div>
       </section>
       <FloatingWhatsApp
-        phoneNumber="1234567890"
+        phoneNumber="637141076"
         accountName="MetricGate"
+        avatar={logoMetricGate}
+        statusMessage="¡Hola! ¿En qué puedo ayudarte?"
+        chatMessage="¡Hola! Gracias por contactarnos. ¿En qué puedo ayudarte hoy?"
+        darkMode={isDarkMode}
         allowClickAway
+        allowEsc
+        className="metricgate-whatsapp"
       />
+      <style>{`
+        .metricgate-whatsapp .styles-module_chatFooter__TGv0P form .styles-module_input__WFb9L {
+          color: #111827 !important;
+          -webkit-text-fill-color: #111827 !important;
+        }
+
+        .metricgate-whatsapp .styles-module_chatFooter__TGv0P form .styles-module_input__WFb9L::placeholder {
+          color: #6b7280 !important;
+        }
+
+        .metricgate-whatsapp.styles-module_dark__iZs3I .styles-module_chatFooter__TGv0P form .styles-module_input__WFb9L {
+          color: #f1f1f2 !important;
+          -webkit-text-fill-color: #f1f1f2 !important;
+        }
+
+        .metricgate-whatsapp.styles-module_dark__iZs3I .styles-module_chatFooter__TGv0P form .styles-module_input__WFb9L::placeholder {
+          color: #b7c0c4 !important;
+        }
+      `}</style>
     </>
   );
 }

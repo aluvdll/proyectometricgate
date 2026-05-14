@@ -20,10 +20,7 @@ export function BtnUserMenu() {
 
   function getAvatarUrl() {
     const avatar =
-      auth.user?.avatar ||
-      auth.user?.avatarUrl ||
-      auth.user?.avatar_url ||
-      "";
+      auth.user?.avatar || auth.user?.avatarUrl || auth.user?.avatar_url || "";
 
     if (!avatar) return "/ico_avatar_default.png";
 
@@ -42,7 +39,6 @@ export function BtnUserMenu() {
 
     return `${API_URL}/storage/${avatar}`;
   }
-  
 
   return (
     <div className="relative">
@@ -95,7 +91,8 @@ export function BtnUserMenu() {
               ? "AdminPanel"
               : auth.user?.role === "commercial"
                 ? "ComerPanel"
-                : auth.user?.role === "technician" || auth.user?.role === "tecnician"
+                : auth.user?.role === "technician" ||
+                    auth.user?.role === "tecnician"
                   ? "TecniPanel"
                   : ""}
         </a>

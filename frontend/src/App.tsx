@@ -365,7 +365,12 @@ export default function App() {
             path="articulos"
             element={
               <RoleRoute
-                allowedRoles={["admin", "commercial", "technician", "tecnician"]}
+                allowedRoles={[
+                  "admin",
+                  "commercial",
+                  "technician",
+                  "tecnician",
+                ]}
               >
                 <ArticulosPanel />
               </RoleRoute>
@@ -383,7 +388,12 @@ export default function App() {
             path="articulos/vereditararticulo/:id"
             element={
               <RoleRoute
-                allowedRoles={["admin", "commercial", "technician", "tecnician"]}
+                allowedRoles={[
+                  "admin",
+                  "commercial",
+                  "technician",
+                  "tecnician",
+                ]}
               >
                 <VerEditarArticulo />
               </RoleRoute>
