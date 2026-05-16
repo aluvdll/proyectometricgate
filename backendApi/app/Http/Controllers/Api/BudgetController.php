@@ -10,6 +10,7 @@ use App\Services\CreateOrderFromBudgetService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class BudgetController extends Controller
 {
@@ -64,6 +65,13 @@ class BudgetController extends Controller
                     return $query->where('company_id', $companyId);
                 }),
             ],
+            'lines.*.configurable_article_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('configurable_articles', 'id')->where(function ($query) use ($companyId) {
+                    return $query->where('company_id', $companyId);
+                }),
+            ],
             'lines.*.configuration' => 'nullable|array',
             'lines.*.name' => 'required|string|max:255',
             'lines.*.description' => 'nullable|string',
@@ -85,6 +93,7 @@ class BudgetController extends Controller
             'lines.required' => 'Debes añadir al menos una línea.',
             'lines.min' => 'Debes añadir al menos una línea.',
             'lines.*.standard_article_id.exists' => 'El artículo seleccionado no pertenece a tu empresa.',
+            'lines.*.configurable_article_id.exists' => 'El artículo configurable seleccionado no pertenece a tu empresa.',
             'lines.*.name.required' => 'Cada línea debe tener un nombre.',
             'lines.*.quantity.required' => 'Cada línea debe tener cantidad.',
             'lines.*.quantity.gt' => 'La cantidad debe ser mayor que 0.',
@@ -113,6 +122,16 @@ class BudgetController extends Controller
 
     private function buildLines(array $lines, int $companyId): array
     {
+        foreach ($lines as $lineIndex => $line) {
+            if (!empty($line['configuration']) && empty($line['configurable_article_id'])) {
+                throw ValidationException::withMessages([
+                    "lines.$lineIndex.configurable_article_id" => [
+                        'La línea tiene configuración pero no tiene artículo configurable.',
+                    ],
+                ]);
+            }
+        }
+
         $articleIds = collect($lines)
             ->pluck('standard_article_id')
             ->filter()
