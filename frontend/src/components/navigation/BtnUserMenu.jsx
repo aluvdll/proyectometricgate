@@ -102,7 +102,7 @@ export function BtnUserMenu() {
           onClick={() => setOpen(false)}
           className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
         >
-          Settings
+          Mi Perfil
         </Link>
 
         <a
