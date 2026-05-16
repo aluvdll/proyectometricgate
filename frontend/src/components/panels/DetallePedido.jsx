@@ -180,6 +180,91 @@ export function DetallePedido() {
     return estado;
   };
 
+  const parseNumero = (valor) => {
+    const n = Number(String(valor ?? "").replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const extraerMedidasDesdeDescripcion = (descripcionRaw) => {
+    const descripcion = String(descripcionRaw || "");
+
+    const patronesC = [
+      /ancho\s*hueco\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)/i,
+      /cota\s*c\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)/i,
+      /\bc\b\s*\(?.*?ancho\s*hueco.*?\)?\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)/i,
+      /\bc\b\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)/i,
+    ];
+
+    const patronesD = [
+      /alto\s*hueco\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)/i,
+      /cota\s*d\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)/i,
+      /\bd\b\s*\(?.*?alto\s*hueco.*?\)?\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)/i,
+      /\bd\b\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)/i,
+    ];
+
+    const valorPorPatrones = (patrones) => {
+      for (const patron of patrones) {
+        const match = descripcion.match(patron);
+        if (match?.[1]) {
+          const valor = parseNumero(match[1]);
+          if (valor != null) return valor;
+        }
+      }
+      return null;
+    };
+
+    const C = valorPorPatrones(patronesC);
+    const D = valorPorPatrones(patronesD);
+
+    if (C == null || C <= 0) return null;
+
+    return { C, D: D ?? 0 };
+  };
+
+  const obtenerMedidasBaseLinea = (linea) => {
+    const savedMedidas = linea?.configuration?.fabrication_measures || null;
+    const Cconfig = parseNumero(linea?.configuration?.ancho_hueco);
+    const Dconfig = parseNumero(linea?.configuration?.alto_hueco);
+
+    if (Cconfig != null && Cconfig > 0) {
+      return {
+        C: Cconfig,
+        D: Dconfig ?? 0,
+        savedMedidas,
+        hasBaseMedidas: true,
+      };
+    }
+
+    const medidasDescripcion = extraerMedidasDesdeDescripcion(linea?.description);
+    if (medidasDescripcion) {
+      return {
+        C: medidasDescripcion.C,
+        D: medidasDescripcion.D,
+        savedMedidas,
+        hasBaseMedidas: true,
+      };
+    }
+
+    if (Array.isArray(savedMedidas) && savedMedidas.length > 0) {
+      return {
+        C: null,
+        D: null,
+        savedMedidas,
+        hasBaseMedidas: false,
+      };
+    }
+
+    return null;
+  };
+
+  const esLineaConfigurableVisual = (linea) => {
+    if (linea?.article_type === "configurable" || linea?.configurable_article_id) {
+      return true;
+    }
+
+    return obtenerMedidasBaseLinea(linea) !== null;
+  };
+
   // ╔════════════════════════════════════════════════════════════════╗
   // ║ RENDER CARGANDO                                                ║
   // ╚════════════════════════════════════════════════════════════════╝
@@ -339,17 +424,17 @@ export function DetallePedido() {
                     )}
 
                     {/* Si es configurable, mostrar medidas de fabricación */}
-                    {(linea.article_type === "configurable" ||
-                      linea.configurable_article_id != null) &&
-                      linea.configuration &&
-                      Number(linea.configuration.ancho_hueco) > 0 &&
+                    {esLineaConfigurableVisual(linea) &&
                       (() => {
-                        const C = Number(linea.configuration.ancho_hueco);
-                        const D = Number(linea.configuration.alto_hueco) || 0;
+                        const baseMedidas = obtenerMedidasBaseLinea(linea);
+                        if (!baseMedidas) {
+                          return null;
+                        }
+
+                        const { C, D, hasBaseMedidas } = baseMedidas;
 
                         // Usar medidas guardadas si tienen valores válidos; si no, recalcular
-                        const savedMedidas =
-                          linea.configuration.fabrication_measures;
+                        const savedMedidas = baseMedidas.savedMedidas;
                         const todasValidas =
                           Array.isArray(savedMedidas) &&
                           savedMedidas.length > 0 &&
@@ -357,7 +442,8 @@ export function DetallePedido() {
 
                         const medidas = todasValidas
                           ? savedMedidas
-                          : [
+                          : hasBaseMedidas
+                            ? [
                               {
                                 label: "Ancho cristal de fijos laterales",
                                 formula: "(C/4) + 45",
@@ -391,16 +477,27 @@ export function DetallePedido() {
                                 formula: "D",
                                 valor: Number(D.toFixed(2)),
                               },
-                            ];
+                            ]
+                            : [];
+
+                        if (!medidas.length) {
+                          return null;
+                        }
 
                         return (
                           <div className="mt-3 rounded-lg bg-blue-50 p-3 text-xs dark:bg-blue-950">
                             <p className="mb-2 font-bold text-blue-700 dark:text-blue-300">
                               Medidas de fabricación
                             </p>
-                            <p className="mb-2 text-blue-500 dark:text-blue-400">
-                              C (ancho hueco) = {C} mm · D (alto hueco) = {D} mm
-                            </p>
+                            {hasBaseMedidas ? (
+                              <p className="mb-2 text-blue-500 dark:text-blue-400">
+                                C (ancho hueco) = {C} mm · D (alto hueco) = {D} mm
+                              </p>
+                            ) : (
+                              <p className="mb-2 text-blue-500 dark:text-blue-400">
+                                Medidas cargadas desde la configuración guardada
+                              </p>
+                            )}
                             <table className="w-full border-collapse">
                               <tbody>
                                 {medidas.map((m, i) => (
@@ -414,9 +511,11 @@ export function DetallePedido() {
                                   >
                                     <td className="py-1 pr-3 text-blue-800 dark:text-blue-200">
                                       {m.label}
-                                      <span className="ml-1 text-blue-400 dark:text-blue-500">
-                                        ({m.formula})
-                                      </span>
+                                      {m.formula ? (
+                                        <span className="ml-1 text-blue-400 dark:text-blue-500">
+                                          ({m.formula})
+                                        </span>
+                                      ) : null}
                                     </td>
                                     <td className="py-1 text-right font-bold text-blue-900 dark:text-blue-100 whitespace-nowrap">
                                       {m.valor} mm

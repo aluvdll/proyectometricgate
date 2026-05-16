@@ -144,20 +144,23 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
               tax_percentage: linea.tax_percentage?.toString() || "21",
             };
 
-            if (linea.configurable_article_id && linea.configuration) {
+            if (linea.configurable_article_id) {
               baseLine._isConfigurable = true;
               baseLine._configurable_article_id = linea.configurable_article_id;
-              baseLine._configuration = {
-                ancho_hueco: linea.configuration.ancho_hueco,
-                alto_hueco: linea.configuration.alto_hueco,
-                ancho_obra: linea.configuration.ancho_obra,
-                alto_obra: linea.configuration.alto_obra,
-                paso_deseado: linea.configuration.paso_deseado,
-                options_chosen: linea.configuration.options_chosen || {},
-                price_breakdown: linea.configuration.price_breakdown || [],
-                fabrication_measures:
-                  linea.configuration.fabrication_measures || [],
-              };
+
+              if (linea.configuration) {
+                baseLine._configuration = {
+                  ancho_hueco: linea.configuration.ancho_hueco,
+                  alto_hueco: linea.configuration.alto_hueco,
+                  ancho_obra: linea.configuration.ancho_obra,
+                  alto_obra: linea.configuration.alto_obra,
+                  paso_deseado: linea.configuration.paso_deseado,
+                  options_chosen: linea.configuration.options_chosen || {},
+                  price_breakdown: linea.configuration.price_breakdown || [],
+                  fabrication_measures:
+                    linea.configuration.fabrication_measures || [],
+                };
+              }
             }
 
             return baseLine;
@@ -508,6 +511,33 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       return;
     }
 
+    const hayConfigurableSinId = lines.some((line) => {
+      const tieneDatosConfigurable =
+        line._isConfigurable ||
+        !!line._configuration ||
+        !!line._configurable_article_id ||
+        !!line.configurable_article_id;
+
+      if (!tieneDatosConfigurable) {
+        return false;
+      }
+
+      const configurableId = Number(
+        line._configurable_article_id || line.configurable_article_id || 0,
+      );
+
+      return configurableId <= 0;
+    });
+
+    if (hayConfigurableSinId) {
+      showNotification(
+        "Error",
+        "Hay una línea configurable sin artículo configurable asignado.",
+        "error",
+      );
+      return;
+    }
+
     const payload = {
       client_id: Number(formData.client_id),
       budget_date: formData.budget_date,
@@ -527,16 +557,22 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
           position: index,
         };
 
-        const esConfigurable =
+        const configurableId = Number(
+          line._configurable_article_id || line.configurable_article_id || 0,
+        );
+        const tieneDatosConfigurable =
           line._isConfigurable ||
-          line._configurable_article_id ||
-          line._configuration;
+          !!line._configuration ||
+          !!line._configurable_article_id ||
+          !!line.configurable_article_id;
 
-        if (esConfigurable) {
-          baseLine.configurable_article_id = line._configurable_article_id
-            ? Number(line._configurable_article_id)
-            : null;
-          baseLine.configuration = line._configuration || null;
+        if (tieneDatosConfigurable && configurableId > 0) {
+          baseLine.configurable_article_id = configurableId;
+          baseLine.configuration = line._configuration || {
+            options_chosen: {},
+            price_breakdown: [],
+            fabrication_measures: [],
+          };
         }
 
         return baseLine;
