@@ -2,49 +2,49 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 
 // Páginas públicas
-import Home from "./pages/Home.jsx";
-import { Notfound } from "./pages/NotFound.jsx";
-import { Login } from "./pages/Login";
-import { Contacto } from "./pages/Contacto";
-import { Tarifas } from "./pages/tarifas";
-import { RecuperarContraseña } from "./pages/RecuperarContraseña";
-import { ResetPassword } from "./pages/ResetPassword";
-import { PoliticaCookies } from "./pages/PoliticaCookies";
+import Home from "./pages/public/Home.jsx";
+import { Notfound } from "./pages/public/NotFound.jsx";
+import { Login } from "./pages/public/Login";
+import { Contacto } from "./pages/public/Contacto";
+import { Tarifas } from "./pages/public/TarifasPage";
+import { RecuperarContraseña } from "./pages/public/RecuperarContraseña";
+import { ResetPassword } from "./pages/public/ResetPassword";
+import { PoliticaCookies } from "./pages/public/PoliticaCookies";
 
 // Páginas privadas (Admin)
-import { AdminPanel } from "./pages/AdminPanel";
-import { UsersPanel } from "./pages/UsersPanel.jsx";
-import { FormUsuario } from "./components/FormUsuario";
-import { Dashboard } from "./components/Dashboard.jsx";
+import { AdminPanel } from "./pages/admin/AdminPanel";
+import { UsersPanel } from "./pages/admin/UsersPanel.jsx";
+import { FormUsuario } from "./components/forms/FormUsuario";
+import { Dashboard } from "./components/panels/Dashboard.jsx";
 
 // Componentes
-import { Nav } from "./components/nav";
-import { Footer } from "./components/Footer/Footer";
-import { CookieBanner } from "./components/CookieBanner";
+import { Nav } from "./components/layout/Navbar";
+import { Footer } from "./components/layout/Footer/Footer";
+import { CookieBanner } from "./components/layout/CookieBanner";
 
 // Context
 import { useAuth } from "./context/AuthContext";
 import type { ReactNode } from "react";
-import { VerEditarUsuario } from "./components/VerEditarUsuario.jsx";
-import { PresupuestosPanel } from "./components/PresupuestoPanel.jsx";
-import { FormPresupuesto } from "./components/FormPresupuesto.jsx";
-import { VerEditarPresupuesto } from "./components/VerEditarPresupuesto.jsx";
-import { PedidosPanel } from "./components/PedidosPanel.jsx";
-import { DetallePedido } from "./components/DetallePedido.jsx";
-import { FormNuevoCliente } from "./FormNuevoCliente";
-import { ClientesPanel } from "./components/ClientesPanel.jsx";
-import { VerEditarCliente } from "./components/VerEditarCliente.jsx";
-import { ArticulosPanel } from "./components/ArticulosPanel.jsx";
-import { FamiliasArticulosPanel } from "./components/FamiliasArticulosPanel.jsx";
-import FormFamiliaArticulo from "./components/FormFamiliaArticulo.jsx";
-import FormArticulo from "./components/FormArticulo.jsx";
-import { VerEditarArticulo } from "./components/VerEditarArticulo.jsx";
-import { VerEditarFamiliaArticulo } from "./components/VerEditarFamiliaArticulo.jsx";
-import { SuperAdminPanel } from "./pages/SuperAdminPanel";
-import PoliticaPrivacidad from "./pages/PoliticaPrivacidad.jsx";
-import ConfigurarArticuloConfigurablePage from "./pages/ConfigurarArticuloConfigurablePage.jsx";
-import ConfigurablePricingPage from "./pages/ConfigurablePricingPage.jsx";
-import BudgetPrintPage from "./pages/BudgetPrintPage.jsx";
+import { VerEditarUsuario } from "./components/views/VerEditarUsuario.jsx";
+import { PresupuestosPanel } from "./components/panels/PresupuestoPanel.jsx";
+import { FormPresupuesto } from "./components/forms/FormPresupuesto.jsx";
+import { VerEditarPresupuesto } from "./components/views/VerEditarPresupuesto.jsx";
+import { PedidosPanel } from "./components/panels/PedidosPanel.jsx";
+import { DetallePedido } from "./components/panels/DetallePedido.jsx";
+import { FormNuevoCliente } from "./components/forms/FormNuevoCliente";
+import { ClientesPanel } from "./components/panels/ClientesPanel.jsx";
+import { VerEditarCliente } from "./components/views/VerEditarCliente.jsx";
+import { ArticulosPanel } from "./components/panels/ArticulosPanel.jsx";
+import { FamiliasArticulosPanel } from "./components/panels/FamiliasArticulosPanel.jsx";
+import FormFamiliaArticulo from "./components/forms/FormFamiliaArticulo.jsx";
+import FormArticulo from "./components/forms/FormArticulo.jsx";
+import { VerEditarArticulo } from "./components/views/VerEditarArticulo.jsx";
+import { VerEditarFamiliaArticulo } from "./components/views/VerEditarFamiliaArticulo.jsx";
+import { SuperAdminPanel } from "./pages/admin/SuperAdminPanel";
+import PoliticaPrivacidad from "./pages/public/PoliticaPrivacidad.jsx";
+import ConfigurarArticuloConfigurablePage from "./pages/admin/ConfigurarArticuloConfigurablePage.jsx";
+import ConfigurablePricingPage from "./pages/admin/ConfigurablePricingPage.jsx";
+import BudgetPrintPage from "./pages/admin/BudgetPrintPage.jsx";
 
 // ----------------------------
 // Componente que protege rutas privadas
