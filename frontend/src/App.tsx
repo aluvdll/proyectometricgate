@@ -333,7 +333,7 @@ export default function App() {
           <Route
             path="usuarios/vereditarusuario/:id"
             element={
-              <RoleRoute allowedRoles={["admin"]}>
+              <RoleRoute allowedRoles={["admin", "commercial", "technician"]}>
                 <VerEditarUsuario />
               </RoleRoute>
             }
@@ -391,14 +391,7 @@ export default function App() {
           <Route
             path="articulos"
             element={
-              <RoleRoute
-                allowedRoles={[
-                  "admin",
-                  "commercial",
-                  "technician",
-                  "tecnician",
-                ]}
-              >
+              <RoleRoute allowedRoles={["admin", "commercial", "technician"]}>
                 <ArticulosPanel />
               </RoleRoute>
             }
@@ -414,14 +407,7 @@ export default function App() {
           <Route
             path="articulos/vereditararticulo/:id"
             element={
-              <RoleRoute
-                allowedRoles={[
-                  "admin",
-                  "commercial",
-                  "technician",
-                  "tecnician",
-                ]}
-              >
+              <RoleRoute allowedRoles={["admin", "commercial", "technician"]}>
                 <VerEditarArticulo />
               </RoleRoute>
             }

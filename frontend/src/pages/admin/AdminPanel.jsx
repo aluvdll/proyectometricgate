@@ -24,7 +24,7 @@ export function AdminPanel() {
   const rolUsuario = usuario?.role; // Admin | comercial | Tecnico
   const esAdmin = rolUsuario === "admin";
   const esComercial = rolUsuario === "commercial";
-  const esTecnico = rolUsuario === "technician" || rolUsuario === "tecnician";
+  const esTecnico = rolUsuario === "technician";
   const claseItemNav = `block py-2 px-3 rounded hover:bg-gray-800 hover:text-white ${
     estaContraido ? "text-center" : ""
   }`;

@@ -24,6 +24,7 @@ const valoresIniciales = {
 export function FormUsuario({ mode, userId }) {
   const isEdit = mode === "edit";
   const { token, user: authUser, updateUser } = useAuth();
+  const isAdmin = authUser?.role === "admin";
   const navigate = useNavigate();
   const [avatar, setAvatar] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -108,7 +109,10 @@ export function FormUsuario({ mode, userId }) {
       payload.append("phone", data.phone || "");
       payload.append("city", data.city || "");
       payload.append("province", data.province || "");
-      payload.append("role", data.role);
+
+      if (!isEdit || isAdmin) {
+        payload.append("role", data.role);
+      }
 
       if (!isEdit) {
         payload.append("email", data.email);
@@ -147,7 +151,9 @@ export function FormUsuario({ mode, userId }) {
         }
 
         showNotification("Éxito", "Usuario editado", "success");
-        setTimeout(() => navigate("/adminPanel/usuarios"), 2500);
+        setTimeout(() => {
+          navigate(isAdmin ? "/adminPanel/usuarios" : "/adminPanel");
+        }, 2500);
       } else {
         await axios.post("http://127.0.0.1:8000/api/company/users", payload, {
           headers: {
@@ -240,33 +246,35 @@ export function FormUsuario({ mode, userId }) {
           )}
         </div>
 
-        <div className="mb-6">
-          <label className="block text-sm font-bold mb-2">Rol</label>
-          <select
-            className="w-full px-3 py-2 rounded-md border border-orange-500"
-            {...register("role", {
-              required: "Debes seleccionar un rol",
-            })}
-          >
-            <option className="bg-amber-200 text-gray-700" value="">
-              Selecciona un rol
-            </option>
+        {(!isEdit || isAdmin) && (
+          <div className="mb-6">
+            <label className="block text-sm font-bold mb-2">Rol</label>
+            <select
+              className="w-full px-3 py-2 rounded-md border border-orange-500"
+              {...register("role", {
+                required: "Debes seleccionar un rol",
+              })}
+            >
+              <option className="bg-amber-200 text-gray-700" value="">
+                Selecciona un rol
+              </option>
 
-            <option className="text-gray-700" value="admin">
-              Admin
-            </option>
+              <option className="text-gray-700" value="admin">
+                Admin
+              </option>
 
-            <option className="text-gray-700" value="commercial">
-              Comercial
-            </option>
-            <option className="text-gray-700" value="technician">
-              Técnico
-            </option>
-          </select>
-          {errors.role && (
-            <p className="mt-1 text-sm text-red-500">{errors.role.message}</p>
-          )}
-        </div>
+              <option className="text-gray-700" value="commercial">
+                Comercial
+              </option>
+              <option className="text-gray-700" value="technician">
+                Técnico
+              </option>
+            </select>
+            {errors.role && (
+              <p className="mt-1 text-sm text-red-500">{errors.role.message}</p>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col lg:flex-row gap-6 mb-6">
           {!isEdit && (

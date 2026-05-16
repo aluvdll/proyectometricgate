@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const RAW_API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -81,8 +81,9 @@ export function BtnUserMenu() {
           open ? "" : "hidden"
         } absolute right-0 mt-2 w-48 bg-orange-300 border rounded shadow-lg text-gray-900 border-amber-300 `}
       >
-        <a
-          href="/adminPanel"
+        <Link
+          to="/adminPanel"
+          onClick={() => setOpen(false)}
           className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
         >
           {auth.user?.role === "super_admin"
@@ -91,18 +92,18 @@ export function BtnUserMenu() {
               ? "AdminPanel"
               : auth.user?.role === "commercial"
                 ? "ComerPanel"
-                : auth.user?.role === "technician" ||
-                    auth.user?.role === "tecnician"
+                : auth.user?.role === "technician"
                   ? "TecniPanel"
                   : ""}
-        </a>
+        </Link>
 
-        <a
-          href={`/adminPanel/usuarios/vereditarusuario/${auth.user?.id}`}
+        <Link
+          to={`/adminPanel/usuarios/vereditarusuario/${auth.user?.id}`}
+          onClick={() => setOpen(false)}
           className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
         >
           Settings
-        </a>
+        </Link>
 
         <a
           href="#"

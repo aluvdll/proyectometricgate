@@ -117,7 +117,10 @@ class UserController extends Controller
             ], 401);
         }
 
-        if ($user->role !== 'admin') {
+        $isAdmin = $user->role === 'admin';
+        $isSelf = (int) $user->id === (int) $id;
+
+        if (!$isAdmin && !$isSelf) {
             return response()->json([
                 'error' => 'No autorizado'
             ], 403);
@@ -151,42 +154,42 @@ class UserController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-$request->validate([
-    // El campo name es obligatorio y debe ser una cadena de texto
-    'name' => 'required|string',
+        $request->validate([
+            // El campo name es obligatorio y debe ser una cadena de texto
+            'name' => 'required|string',
 
-    // Validación del email del usuario
-    'email' => [
-        // El email es obligatorio
-        'required',
+            // Validación del email del usuario
+            'email' => [
+                // El email es obligatorio
+                'required',
 
-        // Debe tener formato de email válido
-        'email',
+                // Debe tener formato de email válido
+                'email',
 
-        // Regla personalizada de unicidad:
-        // El email no puede repetirse dentro de la misma empresa (company_id)
-        // Esto permite que distintos clientes tengan el mismo email en empresas diferentes,
-        // pero no dentro de la misma empresa.
-        Rule::unique('users')->where(function ($query) use ($user) {
-            return $query->where('company_id', $user->company_id);
-        }),
-    ],
+                // Regla personalizada de unicidad:
+                // El email no puede repetirse dentro de la misma empresa (company_id)
+                // Esto permite que distintos clientes tengan el mismo email en empresas diferentes,
+                // pero no dentro de la misma empresa.
+                Rule::unique('users')->where(function ($query) use ($user) {
+                    return $query->where('company_id', $user->company_id);
+                }),
+            ],
 
-    // La contraseña es obligatoria y debe tener mínimo 6 caracteres
-    'password' => 'required|min:6',
+            // La contraseña es obligatoria y debe tener mínimo 6 caracteres
+            'password' => 'required|min:6',
 
-    // DNI obligatorio como texto
-    'dni' => 'required|string',
+            // DNI obligatorio como texto
+            'dni' => 'required|string',
 
-    // El rol es obligatorio y solo puede ser uno de estos tres valores:
-    // - admin (administrador)
-    // - commercial (comercial)
-    // - technician (técnico)
-    'role' => 'required|in:admin,commercial,technician',
+            // El rol es obligatorio y solo puede ser uno de estos tres valores:
+            // - admin (administrador)
+            // - commercial (comercial)
+            // - technician (técnico)
+            'role' => 'required|in:admin,commercial,technician',
 
-    // Avatar opcional
-    'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
-]);
+            // Avatar opcional
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
+        ]);
 
         $avatarPath = null;
         if ($request->hasFile('avatar')) {
@@ -225,7 +228,10 @@ $request->validate([
             ], 401);
         }
 
-        if ($user->role !== 'admin') {
+        $isAdmin = $user->role === 'admin';
+        $isSelf = (int) $user->id === (int) $id;
+
+        if (!$isAdmin && !$isSelf) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
@@ -249,7 +255,11 @@ $request->validate([
             ],
             'password' => 'sometimes|required|min:6',
             'dni' => 'sometimes|required|string',
-            'role' => 'sometimes|required|in:admin,commercial,technician',
+            'role' => [
+                Rule::requiredIf($isAdmin),
+                'sometimes',
+                'in:admin,commercial,technician',
+            ],
             'avatar' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
             'remove_avatar' => 'sometimes|boolean',
         ]);
@@ -279,7 +289,7 @@ $request->validate([
             'city' => $request->city ?? $existingUser->city,
             'province' => $request->province ?? $existingUser->province,
             'avatar' => $avatarPath,
-            'role' => $request->role ?? $existingUser->role,
+            'role' => $isAdmin ? ($request->role ?? $existingUser->role) : $existingUser->role,
         ]);
 
         return response()->json([
