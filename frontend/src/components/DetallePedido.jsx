@@ -1,6 +1,22 @@
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { obtenerPedido, actualizarEstadoPedido } from "../services/pedidos";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+//obtener empresa
+export async function obtenerEmpresa() {
+  const res = await axios.get(`${API_URL}/api/me`, {
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+  // El backend devuelve el usuario; si incluye la relación company la usamos
+  return res.data.company;
+}
 
 export function DetallePedido() {
   const { id } = useParams();
@@ -64,22 +80,26 @@ export function DetallePedido() {
 
       // Crear HTML del PDF
       const element = document.createElement("div");
-      element.style.width = "210mm";
-      element.style.height = "297mm";
-      element.style.padding = "20mm";
+      element.style.width = "105mm";
+      element.style.height = "148mm";
+      element.style.padding = "8mm";
       element.style.boxSizing = "border-box";
       element.style.fontFamily = "Arial, sans-serif";
       element.style.backgroundColor = "#ffffff";
       element.style.display = "flex";
       element.style.flexDirection = "column";
       element.style.alignItems = "center";
-      element.style.justifyContent = "space-between";
+      element.style.justifyContent = "flex-start";
+      element.style.gap = "0";
+      element.style.overflow = "hidden";
 
       // Logo
       const logo = document.createElement("img");
-      logo.src = "/logo_MetricGate.svg";
-      logo.style.maxWidth = "200px";
-      logo.style.marginBottom = "30mm";
+      logo.src = "/logo_MetricGate.png";
+      logo.style.display = "block";
+      logo.style.maxWidth = "65mm";
+      logo.style.width = "100%";
+      logo.style.margin = "0 auto 4mm auto";
       logo.onerror = () => {
         logo.style.display = "none";
       };
@@ -87,94 +107,43 @@ export function DetallePedido() {
       // Número de matrícula
       const numeroMatricula = document.createElement("div");
       numeroMatricula.style.textAlign = "center";
-      numeroMatricula.style.marginBottom = "20mm";
+      numeroMatricula.style.width = "100%";
+      numeroMatricula.style.marginBottom = "0";
       numeroMatricula.innerHTML = `
-        <p style="font-size: 14px; color: #666; margin: 0 0 10px 0;">MATRÍCULA</p>
-        <h1 style="font-size: 48px; font-weight: bold; color: #000; margin: 0; letter-spacing: 2px;">
+        <p style="font-size: 8px; color: #666; margin: 0 0 3mm 0;">MATRÍCULA</p>
+        <h1 style="font-size: 24px; font-weight: bold; color: #000; margin: 0; letter-spacing: 1px; line-height: 1.05;">
           ${pedido.order_number}
         </h1>
       `;
 
-      // Tabla de medidas de fabricación
-      const medidasDiv = document.createElement("div");
-      medidasDiv.style.width = "100%";
-      medidasDiv.style.marginTop = "20mm";
-
-      // Colectar todas las medidas de todos los artículos configurables
-      const medidas = [];
-      if (pedido.lines) {
-        pedido.lines.forEach((linea, idx) => {
-          if (linea.article_type === "configurable" && linea.configuration) {
-            medidas.push({
-              articulo: linea.name,
-              config: linea.configuration,
-            });
-          }
-        });
-      }
-
-      if (medidas.length > 0) {
-        let tablasHTML = '<div style="page-break-inside: avoid;">';
-        medidas.forEach((item, idx) => {
-          // C = ancho_hueco, D = alto_hueco
-          const C = Number(item.config.ancho_hueco) || 0;
-          const D = Number(item.config.alto_hueco) || 0;
-
-          const medidasCalculadas = [
-            {
-              label: "Ancho cristal fijos laterales ((C/4) + 45)",
-              valor: C / 4 + 45,
-            },
-            { label: "Alto cristal fijos laterales (D)", valor: D },
-            {
-              label: "Ancho cristal hojas móviles ((C/4) - 5)",
-              valor: C / 4 - 5,
-            },
-            {
-              label: "Alto cristal hojas móviles sin plintón (D - 50)",
-              valor: D - 50,
-            },
-            {
-              label: "Ancho hueco paso libre final (C - ((C/4) + 45) × 2)",
-              valor: C - (C / 4 + 45) * 2,
-            },
-            { label: "Alto hueco de paso libre (D)", valor: D },
-          ];
-
-          tablasHTML += `
-            <div style="margin-bottom: 15mm; page-break-inside: avoid;">
-              <p style="font-size: 12px; font-weight: bold; color: #333; margin: 0 0 3px 0;">
-                ${idx + 1}. ${item.articulo}
-              </p>
-              <p style="font-size: 10px; color: #666; margin: 0 0 6px 0;">
-                C (ancho hueco) = ${C} mm &nbsp;·&nbsp; D (alto hueco) = ${D} mm
-              </p>
-              <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                <tbody>
-                  ${medidasCalculadas
-                    .map(
-                      (m, i) => `
-                    <tr style="background: ${i % 2 === 0 ? "#f0f4ff" : "#fff"}; border-bottom: 1px solid #ddd;">
-                      <td style="padding: 5px;">${m.label}</td>
-                      <td style="padding: 5px; text-align: right; font-weight: bold;">${m.valor} mm</td>
-                    </tr>
-                  `,
-                    )
-                    .join("")}
-                </tbody>
-              </table>
-            </div>
-          `;
-        });
-        tablasHTML += "</div>";
-        medidasDiv.innerHTML = tablasHTML;
-      }
+      // Datos de la empresa
+      const empresa = await obtenerEmpresa();
+      const datosEmpresa = document.createElement("div");
+      datosEmpresa.style.textAlign = "center";
+      datosEmpresa.innerHTML = `
+        <p style="font-size: 14px; font-weight: bold; color: #000; margin: 6mm 0 2mm 0;">
+          ${empresa.fiscal_name}
+        </p>
+        <p style="font-size: 9px; color: #666; margin: 0 0 1mm 0;">
+          ${empresa.address} 
+        </p>
+        
+        <p style="font-size: 9px; color: #666; margin: 0 0 1mm 0;">
+         ${empresa.city} · ${empresa.postal_code} · 
+        </p>
+        
+        <p style="font-size: 9px; color: #666; margin: 0 0 1mm 0;">
+          ${empresa.province}
+        </p>
+        
+        <p style="font-size: 9px; color: #666; margin: 0;">
+          CIF: ${empresa.cif_nif} · Tel: ${empresa.phone}
+        </p>
+      `;
 
       element.appendChild(logo);
       element.appendChild(numeroMatricula);
-      if (medidas.length > 0) {
-        element.appendChild(medidasDiv);
-      }
+      element.appendChild(datosEmpresa);
 
       // Opciones de html2pdf
       const options = {
@@ -182,7 +151,7 @@ export function DetallePedido() {
         filename: `matricula_${pedido.order_number}.pdf`,
         image: { type: "image/png", quality: 0.98 },
         html2canvas: { scale: 2 },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        jsPDF: { unit: "mm", format: "a6", orientation: "portrait" },
       };
 
       // Generar PDF
@@ -313,13 +282,13 @@ export function DetallePedido() {
       <div className="flex flex-wrap gap-3">
         {/* Botón cambiar estado */}
         {pedido.status !== "finalizado" && (
-        <button
-          onClick={() => setMostrarCambioEstado(true)}
-          disabled={pedido.status === "finalizado"}
-          className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
-        >
-          Cambiar estado
-        </button>
+          <button
+            onClick={() => setMostrarCambioEstado(true)}
+            disabled={pedido.status === "finalizado"}
+            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+          >
+            Cambiar estado
+          </button>
         )}
         {/* Botón generar matrícula (solo si finalizado) */}
         {pedido.status === "finalizado" && (
