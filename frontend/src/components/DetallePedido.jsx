@@ -312,13 +312,15 @@ export function DetallePedido() {
       {/* BOTONES DE ACCIÓN */}
       <div className="flex flex-wrap gap-3">
         {/* Botón cambiar estado */}
+        {pedido.status !== "finalizado" && (
         <button
           onClick={() => setMostrarCambioEstado(true)}
+          disabled={pedido.status === "finalizado"}
           className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
         >
           Cambiar estado
         </button>
-
+        )}
         {/* Botón generar matrícula (solo si finalizado) */}
         {pedido.status === "finalizado" && (
           <button

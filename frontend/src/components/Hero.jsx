@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import heroImg from "../assets/images/hero2.jpg";
-import logoMetricGate from "../../public/fav_icon_metricGates.svg";
+import logoMetricGate from "/fav_icon_metricGates.svg";
 import { FloatingWhatsApp } from "react-floating-whatsapp";
 
 export function Hero() {
