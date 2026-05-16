@@ -35,32 +35,6 @@ export function AdminPanel() {
             Dashboard
           </Link>
 
-          {/* Visible para admin, commercial y technician */}
-          <Link
-            to="/adminPanel/pedidos"
-            className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
-          >
-            Pedidos
-          </Link>
-
-          {isAdmin && (
-            <Link
-              to="/adminPanel/usuarios"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
-            >
-              Usuarios
-            </Link>
-          )}
-
-          {isAdmin && (
-            <Link
-              to="/adminPanel/usuarios/nuevouser"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
-            >
-              Nuevo Usuario
-            </Link>
-          )}
-
           {!isTechnician && (
             <Link
               to="/adminPanel/presupuestos"
@@ -78,6 +52,16 @@ export function AdminPanel() {
               Nuevo Presupuesto
             </Link>
           )}
+
+          {/* Visible para admin, commercial y technician */}
+          <Link
+            to="/adminPanel/pedidos"
+            className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+          >
+            Pedidos
+          </Link>
+
+       
 
           {(isAdmin || isCommercial) && (
             <Link
@@ -106,12 +90,29 @@ export function AdminPanel() {
             </Link>
           )}
 
-          {(isAdmin || isCommercial) && (
+          {isAdmin && (
             <Link
-              to="/adminPanel/articulos/tarifas-configurables"
+              to="/adminPanel/articulos/nuevoarticulo"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
-              Tarifas Configurables
+              Nuevo Articulo
+            </Link>
+          )}
+             {isAdmin && (
+            <Link
+              to="/adminPanel/usuarios"
+              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+            >
+              Usuarios
+            </Link>
+          )}
+
+          {isAdmin && (
+            <Link
+              to="/adminPanel/usuarios/nuevouser"
+              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+            >
+              Nuevo Usuario
             </Link>
           )}
 
@@ -121,15 +122,6 @@ export function AdminPanel() {
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
               Familias
-            </Link>
-          )}
-
-          {isAdmin && (
-            <Link
-              to="/adminPanel/articulos/nuevoarticulo"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
-            >
-              Nuevo Articulo
             </Link>
           )}
 

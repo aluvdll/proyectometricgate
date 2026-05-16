@@ -54,16 +54,25 @@ export const ClientesPanel = () => {
   return (
     <div className="container w-full mt-1">
       <div className="w-full mx-auto rounded-md border border-orange-400 p-3 shadow-amber-600">
-        <div className="mb-2 flex flex-row items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-gray-700 dark:text-gray-200">
             Clientes
           </h2>
 
           {/* Componente de búsqueda */}
-          <div className="flex justify-end ">
+            <div className="flex items-center gap-2">
             <div className="w-56">
               <UserSearch value={textoBusqueda} onChange={setTextoBusqueda} />
             </div>
+
+            {/* Botón para crear nuevo cliente, visible solo para admin*/}
+            <button
+              type="button"
+              onClick={() => navigate("/adminPanel/clientes/nuevocliente")}
+              className="rounded-md bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+            >
+              Nuevo Cliente
+            </button>
           </div>
         </div>
 
