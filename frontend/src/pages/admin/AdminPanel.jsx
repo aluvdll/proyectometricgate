@@ -1,9 +1,8 @@
+import { useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import {
-  Home,
   User,
   LayoutDashboard,
-  Settings,
   StickyNoteCheck,
   StickyNotePlus,
   ClipboardClock,
@@ -13,156 +12,195 @@ import {
   BookPlus,
   UserPlus,
   Notebook,
-  NotebookPen
+  NotebookPen,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export function AdminPanel() {
-  const { user } = useAuth();
-  const userRole = user?.role; // Admin | comercial | Tecnico
-  const isAdmin = userRole === "admin";
-  const isCommercial = userRole === "commercial";
-  const isTechnician = userRole === "technician" || userRole === "tecnician";
-  console.log("USER EN CONTEXTO:", user);
-  console.log("ROL:", user?.role);
+  const [estaContraido, setEstaContraido] = useState(false);
+  const { user: usuario } = useAuth();
+  const rolUsuario = usuario?.role; // Admin | comercial | Tecnico
+  const esAdmin = rolUsuario === "admin";
+  const esComercial = rolUsuario === "commercial";
+  const esTecnico = rolUsuario === "technician" || rolUsuario === "tecnician";
+  const claseItemNav = `block py-2 px-3 rounded hover:bg-gray-800 hover:text-white ${
+    estaContraido ? "text-center" : ""
+  }`;
+  const claseIcono = estaContraido ? "mx-auto" : "inline-block mr-2";
+  console.log("USER EN CONTEXTO:", usuario);
+  console.log("ROL:", usuario?.role);
 
   return (
-    <div className="flex min-h-screen items-start pt-16">
-      <aside className="min-h-[calc(100vh-4rem)] bg-orange-400 text-gray-800 dark:bg-gray-500 flex flex-col">
-        <div className="p-4 mt-6 font-bold flex justify-center text-2xl">
-          {/*Titulo dinamico segun rol*/}
-          <span className="text-orange-600">
-            {isAdmin
-              ? "Admin"
-              : isCommercial
-                ? "Comer"
-                : isTechnician
-                  ? "Tecni"
-                  : ""}
-          </span>
-          Panel
+    <div className="flex h-full pt-16">
+      <aside
+        className={`h-full bg-orange-400 text-gray-800 dark:bg-gray-400 flex flex-col transition-all duration-300 ${
+          estaContraido ? "w-20" : "w-72"
+        }`}
+      >
+        <div className="p-4 mt-6 font-bold flex items-center justify-between text-2xl">
+          {!estaContraido && (
+            <div className="flex justify-center w-full">
+              {/*Titulo dinamico segun rol*/}
+              <span className="text-orange-600">
+                {esAdmin
+                  ? "Admin"
+                  : esComercial
+                    ? "Comer"
+                    : esTecnico
+                      ? "Tecni"
+                      : ""}
+              </span>
+              Panel
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setEstaContraido((anterior) => !anterior)}
+            className="rounded p-2 hover:bg-gray-800 hover:text-white"
+            aria-label={estaContraido ? "Expandir menu" : "Contraer menu"}
+            title={estaContraido ? "Expandir menu" : "Contraer menu"}
+          >
+            {estaContraido ? (
+              <ChevronsRight size={18} />
+            ) : (
+              <ChevronsLeft size={18} />
+            )}
+          </button>
         </div>
 
-        <nav className="flex-1 px-6 pt-1 space-y-1">
-          <Link
-            to="/adminPanel"
-            className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
-          >
-            <LayoutDashboard className="inline-block mr-2" size={16} />
-            Dashboard
+        <nav
+          className={`flex-1 pt-1 space-y-1 ${estaContraido ? "px-2" : "px-6"}`}
+        >
+          <Link to="/adminPanel" className={claseItemNav} title="Dashboard">
+            <LayoutDashboard className={claseIcono} size={16} />
+            {!estaContraido && "Dashboard"}
           </Link>
 
-          {!isTechnician && (
+          {!esTecnico && (
             <Link
               to="/adminPanel/presupuestos"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Presupuestos"
             >
-              <StickyNoteCheck className="inline-block mr-2" size={16} />
-              Presupuestos
+              <StickyNoteCheck className={claseIcono} size={16} />
+              {!estaContraido && "Presupuestos"}
             </Link>
           )}
 
-          {!isTechnician && (
+          {!esTecnico && (
             <Link
               to="/adminPanel/presupuestos/nuevopresupuesto"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Nuevo Presupuesto"
             >
-              <StickyNotePlus className="inline-block mr-2" size={16} />
-              Nuevo Presupuesto
+              <StickyNotePlus className={claseIcono} size={16} />
+              {!estaContraido && "Nuevo Presupuesto"}
             </Link>
           )}
 
           {/* Visible para admin, commercial y technician */}
           <Link
             to="/adminPanel/pedidos"
-            className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+            className={claseItemNav}
+            title="Pedidos"
           >
-            <ClipboardClock className="inline-block mr-2" size={16} />
-            Pedidos
+            <ClipboardClock className={claseIcono} size={16} />
+            {!estaContraido && "Pedidos"}
           </Link>
 
-          {(isAdmin || isCommercial) && (
+          {(esAdmin || esComercial) && (
             <Link
               to="/adminPanel/clientes"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Clientes"
             >
-              <UserRound className="inline-block mr-2" size={16} />
-              Clientes
+              <UserRound className={claseIcono} size={16} />
+              {!estaContraido && "Clientes"}
             </Link>
           )}
 
-          {(isAdmin || isCommercial) && (
+          {(esAdmin || esComercial) && (
             <Link
               to="/adminPanel/clientes/nuevocliente"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Nuevo Cliente"
             >
-              <UserRoundPen className="inline-block mr-2" size={16} />
-              Nuevo Cliente
+              <UserRoundPen className={claseIcono} size={16} />
+              {!estaContraido && "Nuevo Cliente"}
             </Link>
           )}
 
-          {(isAdmin || isCommercial || isTechnician) && (
+          {(esAdmin || esComercial || esTecnico) && (
             <Link
               to="/adminPanel/articulos"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Articulos"
             >
-              <BookA className="inline-block mr-2" size={16} />
-              Articulos
+              <BookA className={claseIcono} size={16} />
+              {!estaContraido && "Articulos"}
             </Link>
           )}
 
-          {isAdmin && (
+          {esAdmin && (
             <Link
               to="/adminPanel/articulos/nuevoarticulo"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Nuevo Articulo"
             >
-              <BookPlus className="inline-block mr-2" size={16} />
-              Nuevo Articulo
+              <BookPlus className={claseIcono} size={16} />
+              {!estaContraido && "Nuevo Articulo"}
             </Link>
           )}
-          {isAdmin && (
+          {esAdmin && (
             <Link
               to="/adminPanel/usuarios"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Usuarios"
             >
-              <User className="inline-block mr-2" size={16} />  
-              Usuarios
+              <User className={claseIcono} size={16} />
+              {!estaContraido && "Usuarios"}
             </Link>
           )}
 
-          {isAdmin && (
+          {esAdmin && (
             <Link
               to="/adminPanel/usuarios/nuevouser"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Nuevo Usuario"
             >
-              <UserPlus className="inline-block mr-2" size={16} />  
-              Nuevo Usuario
+              <UserPlus className={claseIcono} size={16} />
+              {!estaContraido && "Nuevo Usuario"}
             </Link>
           )}
 
-          {isAdmin && (
+          {esAdmin && (
             <Link
               to="/adminPanel/familias"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Familias"
             >
-              <Notebook className="inline-block mr-2" size={16} />
-              Familias
+              <Notebook className={claseIcono} size={16} />
+              {!estaContraido && "Familias"}
             </Link>
           )}
 
-          {isAdmin && (
+          {esAdmin && (
             <Link
               to="/adminPanel/familias/nuevafamilia"
-              className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
+              className={claseItemNav}
+              title="Crear Familia"
             >
-              <NotebookPen className="inline-block mr-2" size={16} />
-              Crear Familia
+              <NotebookPen className={claseIcono} size={16} />
+              {!estaContraido && "Crear Familia"}
             </Link>
           )}
         </nav>
       </aside>
 
-      <main className="min-h-[calc(100vh-4rem)] flex-1 p-6">
+      <main className="h-full flex-1 p-6 overflow-y-auto">
         <Outlet />
       </main>
     </div>
