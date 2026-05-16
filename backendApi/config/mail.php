@@ -47,6 +47,11 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            // Opciones para desactivar verificación SSL en desarrollo
+            'options' => [
+                'verify_peer' => env('MAIL_VERIFY_PEER', false) === 'true',
+                'verify_peer_name' => env('MAIL_VERIFY_PEER', false) === 'true',
+            ],
         ],
 
         'ses' => [

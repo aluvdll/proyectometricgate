@@ -12,8 +12,13 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PanelEmpresasController;
 use App\Http\Controllers\Api\StandardArticleController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\StripeController;
 
-
+Route::post('/checkout', [StripeController::class, 'checkout']);
+Route::post('/checkout/confirm', [StripeController::class, 'confirmPaymentAndSendRegistrationEmail']);
+Route::get('/checkout/registration/info', [StripeController::class, 'registrationInfo']);
+Route::post('/checkout/registration/complete', [StripeController::class, 'completeRegistration']);
+Route::post('/stripe/webhook', [StripeController::class, 'webhook']);
 /*
 |--------------------------------------------------------------------------
 | AUTH (login público)
@@ -23,9 +28,26 @@ use App\Http\Controllers\Api\UserController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-use App\Http\Controllers\StripeController;
 
-Route::post('/checkout', [StripeController::class, 'checkout']);
+// Ruta de prueba de correo (solo local)
+if (app()->environment('local')) {
+    Route::get('/test-mail', function () {
+        try {
+            \Illuminate\Support\Facades\Mail::raw('Prueba SMTP desde Laravel - ' . now(), function ($message) {
+                $message->to('vdll1986@gmail.com')
+                    ->subject('Test Mail Laravel ' . now()->format('Y-m-d H:i:s'));
+            });
+            return response()->json(['status' => 'Mail sent (check logs or inbox)', 'config' => [
+                'driver' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'encryption' => config('mail.mailers.smtp.encryption'),
+            ]]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    });
+}
 
 /*
 |--------------------------------------------------------------------------

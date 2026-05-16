@@ -12,6 +12,7 @@ import { ResetPassword } from "./pages/public/ResetPassword";
 import { PoliticaCookies } from "./pages/public/PoliticaCookies";
 import PagoAceptado from "./pages/public/PagoAceptado.jsx";
 import PagoCancelado from "./pages/public/PagoCancelado.jsx";
+import RegistroEmpresaPago from "./pages/public/RegistroEmpresaPago.jsx";
 
 // Páginas privadas (Admin)
 import { AdminPanel } from "./pages/admin/AdminPanel";
@@ -169,6 +170,14 @@ export default function App() {
           element={
             <PublicLayout>
               <PagoCancelado />
+            </PublicLayout>
+          }
+        />
+        <Route
+          path="/registro-empresa"
+          element={
+            <PublicLayout>
+              <RegistroEmpresaPago />
             </PublicLayout>
           }
         />
