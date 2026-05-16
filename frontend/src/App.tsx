@@ -10,6 +10,8 @@ import { Tarifas } from "./pages/public/TarifasPage";
 import { RecuperarContraseña } from "./pages/public/RecuperarContraseña";
 import { ResetPassword } from "./pages/public/ResetPassword";
 import { PoliticaCookies } from "./pages/public/PoliticaCookies";
+import PagoAceptado from "./pages/public/PagoAceptado.jsx";
+import PagoCancelado from "./pages/public/PagoCancelado.jsx";
 
 // Páginas privadas (Admin)
 import { AdminPanel } from "./pages/admin/AdminPanel";
@@ -151,6 +153,22 @@ export default function App() {
           element={
             <PublicLayout>
               <Contacto />
+            </PublicLayout>
+          }
+        />
+        <Route
+          path="/pago-aceptado"
+          element={
+            <PublicLayout>
+              <PagoAceptado />
+            </PublicLayout>
+          }
+        />
+        <Route
+          path="/pago-cancelado"
+          element={
+            <PublicLayout>
+              <PagoCancelado />
             </PublicLayout>
           }
         />

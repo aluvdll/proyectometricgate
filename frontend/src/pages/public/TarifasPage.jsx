@@ -15,12 +15,47 @@ export const Tarifas = () => {
     setTimeout(() => setNotifyVisible(false), 3500);
   };
 
-  const handlePagaAhora = () => {
-    showNotification(
-      "Pago en preparacion",
-      "Estamos preparando la pasarela de pago. Contacta con soporte para activar tu plan.",
-      "success",
-    );
+  const handleCheckout = async (plan = "basica") => {
+    try {
+      if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
+        showNotification(
+          "Configuracion incompleta",
+          "Falta VITE_STRIPE_PUBLISHABLE_KEY en el archivo .env del frontend.",
+          "error",
+        );
+        return;
+      }
+
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+      const response = await fetch(`${apiUrl}/api/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan }),
+      });
+
+      if (!response.ok) {
+        throw new Error("No se pudo crear la sesion de pago.");
+      }
+
+      const session = await response.json();
+      const sessionUrl = session?.url;
+
+      if (!sessionUrl) {
+        throw new Error("La respuesta del backend no incluye session.url.");
+      }
+
+      window.location.href = sessionUrl;
+    } catch (error) {
+      showNotification(
+        "Error en el pago",
+        error?.message ||
+          "No se pudo iniciar el pago. Revisa backend, claves Stripe y red.",
+        "error",
+      );
+    }
   };
 
   return (
@@ -56,7 +91,7 @@ export const Tarifas = () => {
                 type="button"
                 aria-describedby="tier-standard"
                 className="mt-6 block rounded-md px-3 py-2 text-center text-base font-medium leading-6 text-orange-500 ring-1 ring-inset ring-blue-200 hover:border-2 hover:border-amber-50 hover:bg-orange-800"
-                onClick={handlePagaAhora}
+                onClick={() => handleCheckout("basica")}
               >
                 Paga ahora
               </button>
@@ -147,7 +182,7 @@ export const Tarifas = () => {
                 type="button"
                 aria-describedby="tier-extended"
                 className="mt-6 block rounded-md bg-orange-500 px-3 py-2 text-center text-base font-medium leading-6 text-white shadow-sm hover:border-2 hover:border-amber-50 hover:bg-orange-800"
-                onClick={handlePagaAhora}
+                onClick={() => handleCheckout("extendida")}
               >
                 Paga ahora
               </button>
@@ -225,3 +260,5 @@ export const Tarifas = () => {
     </>
   );
 };
+
+export default Tarifas;

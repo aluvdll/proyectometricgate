@@ -23,6 +23,9 @@ use App\Http\Controllers\Api\UserController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+use App\Http\Controllers\StripeController;
+
+Route::post('/checkout', [StripeController::class, 'checkout']);
 
 /*
 |--------------------------------------------------------------------------
