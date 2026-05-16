@@ -235,7 +235,9 @@ export function DetallePedido() {
       };
     }
 
-    const medidasDescripcion = extraerMedidasDesdeDescripcion(linea?.description);
+    const medidasDescripcion = extraerMedidasDesdeDescripcion(
+      linea?.description,
+    );
     if (medidasDescripcion) {
       return {
         C: medidasDescripcion.C,
@@ -258,7 +260,10 @@ export function DetallePedido() {
   };
 
   const esLineaConfigurableVisual = (linea) => {
-    if (linea?.article_type === "configurable" || linea?.configurable_article_id) {
+    if (
+      linea?.article_type === "configurable" ||
+      linea?.configurable_article_id
+    ) {
       return true;
     }
 
@@ -444,40 +449,40 @@ export function DetallePedido() {
                           ? savedMedidas
                           : hasBaseMedidas
                             ? [
-                              {
-                                label: "Ancho cristal de fijos laterales",
-                                formula: "(C/4) + 45",
-                                valor: Number((C / 4 + 45).toFixed(2)),
-                              },
-                              {
-                                label: "Alto cristal de los fijos laterales",
-                                formula: "D",
-                                valor: Number(D.toFixed(2)),
-                              },
-                              {
-                                label: "Ancho cristal de las hojas móviles",
-                                formula: "(C/4) - 5",
-                                valor: Number((C / 4 - 5).toFixed(2)),
-                              },
-                              {
-                                label:
-                                  "Alto cristal de las hojas móviles (sin perfil plintón)",
-                                formula: "D - 50",
-                                valor: Number((D - 50).toFixed(2)),
-                              },
-                              {
-                                label: "Ancho hueco de paso libre final",
-                                formula: "C - ((C/4) + 45) × 2",
-                                valor: Number(
-                                  (C - (C / 4 + 45) * 2).toFixed(2),
-                                ),
-                              },
-                              {
-                                label: "Alto hueco de paso libre",
-                                formula: "D",
-                                valor: Number(D.toFixed(2)),
-                              },
-                            ]
+                                {
+                                  label: "Ancho cristal de fijos laterales",
+                                  formula: "(C/4) + 45",
+                                  valor: Number((C / 4 + 45).toFixed(2)),
+                                },
+                                {
+                                  label: "Alto cristal de los fijos laterales",
+                                  formula: "D",
+                                  valor: Number(D.toFixed(2)),
+                                },
+                                {
+                                  label: "Ancho cristal de las hojas móviles",
+                                  formula: "(C/4) - 5",
+                                  valor: Number((C / 4 - 5).toFixed(2)),
+                                },
+                                {
+                                  label:
+                                    "Alto cristal de las hojas móviles (sin perfil plintón)",
+                                  formula: "D - 50",
+                                  valor: Number((D - 50).toFixed(2)),
+                                },
+                                {
+                                  label: "Ancho hueco de paso libre final",
+                                  formula: "C - ((C/4) + 45) × 2",
+                                  valor: Number(
+                                    (C - (C / 4 + 45) * 2).toFixed(2),
+                                  ),
+                                },
+                                {
+                                  label: "Alto hueco de paso libre",
+                                  formula: "D",
+                                  valor: Number(D.toFixed(2)),
+                                },
+                              ]
                             : [];
 
                         if (!medidas.length) {
@@ -491,7 +496,8 @@ export function DetallePedido() {
                             </p>
                             {hasBaseMedidas ? (
                               <p className="mb-2 text-blue-500 dark:text-blue-400">
-                                C (ancho hueco) = {C} mm · D (alto hueco) = {D} mm
+                                C (ancho hueco) = {C} mm · D (alto hueco) = {D}{" "}
+                                mm
                               </p>
                             ) : (
                               <p className="mb-2 text-blue-500 dark:text-blue-400">
