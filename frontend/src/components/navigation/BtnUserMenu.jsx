@@ -110,7 +110,7 @@ export function BtnUserMenu() {
           onClick={handlerlogout}
           className="block px-4 py-2 hover:bg-orange-400 hover:transition-colors-duration-200 text-red-500 hover:text-white transition-colors duration-1000"
         >
-          Logout
+          Cerrar Sesión
         </a>
       </div>
     </div>
