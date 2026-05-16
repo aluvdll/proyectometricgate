@@ -1,4 +1,20 @@
 import { Link, Outlet } from "react-router-dom";
+import {
+  Home,
+  User,
+  LayoutDashboard,
+  Settings,
+  StickyNoteCheck,
+  StickyNotePlus,
+  ClipboardClock,
+  UserRound,
+  UserRoundPen,
+  BookA,
+  BookPlus,
+  UserPlus,
+  Notebook,
+  NotebookPen
+} from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export function AdminPanel() {
@@ -32,6 +48,7 @@ export function AdminPanel() {
             to="/adminPanel"
             className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
           >
+            <LayoutDashboard className="inline-block mr-2" size={16} />
             Dashboard
           </Link>
 
@@ -40,6 +57,7 @@ export function AdminPanel() {
               to="/adminPanel/presupuestos"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <StickyNoteCheck className="inline-block mr-2" size={16} />
               Presupuestos
             </Link>
           )}
@@ -49,6 +67,7 @@ export function AdminPanel() {
               to="/adminPanel/presupuestos/nuevopresupuesto"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <StickyNotePlus className="inline-block mr-2" size={16} />
               Nuevo Presupuesto
             </Link>
           )}
@@ -58,16 +77,16 @@ export function AdminPanel() {
             to="/adminPanel/pedidos"
             className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
           >
+            <ClipboardClock className="inline-block mr-2" size={16} />
             Pedidos
           </Link>
-
-       
 
           {(isAdmin || isCommercial) && (
             <Link
               to="/adminPanel/clientes"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <UserRound className="inline-block mr-2" size={16} />
               Clientes
             </Link>
           )}
@@ -77,6 +96,7 @@ export function AdminPanel() {
               to="/adminPanel/clientes/nuevocliente"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <UserRoundPen className="inline-block mr-2" size={16} />
               Nuevo Cliente
             </Link>
           )}
@@ -86,6 +106,7 @@ export function AdminPanel() {
               to="/adminPanel/articulos"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <BookA className="inline-block mr-2" size={16} />
               Articulos
             </Link>
           )}
@@ -95,14 +116,16 @@ export function AdminPanel() {
               to="/adminPanel/articulos/nuevoarticulo"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <BookPlus className="inline-block mr-2" size={16} />
               Nuevo Articulo
             </Link>
           )}
-             {isAdmin && (
+          {isAdmin && (
             <Link
               to="/adminPanel/usuarios"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <User className="inline-block mr-2" size={16} />  
               Usuarios
             </Link>
           )}
@@ -112,6 +135,7 @@ export function AdminPanel() {
               to="/adminPanel/usuarios/nuevouser"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <UserPlus className="inline-block mr-2" size={16} />  
               Nuevo Usuario
             </Link>
           )}
@@ -121,6 +145,7 @@ export function AdminPanel() {
               to="/adminPanel/familias"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <Notebook className="inline-block mr-2" size={16} />
               Familias
             </Link>
           )}
@@ -130,6 +155,7 @@ export function AdminPanel() {
               to="/adminPanel/familias/nuevafamilia"
               className="block py-2 px-3 rounded hover:bg-gray-800 hover:text-white"
             >
+              <NotebookPen className="inline-block mr-2" size={16} />
               Crear Familia
             </Link>
           )}

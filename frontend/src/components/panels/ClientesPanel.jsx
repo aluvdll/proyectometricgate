@@ -4,6 +4,7 @@ import { NotificationModal } from "../modals/NotificationModal";
 import { UserSearch } from "../shared/UserSearch.jsx";
 import { obtenerClientesEmpresa } from "../../services/clientes";
 
+
 export const ClientesPanel = () => {
   const [clientes, setClientes] = useState([]);
   const [cargando, setCargando] = useState(true);
