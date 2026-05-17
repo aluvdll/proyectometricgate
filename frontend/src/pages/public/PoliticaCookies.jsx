@@ -1,7 +1,7 @@
 export function PoliticaCookies() {
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-12 text-gray-800 dark:text-gray-100">
-      <h1 className="mb-6 text-3xl font-bold">Política de Cookies</h1>
+    <div className="mt-15 mx-auto w-full max-w-4xl px-6 py-12 text-gray-800 dark:text-gray-100">
+      <h1 className="mt-10 text-3xl font-bold">Política de Cookies</h1>
 
       <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
         Última actualización: 9 de mayo de 2026

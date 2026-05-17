@@ -1,5 +1,23 @@
 import { useState } from "react";
 import { NotificationModal } from "../../components/modals/NotificationModal";
+import axios from "axios";
+
+const CONTACT_API_URL =
+  import.meta.env.VITE_CONTACT_API_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://127.0.0.1:8000";
+
+function getAlternateHostUrl(url) {
+  if (url.includes("127.0.0.1")) {
+    return url.replace("127.0.0.1", "localhost");
+  }
+
+  if (url.includes("localhost")) {
+    return url.replace("localhost", "127.0.0.1");
+  }
+
+  return null;
+}
 
 export function Contacto() {
   const [formData, setFormData] = useState({
@@ -34,13 +52,29 @@ export function Contacto() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:3001/contact/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const endpoint = `${CONTACT_API_URL}/api/contact/send-email`;
 
-      if (!res.ok) throw new Error("Error al enviar el mensaje");
+      try {
+        await axios.post(endpoint, formData, {
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (error) {
+        const isNetworkError = axios.isAxiosError(error) && !error.response;
+
+        if (!isNetworkError) {
+          throw error;
+        }
+
+        const alternateEndpoint = getAlternateHostUrl(endpoint);
+
+        if (!alternateEndpoint) {
+          throw error;
+        }
+
+        await axios.post(alternateEndpoint, formData, {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
       setFormData({ name: "", email: "", message: "" });
       showNotification(
@@ -50,9 +84,16 @@ export function Contacto() {
       );
     } catch (err) {
       console.error(err);
+
+      const backendMessage =
+        axios.isAxiosError(err) && typeof err.response?.data?.error === "string"
+          ? err.response.data.error
+          : null;
+
       showNotification(
         "Error",
-        "No se pudo enviar el mensaje. Revisa la consola del servidor.",
+        backendMessage ||
+          "No se pudo enviar el mensaje. Revisa la consola del servidor.",
         "error",
       );
     }

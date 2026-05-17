@@ -75,7 +75,7 @@ export const Tarifas = () => {
                   id="tier-standard"
                   className="text-2xl font-semibold leading-8 text-gray-900 dark:text-white"
                 >
-                  Basica
+                  Básica
                 </h3>
               </div>
               <p className="mt-4 text-base leading-6 text-gray-900 dark:text-gray-100">
@@ -115,7 +115,8 @@ export const Tarifas = () => {
                       d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     ></path>
                   </svg>
-                  Perfil comercial/tecnico
+                  Paga cuando lo necesites, <br />
+                  sin compromiso de permanencia
                 </li>
                 <li className="flex gap-x-3 text-base">
                   <svg
@@ -151,7 +152,8 @@ export const Tarifas = () => {
                       d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     ></path>
                   </svg>
-                  Asistencia remota basica
+                  Asistencia remota básica <br />
+                  (3h mensuales con cita previa)
                 </li>
               </ul>
             </div>
@@ -206,7 +208,8 @@ export const Tarifas = () => {
                       d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     ></path>
                   </svg>
-                  Asistencia remota premium
+                  Asistencia remota premium <br />
+                  (5h mensuales con cita, con prioridad en agenda)
                 </li>
                 <li className="flex gap-x-3 text-base">
                   <svg
@@ -224,7 +227,7 @@ export const Tarifas = () => {
                       d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     ></path>
                   </svg>
-                  Perfil administrador activo
+                  1 Plantilla de artículo configurable gratuita
                 </li>
                 <li className="flex gap-x-3 text-base">
                   <svg
@@ -242,7 +245,7 @@ export const Tarifas = () => {
                       d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     ></path>
                   </svg>
-                  Respaldo de datos ilimitado
+                  Respaldo de datos hasta 5 años por pago
                 </li>
               </ul>
             </div>

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ConfigurableArticleController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PanelEmpresasController;
 use App\Http\Controllers\Api\StandardArticleController;
+use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\StripeController;
 
@@ -28,6 +29,7 @@ Route::post('/stripe/webhook', [StripeController::class, 'webhook']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/contact/send-email', [ContactController::class, 'sendEmail']);
 
 // Ruta de prueba de correo (solo local)
 if (app()->environment('local')) {
