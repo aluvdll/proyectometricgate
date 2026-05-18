@@ -186,3 +186,43 @@ Si renueva correctamente, vuelve a copiar certificados a `docker/certs` y recarg
 - En esta configuracion se compila con `VITE_API_URL=https://www.metricgate.es`.
 - Si cambias dominio en produccion, rebuild del frontend para hornear la nueva URL.
 - Si una migracion historica falla por llaves foraneas largas o migraciones duplicadas, ejecutar migraciones puntuales con `--path`.
+
+## 12) DNS LAN con Docker (Bind9, opcional)
+
+Este repo incluye un servicio DNS opcional llamado `dns` para resolver `metricgate.es` y `www.metricgate.es` desde varias maquinas de tu red local.
+
+Archivos incluidos:
+
+- `dns/bind/named.conf`
+- `dns/bind/named.conf.options`
+- `dns/bind/named.conf.local`
+- `dns/bind/zones/db.metricgate.es`
+
+### 12.1 Ajustes previos
+
+1. Edita `dns/bind/zones/db.metricgate.es` y cambia `192.168.1.50` por la IP LAN real de tu servidor (donde corre `edge-nginx`).
+2. Si tu red no es `192.168.1.0/24`, ajusta `allow-recursion` en `dns/bind/named.conf.options`.
+
+### 12.2 Levantar DNS
+
+`docker compose --profile lan-dns up -d dns`
+
+Si quieres levantar todo junto (app + dns):
+
+`docker compose --env-file .env --profile lan-dns up -d --build`
+
+### 12.3 Configurar clientes LAN
+
+Configura en router DHCP (recomendado) o manualmente en cada equipo el DNS primario apuntando a la IP LAN del servidor Docker.
+
+### 12.4 Probar resolucion
+
+Desde un cliente de la LAN:
+
+`nslookup metricgate.es <IP_DNS_LAN>`
+`nslookup www.metricgate.es <IP_DNS_LAN>`
+
+### 12.5 Notas
+
+- Si Ubuntu ya tiene un DNS local ocupando el puerto 53 en esa maquina, libera el puerto o ejecuta DNS en otro host.
+- Si usas certificado autofirmado, cada cliente debe confiar ese certificado para evitar advertencias HTTPS.
