@@ -63,7 +63,7 @@ class StripeController extends Controller
         }
 
         return response()->json([
-            'status' => 'success'
+            'status' => 'ok'
         ]);
     }
 
@@ -77,7 +77,7 @@ class StripeController extends Controller
 
         if (!array_key_exists($requestedPlan, $plans)) {
             return response()->json([
-                'message' => 'Plan no valido.',
+                'message' => 'Plan no válido.',
                 'available_plans' => array_keys($plans),
             ], 422);
         }
@@ -125,20 +125,20 @@ class StripeController extends Controller
             $session = Session::retrieve($validated['session_id']);
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'No se pudo verificar la sesion de pago.',
+                'message' => 'No se pudo verificar la sesión de pago.',
             ], 422);
         }
 
         if (($session->payment_status ?? null) !== 'paid') {
             return response()->json([
-                'message' => 'El pago aun no aparece como completado.',
+                'message' => 'El pago aún no aparece como completado.',
             ], 409);
         }
 
         $cacheKey = 'stripe_registration_email_sent_' . $session->id;
         if (Cache::has($cacheKey)) {
             return response()->json([
-                'message' => 'Correo de registro ya enviado para esta sesion.',
+                'message' => 'Correo de registro ya enviado para esta sesión.',
                 'already_sent' => true,
             ]);
         }
@@ -148,7 +148,7 @@ class StripeController extends Controller
 
         if (!$customerEmail) {
             return response()->json([
-                'message' => 'No se encontro un email del cliente en la sesion.',
+                'message' => 'No se encontró un email del cliente en la sesión.',
             ], 422);
         }
 
@@ -185,7 +185,7 @@ class StripeController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Pago verificado, pero fallo el envio del correo.',
+                'message' => 'Pago verificado, pero falló el envío del correo.',
             ], 500);
         }
 
@@ -207,14 +207,14 @@ class StripeController extends Controller
 
         if (!$registration) {
             return response()->json([
-                'message' => 'El enlace de registro es invalido o ha expirado.',
+                'message' => 'El enlace de registro es inválido o ha expirado.',
             ], 404);
         }
 
         $completedCacheKey = 'stripe_registration_completed_' . $registration['session_id'];
         if (Cache::has($completedCacheKey)) {
             return response()->json([
-                'message' => 'Este registro ya se completo anteriormente.',
+                'message' => 'Este registro ya se completó anteriormente.',
                 'already_completed' => true,
             ], 409);
         }
@@ -253,8 +253,39 @@ class StripeController extends Controller
             'admin_city' => 'nullable|string|max:100',
             'admin_province' => 'nullable|string|max:100',
         ], [
-            'admin_email.same' => 'El email del administrador y su confirmacion deben coincidir.',
-            'admin_password.confirmed' => 'La contraseña del administrador y su confirmacion deben coincidir.',
+            'required' => 'El campo :attribute es obligatorio.',
+            'string' => 'El campo :attribute debe ser un texto válido.',
+            'email' => 'El campo :attribute debe ser un correo electrónico válido.',
+            'max' => 'El campo :attribute no puede tener más de :max caracteres.',
+            'min' => 'El campo :attribute debe tener al menos :min caracteres.',
+            'unique' => 'El campo :attribute ya está registrado.',
+            'token.required' => 'Falta el token de registro.',
+            'token.string' => 'El token de registro no es válido.',
+            'admin_email.same' => 'El email del administrador y su confirmación deben coincidir.',
+            'admin_password.confirmed' => 'La contraseña del administrador y su confirmación deben coincidir.',
+            'admin_dni.unique' => 'El DNI del administrador ya está registrado.',
+        ], [
+            'token' => 'token de registro',
+            'fiscal_name' => 'nombre fiscal',
+            'commercial_name' => 'nombre comercial',
+            'cif_nif' => 'CIF/NIF',
+            'email' => 'email de empresa',
+            'address' => 'dirección',
+            'phone' => 'teléfono',
+            'phone2' => 'teléfono secundario',
+            'city' => 'ciudad',
+            'province' => 'provincia',
+            'postal_code' => 'código postal',
+            'admin_name' => 'nombre del administrador',
+            'admin_email' => 'email del administrador',
+            'admin_email_confirmation' => 'confirmación del email del administrador',
+            'admin_password' => 'contraseña del administrador',
+            'admin_password_confirmation' => 'confirmación de contraseña del administrador',
+            'admin_dni' => 'DNI del administrador',
+            'admin_phone' => 'teléfono del administrador',
+            'admin_address' => 'dirección del administrador',
+            'admin_city' => 'ciudad del administrador',
+            'admin_province' => 'provincia del administrador',
         ]);
 
         $tokenCacheKey = 'stripe_registration_token_' . $validated['token'];
@@ -262,14 +293,14 @@ class StripeController extends Controller
 
         if (!$registration) {
             return response()->json([
-                'message' => 'El enlace de registro es invalido o ha expirado.',
+                'message' => 'El enlace de registro es inválido o ha expirado.',
             ], 404);
         }
 
         $completedCacheKey = 'stripe_registration_completed_' . $registration['session_id'];
         if (Cache::has($completedCacheKey)) {
             return response()->json([
-                'message' => 'Este registro ya se completo anteriormente.',
+                'message' => 'Este registro ya se completó anteriormente.',
             ], 409);
         }
 
@@ -321,7 +352,7 @@ class StripeController extends Controller
         Cache::put($completedCacheKey, true, now()->addDays(30));
 
         return response()->json([
-            'message' => 'Empresa registrada correctamente. Ya puedes iniciar sesion.',
+            'message' => 'Empresa registrada correctamente. Ya puedes iniciar sesión.',
             'company_id' => $resultado['empresa']->id,
             'admin_email' => $resultado['administrador']->email,
         ], 201);
