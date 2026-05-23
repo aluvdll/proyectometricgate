@@ -33,13 +33,13 @@ export function AdminPanel() {
   console.log("ROL:", usuario?.role);
 
   return (
-    <div className="flex h-full pt-16">
+    <div className="flex min-h-[calc(100vh-4rem)] pt-16">
       <aside
-        className={`h-full bg-orange-400 text-gray-800 dark:bg-gray-400 flex flex-col transition-all duration-300 ${
+        className={`sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto bg-orange-400 text-gray-800 dark:bg-gray-400 flex flex-col transition-all duration-300 ${
           estaContraido ? "w-20" : "w-72"
         }`}
       >
-        <div className="p-4 mt-6 font-bold flex items-center justify-between text-2xl">
+        <div className="p-4 font-bold flex items-center justify-between text-2xl">
           {!estaContraido && (
             <div className="flex justify-center w-full">
               {/*Titulo dinamico segun rol*/}
@@ -72,7 +72,7 @@ export function AdminPanel() {
         </div>
 
         <nav
-          className={`flex-1 pt-1 space-y-1 ${estaContraido ? "px-2" : "px-6"}`}
+          className={`flex-1 space-y-1 ${estaContraido ? "px-2" : "px-6"}`}
         >
           <Link to="/adminPanel" className={claseItemNav} title="Dashboard">
             <LayoutDashboard className={claseIcono} size={16} />
@@ -200,7 +200,7 @@ export function AdminPanel() {
         </nav>
       </aside>
 
-      <main className="h-full flex-1 p-6 overflow-y-auto">
+      <main className="min-h-[calc(100vh-4rem)] flex-1 p-6 overflow-y-auto">
         <Outlet />
       </main>
     </div>

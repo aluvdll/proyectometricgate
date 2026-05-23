@@ -104,11 +104,28 @@ export default function RegistroEmpresaPago() {
       try {
         const response = await fetch(
           `${apiUrl}/api/checkout/registration/info?token=${encodeURIComponent(token)}`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+          },
         );
-        const data = await response.json();
+        const contentType = response.headers.get("content-type") || "";
+        const data = contentType.includes("application/json")
+          ? await response.json()
+          : null;
 
         if (!response.ok) {
-          throw new Error(data?.message || "No se pudo validar el enlace.");
+          throw new Error(
+            data?.message ||
+              "No se pudo validar el enlace. El servidor no devolvio JSON valido.",
+          );
+        }
+
+        if (!data) {
+          throw new Error(
+            "Respuesta invalida del servidor al validar el enlace.",
+          );
         }
 
         setPaymentInfo(data);
@@ -146,6 +163,7 @@ export default function RegistroEmpresaPago() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Accept: "application/json",
           },
           body: JSON.stringify({
             token,
@@ -154,7 +172,16 @@ export default function RegistroEmpresaPago() {
         },
       );
 
-      const responseData = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      const responseData = contentType.includes("application/json")
+        ? await response.json()
+        : null;
+
+      if (!contentType.includes("application/json")) {
+        throw new Error(
+          "El servidor devolvio una respuesta no valida (esperaba JSON).",
+        );
+      }
 
       if (!response.ok) {
         const message =

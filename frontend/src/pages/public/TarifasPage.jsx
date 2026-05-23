@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { NotificationModal } from "../../components/modals/NotificationModal";
 
 export const Tarifas = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [notifyVisible, setNotifyVisible] = useState(false);
   const [notifyTitle, setNotifyTitle] = useState("");
   const [notifyMessage, setNotifyMessage] = useState("");
@@ -14,6 +17,22 @@ export const Tarifas = () => {
     setNotifyVisible(true);
     setTimeout(() => setNotifyVisible(false), 3500);
   };
+
+  useEffect(() => {
+    const notify = location.state?.notify;
+
+    if (!notify) {
+      return;
+    }
+
+    showNotification(
+      notify.title || "Aviso",
+      notify.message || "",
+      notify.type || "success",
+    );
+
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state]);
 
   const handleCheckout = async (plan = "basica") => {
     try {

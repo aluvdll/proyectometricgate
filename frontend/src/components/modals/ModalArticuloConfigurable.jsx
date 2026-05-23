@@ -105,6 +105,20 @@ function validarMedidasConReglas(medidas, rules = [], touched = {}) {
     );
   }
 
+  const bValue = toNumber(medidas.ancho_obra);
+  const cValue = toNumber(medidas.ancho_hueco);
+  if (
+    touched.ancho_obra &&
+    bValue !== null &&
+    cValue !== null &&
+    bValue < cValue
+  ) {
+    addError(
+      "ancho_obra",
+      "La medida B (ancho obra) no puede ser inferior a C (ancho hueco libre).",
+    );
+  }
+
   return errors;
 }
 

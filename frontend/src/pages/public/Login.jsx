@@ -45,6 +45,21 @@ export function Login() {
 
       navigate("/adminPanel/", { replace: true });
     } catch (err) {
+      if (err instanceof Error && err.message === "Usuario no registrado") {
+        navigate("/tarifas", {
+          replace: true,
+          state: {
+            notify: {
+              title: "Usuario no registrado",
+              message:
+                "No hemos encontrado una cuenta con ese correo. Revisa las tarifas o solicita acceso.",
+              type: "error",
+            },
+          },
+        });
+        return;
+      }
+
       if (err instanceof Error && err.message) {
         setError(err.message);
         showNotification("Error", err.message, "error");

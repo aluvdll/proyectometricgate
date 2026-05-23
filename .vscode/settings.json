@@ -1,0 +1,13 @@
+{
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.defaultFormatter": "junstyle.php-cs-fixer",
+  "[php]": {
+    "editor.defaultFormatter": "junstyle.php-cs-fixer",
+    "editor.formatOnSave": true
+  },
+  "php-cs-fixer.executablePath": "/var/www/proyectometricgate/backendApi/vendor/bin/php-cs-fixer",
+  "php-cs-fixer.documentFormattingProvider": true,
+  "php-cs-fixer.onsave": true,
+  "php-cs-fixer.rules": "@PSR12,array_indentation"
+}
