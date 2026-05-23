@@ -25,10 +25,17 @@ class AuthController extends Controller
         // 🔍 buscar usuario
         $user = User::where('email', $request->email)->first();
 
-        // ❌ credenciales incorrectas
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        // ❌ usuario no registrado
+        if (!$user) {
             return response()->json([
-                'error' => 'Credenciales incorrectas'
+                'error' => 'Usuario no registrado'
+            ], 404);
+        }
+
+        // ❌ contraseña incorrecta
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'error' => 'Usuario o contraseña incorrecta'
             ], 401);
         }
 

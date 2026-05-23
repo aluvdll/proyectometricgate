@@ -18,6 +18,7 @@ use Stripe\Webhook;
 class StripeController extends Controller
 {
 
+    // Yo recibo y valido el webhook de Stripe para confirmar eventos de pago de forma segura.
     public function webhook(Request $request)
     {
         $payload = $request->getContent();
@@ -57,9 +58,6 @@ class StripeController extends Controller
                 'amount' => $session->amount_total / 100
             ]);
 
-            // AQUÍ:
-            // guardar pedido
-            // enviar email
         }
 
         return response()->json([
@@ -67,8 +65,10 @@ class StripeController extends Controller
         ]);
     }
 
+    // Yo creo una sesion de Checkout en Stripe segun el plan seleccionado y devuelvo la URL de pago.
     public function checkout(Request $request)
     {
+        // Cargo la clave secreta de Stripe para autenticar las llamadas al API desde el backend.
         Stripe::setApiKey(config('services.stripe.secret'));
 
         $plans = config('services.stripe.plans', []);
@@ -113,8 +113,10 @@ class StripeController extends Controller
         ]);
     }
 
+    // Yo verifico que la sesion pagada sea valida y envio el correo con el enlace de registro de empresa.
     public function confirmPaymentAndSendRegistrationEmail(Request $request)
     {
+        // Valido que me llegue session_id y que tenga formato de texto antes de consultar Stripe.
         $validated = $request->validate([
             'session_id' => 'required|string',
         ]);
@@ -197,6 +199,7 @@ class StripeController extends Controller
         ]);
     }
 
+    // Yo valido el token de registro y devuelvo los datos del pago para rellenar la pantalla de registro.
     public function registrationInfo(Request $request)
     {
         $validated = $request->validate([
@@ -226,9 +229,12 @@ class StripeController extends Controller
         ]);
     }
 
+    //completo el alta de empresa y administrador usando el token emitido tras un pago correcto.
+
     public function completeRegistration(Request $request)
     {
         $validated = $request->validate([
+            
             'token' => 'required|string',
 
             'fiscal_name' => 'required|string|max:255',
@@ -358,6 +364,7 @@ class StripeController extends Controller
         ], 201);
     }
 
+    // Yo agrego el placeholder de session_id a la URL de exito si todavia no esta incluido.
     private function appendSessionIdPlaceholder(string $url): string
     {
         if (str_contains($url, '{CHECKOUT_SESSION_ID}')) {
