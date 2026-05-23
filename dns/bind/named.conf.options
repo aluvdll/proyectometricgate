@@ -1,0 +1,20 @@
+options {
+    directory "/var/cache/bind";
+
+    recursion yes;
+    allow-query { any; };
+
+    // Ajusta el CIDR de tu LAN segun corresponda.
+    allow-recursion { 192.168.1.0/24; 127.0.0.1; };
+
+    // DNS publicos para resolver dominios externos.
+    forwarders {
+        1.1.1.1;
+        8.8.8.8;
+    };
+
+    dnssec-validation auto;
+
+    listen-on { any; };
+    listen-on-v6 { any; };
+};
