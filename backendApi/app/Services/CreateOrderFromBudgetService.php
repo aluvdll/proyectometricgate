@@ -18,104 +18,105 @@ class CreateOrderFromBudgetService
      */
     public static function execute(Budget $budget): Order
     {
-        // Si ya existe pedido para este presupuesto, no crear otro
-        $existingOrder = Order::where('budget_id', $budget->id)->first();
-        if ($existingOrder) {
-            return $existingOrder;
-        }
-
-        // Crear el pedido dentro de una transacción (todo o nada)
+        // Todo dentro de una transacción para garantizar consistencia
         return DB::transaction(function () use ($budget) {
-            // Generar número de pedido único
-            $orderNumber = self::generateOrderNumber($budget->company_id);
 
-            // ╔════════════════════════════════════════════════════════════════╗
-            // ║ 1. CREAR PEDIDO                                                ║
-            // ╚════════════════════════════════════════════════════════════════╝
+            // Bloqueo del presupuesto para evitar que dos peticiones simultáneas
+            // creen el mismo pedido a la vez
+            Budget::where('id', $budget->id)->lockForUpdate()->first();
 
-            $order = Order::create([
-                'company_id' => $budget->company_id,
-                'budget_id' => $budget->id,
-                'client_id' => $budget->client_id,
-                'order_number' => $orderNumber,
-                'order_date' => now()->toDateString(),
-                'estimated_delivery' => now()->addDays(14)->toDateString(), // 14 días por defecto
-                'status' => 'pendiente',
-                'base_amount' => $budget->base_amount,
-                'tax_amount' => $budget->tax_amount,
-                'total_amount' => $budget->total_amount,
-                'notes' => $budget->notes,
-                'created_by_user_id' => auth()->id(), // Usuario que acepta el presupuesto
+            // Si ya existe un pedido para este presupuesto, lo devolvemos sin crear otro
+            $pedidoExistente = Order::where('budget_id', $budget->id)->first();
+            if ($pedidoExistente) {
+                return $pedidoExistente;
+            }
+
+            // Generamos el número de pedido único para esta empresa y año
+            $numeroPedido = self::generarNumeroPedido($budget->company_id);
+
+            // 1. Crear el pedido
+            $pedido = Order::create([
+                'company_id'          => $budget->company_id,
+                'budget_id'           => $budget->id,
+                'client_id'           => $budget->client_id,
+                'order_number'        => $numeroPedido,
+                'order_date'          => now()->toDateString(),
+                'estimated_delivery'  => now()->addDays(14)->toDateString(),
+                'status'              => 'pendiente',
+                'base_amount'         => $budget->base_amount,
+                'tax_amount'          => $budget->tax_amount,
+                'total_amount'        => $budget->total_amount,
+                'notes'               => $budget->notes,
+                'created_by_user_id'  => auth()->id(),
             ]);
 
-            // ╔════════════════════════════════════════════════════════════════╗
-            // ║ 2. COPIAR LÍNEAS DEL PRESUPUESTO AL PEDIDO                    ║
-            // ╚════════════════════════════════════════════════════════════════╝
-
-            foreach ($budget->lines as $budgetLine) {
-                // Crear línea del pedido
-                $orderLine = $order->lines()->create([
-                    'article_type' => $budgetLine->article_type,
-                    'standard_article_id' => $budgetLine->standard_article_id,
-                    'configurable_article_id' => $budgetLine->configurable_article_id,
-                    'name' => $budgetLine->name,
-                    'description' => $budgetLine->description,
-                    'quantity' => $budgetLine->quantity,
-                    'unit_price' => $budgetLine->unit_price,
-                    'gross_subtotal' => $budgetLine->gross_subtotal,
-                    'discount_percentage' => $budgetLine->discount_percentage,
-                    'discount_amount' => $budgetLine->discount_amount,
-                    'net_subtotal' => $budgetLine->net_subtotal,
-                    'tax_percentage' => $budgetLine->tax_percentage,
-                    'tax_amount' => $budgetLine->tax_amount,
-                    'total_amount' => $budgetLine->total_amount,
-                    'position' => $budgetLine->position,
+            // 2. Copiar cada línea del presupuesto al pedido
+            foreach ($budget->lines as $lineaPresupuesto) {
+                $lineaPedido = $pedido->lines()->create([
+                    'article_type'              => $lineaPresupuesto->article_type,
+                    'standard_article_id'       => $lineaPresupuesto->standard_article_id,
+                    'configurable_article_id'   => $lineaPresupuesto->configurable_article_id,
+                    'name'                      => $lineaPresupuesto->name,
+                    'description'               => $lineaPresupuesto->description,
+                    'quantity'                  => $lineaPresupuesto->quantity,
+                    'unit_price'                => $lineaPresupuesto->unit_price,
+                    'gross_subtotal'            => $lineaPresupuesto->gross_subtotal,
+                    'discount_percentage'       => $lineaPresupuesto->discount_percentage,
+                    'discount_amount'           => $lineaPresupuesto->discount_amount,
+                    'net_subtotal'              => $lineaPresupuesto->net_subtotal,
+                    'tax_percentage'            => $lineaPresupuesto->tax_percentage,
+                    'tax_amount'                => $lineaPresupuesto->tax_amount,
+                    'total_amount'              => $lineaPresupuesto->total_amount,
+                    'position'                  => $lineaPresupuesto->position,
                 ]);
 
-                // ╔════════════════════════════════════════════════════════════════╗
-                // ║ 3. SI ES CONFIGURABLE, COPIAR MEDIDAS DE FABRICACIÓN         ║
-                // ╚════════════════════════════════════════════════════════════════╝
-
-                if ($budgetLine->configurable_article_id && $budgetLine->configuration) {
-                    $orderLine->configuration()->create([
-                        'ancho_hueco'          => $budgetLine->configuration->ancho_hueco,
-                        'alto_hueco'           => $budgetLine->configuration->alto_hueco,
-                        'ancho_obra'           => $budgetLine->configuration->ancho_obra,
-                        'alto_obra'            => $budgetLine->configuration->alto_obra,
-                        'paso_deseado'         => $budgetLine->configuration->paso_deseado,
-                        'options_chosen'       => $budgetLine->configuration->options_chosen,
-                        'price_breakdown'      => $budgetLine->configuration->price_breakdown,
-                        'fabrication_measures' => $budgetLine->configuration->fabrication_measures,
+                // 3. Si la línea tiene un artículo configurable, copiar sus medidas
+                if ($lineaPresupuesto->configurable_article_id && $lineaPresupuesto->configuration) {
+                    $lineaPedido->configuration()->create([
+                        'ancho_hueco'          => $lineaPresupuesto->configuration->ancho_hueco,
+                        'alto_hueco'           => $lineaPresupuesto->configuration->alto_hueco,
+                        'ancho_obra'           => $lineaPresupuesto->configuration->ancho_obra,
+                        'alto_obra'            => $lineaPresupuesto->configuration->alto_obra,
+                        'paso_deseado'         => $lineaPresupuesto->configuration->paso_deseado,
+                        'options_chosen'       => $lineaPresupuesto->configuration->options_chosen,
+                        'price_breakdown'      => $lineaPresupuesto->configuration->price_breakdown,
+                        'fabrication_measures' => $lineaPresupuesto->configuration->fabrication_measures,
                     ]);
                 }
             }
 
-            // Retornar pedido completo
-            return $order->load(['client', 'createdBy', 'lines.standardArticle', 'lines.configurableArticle', 'lines.configuration']);
+            return $pedido->load(['client', 'createdBy', 'lines.standardArticle', 'lines.configurableArticle', 'lines.configuration']);
         });
     }
 
     /**
-     * Genera número único de pedido (ej: 2026-00001)
+     * Genera el siguiente número de pedido para una empresa y año.
+     * El número es único por empresa: dos empresas distintas pueden tener
+     * el mismo número (ej: 2026-00001), pero no la misma empresa.
+     * Formato: YYYY-NNNNN  (ej: 2026-00003)
      */
-    private static function generateOrderNumber(int $companyId): string
+    private static function generarNumeroPedido(int $empresaId): string
     {
-        $year = now()->year;
+        $anio = now()->year;
 
-        // Buscar último pedido de la empresa en este año
-        $lastOrder = Order::where('company_id', $companyId)
-            ->where('order_number', 'like', $year . '-%')
+        // Buscamos el último pedido de ESTA empresa en el año actual.
+        // lockForUpdate evita que dos transacciones concurrentes lean
+        // el mismo último número y generen un duplicado.
+        $ultimoPedido = Order::where('company_id', $empresaId)
+            ->where('order_number', 'like', $anio . '-%')
             ->orderByDesc('order_number')
+            ->lockForUpdate()
             ->first();
 
-        if (!$lastOrder) {
-            return $year . '-00001';
+        // Si no hay pedidos este año, empezamos desde 1
+        if (!$ultimoPedido) {
+            return $anio . '-00001';
         }
 
-        // Extraer número secuencial y aumentar
-        $lastSequence = (int) substr($lastOrder->order_number, -5);
-        $nextSequence = $lastSequence + 1;
+        // Extraemos los últimos 5 dígitos y sumamos 1
+        $ultimoNumero  = (int) substr($ultimoPedido->order_number, -5);
+        $siguienteNumero = $ultimoNumero + 1;
 
-        return $year . '-' . str_pad((string) $nextSequence, 5, '0', STR_PAD_LEFT);
+        return $anio . '-' . str_pad((string) $siguienteNumero, 5, '0', STR_PAD_LEFT);
     }
 }

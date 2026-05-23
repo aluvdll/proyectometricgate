@@ -81,7 +81,7 @@ class ConfigurableArticleController extends Controller
             ->findOrFail($id);
 
         $allowedOptionIds = $article->parts
-            ->flatMap(fn($part) => $part->options->pluck('id'))
+            ->flatMap(fn ($part) => $part->options->pluck('id'))
             ->unique()
             ->values();
 
@@ -103,7 +103,7 @@ class ConfigurableArticleController extends Controller
 
         $now = now();
         $upserts = collect($validated['prices'])
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'company_id' => $companyId,
                 'configurable_article_option_id' => (int) $item['option_id'],
                 'price' => (float) $item['price'],
@@ -185,6 +185,12 @@ class ConfigurableArticleController extends Controller
         foreach ($rules as $rule) {
             $field  = $rule->field;
             $params = $rule->params;
+            if (is_string($params)) {
+                $decoded = json_decode($params, true);
+                $params = is_array($decoded) ? $decoded : [];
+            } elseif (!is_array($params)) {
+                $params = [];
+            }
             // Si no existe el campo, queda null y cada regla decide cómo tratarlo
             $value  = isset($data[$field]) ? (float) $data[$field] : null;
 
@@ -234,16 +240,18 @@ class ConfigurableArticleController extends Controller
         // Opciones elegidas desde el frontend (por key de parte)
         $optionsChosen = $data['options'] ?? [];
 
-        // Regla de negocio: ancho de cajón limitado a 1480 mm
+        // Regla de negocio: ancho de cajón limitado a 1480 mm (límite mecánico del motor)
         $anchoCajon = min(
             (float) ($data['ancho_hueco'] ?? 0),
             1480
         );
+        // Ancho real del hueco (sin cap) para calcular área de cristales
+        $anchoHueco = (float) ($data['ancho_hueco'] ?? 0);
         // Altura útil para cálculos de m2
         $alturaHueco = (float) ($data['alto_hueco'] ?? 0);
 
         $articleOptionIds = $article->parts
-            ->flatMap(fn($part) => $part->options->pluck('id'))
+            ->flatMap(fn ($part) => $part->options->pluck('id'))
             ->unique()
             ->values();
 
@@ -277,11 +285,11 @@ class ConfigurableArticleController extends Controller
 
             // Cálculo según unidad de negocio definida en la parte
             $price = match ($part->unit) {
-                // Cajón → precio por metro lineal × metros del cajón
+                // Cajón → precio por metro lineal × metros del cajón (cap 1480mm por motor)
                 'ml' => $effectivePrice * ($anchoCajon / 1000),
 
-                // Hojas → precio por m² × (ancho × alto en metros)
-                'm2' => $effectivePrice * (($anchoCajon / 1000) * ($alturaHueco / 1000)),
+                // Hojas → precio por m² × (ancho hueco real × alto en metros)
+                'm2' => $effectivePrice * (($anchoHueco / 1000) * ($alturaHueco / 1000)),
 
                 // Precio fijo (fabricación)
                 'fixed', 'units' => $effectivePrice,
@@ -307,7 +315,7 @@ class ConfigurableArticleController extends Controller
     private function construirTarifasRespuesta(ConfigurableArticle $article, int $companyId): array
     {
         $optionIds = $article->parts
-            ->flatMap(fn($part) => $part->options->pluck('id'))
+            ->flatMap(fn ($part) => $part->options->pluck('id'))
             ->unique()
             ->values();
 

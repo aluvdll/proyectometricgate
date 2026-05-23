@@ -27,8 +27,10 @@ return new class extends Migration
                 ->constrained()
                 ->onDelete('restrict');
 
-            // 🔢 NÚMERO ÚNICO POR EMPRESA (ej: 2026-00001)
-            $table->string('order_number')->unique();
+            // 🔢 NÚMERO DE PEDIDO (ej: 2026-00001)
+            // Nota: el índice único compuesto (company_id + order_number)
+            // se aplica en la migración fix_order_number_unique_per_company
+            $table->string('order_number');
 
             // 📅 FECHAS
             $table->date('order_date');
