@@ -119,7 +119,7 @@ export function BtnUserMenu() {
       >
         {/* Enlace al panel según el rol del usuario */}
         <Link
-          to="/adminPanel"
+          to={auth.user?.role === "super_admin" ? "/superadminPanel" : "/adminPanel"}
           onClick={() => setOpen(false)}
           className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
         >

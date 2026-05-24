@@ -53,16 +53,26 @@ import BudgetPrintPage from "./pages/admin/BudgetPrintPage.jsx";
 // Componente que protege rutas privadas
 // ----------------------------
 function PrivateRoute({ children }: { children: ReactNode }) {
-  const { isLogged, loading } = useAuth();
+  const { isLogged, loading, role, user, token } = useAuth();
+
+  const rolSesion = role ?? user?.role ?? localStorage.getItem("role");
+  const tokenSesion = token ?? localStorage.getItem("token");
+  const usuarioSesion = user ?? localStorage.getItem("usuario");
+  const autenticado = isLogged || (!!tokenSesion && !!usuarioSesion);
 
   // ⛔ Esperar a que cargue sesión
   if (loading) return <div>Cargando...</div>;
 
-  // 🔐 Si está logueado entra
-  if (isLogged) return <>{children}</>;
+  // ❌ Si no hay sesión válida, lo mando a login.
+  if (!autenticado) return <Navigate to="/login" replace />;
 
-  // ❌ Si no, fuera
-  return <Navigate to="/login" replace />;
+  // 🔐 Si es super admin, no debe entrar al /adminPanel normal.
+  if (rolSesion === "super_admin") {
+    return <Navigate to="/superadminPanel" replace />;
+  }
+
+  // ✅ Si está autenticado y no es superadmin, entra al adminPanel normal.
+  return <>{children}</>;
 }
 
 function SuperAdminRoute({ children }: { children: ReactNode }) {
