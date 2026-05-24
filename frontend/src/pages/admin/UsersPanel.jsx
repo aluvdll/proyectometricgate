@@ -2,16 +2,19 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { NotificationModal } from "../../components/modals/NotificationModal";
+import { ControlesPaginacion } from "../../components/shared/ControlesPaginacion.jsx";
 import { UserSearch } from "../../components/shared/UserSearch.jsx";
 import { useAuth } from "../../context/AuthContext";
 
 import { API_URL } from "../../services/apiBase";
 
-
 export const UsersPanel = () => {
   const { token, user, loading: authLoading } = useAuth();
 
   const [usuarios, setUsuarios] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,6 +26,43 @@ export const UsersPanel = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
+  // Aquí pido la página al backend y guardo lista + datos de paginación.
+  const fetchUsers = async (page = 1) => {
+    if (!token) return;
+
+    setLoading(true);
+
+    try {
+      const response = await axios.get(`${API_URL}/api/company/users?page=${page}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const payload = response.data;
+      const users = Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload)
+          ? payload
+          : [];
+
+      setUsuarios(users);
+      setCurrentPage(payload?.meta?.current_page ?? page);
+      setLastPage(payload?.meta?.last_page ?? 1);
+      setTotalUsers(payload?.meta?.total ?? users.length);
+      setError(null);
+    } catch {
+      setError(null);
+      setNotifyTitle("Error");
+      setNotifyMessage("No hay conexión con el servidor.");
+      setNotifyType("error");
+      setNotifyVisible(true);
+      setTimeout(() => setNotifyVisible(false), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (authLoading) return;
 
@@ -32,29 +72,7 @@ export const UsersPanel = () => {
       return;
     }
 
-    setLoading(true);
-
-    axios
-      .get("http://127.0.0.1:8000/api/company/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => {
-        console.log("DATA:", response.data);
-        setUsuarios(response.data);
-      })
-      .catch(() => {
-        setError(null);
-        setNotifyTitle("Error");
-        setNotifyMessage("No hay conexión con el servidor.");
-        setNotifyType("error");
-        setNotifyVisible(true);
-        setTimeout(() => setNotifyVisible(false), 3000);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    fetchUsers(1);
   }, [token, authLoading]);
 
   const handlerClickEdit = (id) => {
@@ -65,13 +83,14 @@ export const UsersPanel = () => {
     if (!token) return;
 
     try {
-      await axios.delete(`http://127.0.0.1:8000/api/company/users/${id}`, {
+      await axios.delete(`${API_URL}/api/company/users/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      setUsuarios((prev) => prev.filter((usuario) => usuario.id !== id));
+      // Aquí recargo la página actual para no desajustar tabla y contador.
+      fetchUsers(currentPage);
 
       setNotifyTitle("Éxito");
       setNotifyMessage("Usuario eliminado correctamente");
@@ -102,8 +121,11 @@ export const UsersPanel = () => {
       .includes(search.toLowerCase()),
   );
 
-  console.log("SEARCH:", search);
-  console.log("FILTERED:", filteredUsuarios);
+  // Aqui cambio de pagina desde el componente reutilizable.
+  const handlePageChange = (page) => {
+    if (page < 1 || page > lastPage) return;
+    fetchUsers(page);
+  };
 
   return (
     <div className="container w-full mt-1">
@@ -184,6 +206,15 @@ export const UsersPanel = () => {
               ))}
           </tbody>
         </table>
+
+        {/* Aqui reutilizo el mismo componente para no repetir paginacion en otros paneles. */}
+        <ControlesPaginacion
+          paginaActual={currentPage}
+          ultimaPagina={lastPage}
+          totalRegistros={totalUsers}
+          cargando={loading}
+          onCambiarPagina={handlePageChange}
+        />
       </div>
 
       {notifyVisible && (

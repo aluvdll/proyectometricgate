@@ -58,26 +58,27 @@ export function FormUsuario({ mode, userId }) {
   useEffect(() => {
     if (isEdit && userId) {
       axios
-        .get(`http://127.0.0.1:8000/api/company/users/${userId}`, {
+        .get(`${API_URL}/api/company/users/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
         .then((res) => {
+          const usuario = res?.data?.data ?? {};
           reset({
-            name: res.data.name ?? "",
-            dni: res.data.dni ?? "",
-            address: res.data.address ?? "",
-            phone: res.data.phone ?? "",
-            city: res.data.city ?? "",
-            province: res.data.province ?? "",
-            role: res.data.role ?? "",
-            email: res.data.email ?? "",
+            name: usuario.name ?? "",
+            dni: usuario.dni ?? "",
+            address: usuario.address ?? "",
+            phone: usuario.phone ?? "",
+            city: usuario.city ?? "",
+            province: usuario.province ?? "",
+            role: usuario.role ?? "",
+            email: usuario.email ?? "",
             password: "",
             confirmPassword: "",
           });
           setAvatar(null);
-          setAvatarUrl(res.data.avatar ?? null);
+          setAvatarUrl(usuario.avatar ?? null);
           setRemoveAvatar(false);
         })
 
@@ -131,7 +132,7 @@ export function FormUsuario({ mode, userId }) {
       if (isEdit && userId) {
         payload.append("_method", "PUT");
         const response = await axios.post(
-          `http://127.0.0.1:8000/api/company/users/${userId}`,
+          `${API_URL}/api/company/users/${userId}`,
           payload,
           {
             headers: {
@@ -146,9 +147,9 @@ export function FormUsuario({ mode, userId }) {
         if (
           authUser?.id &&
           Number(userId) === Number(authUser.id) &&
-          response?.data?.user
+          response?.data?.data
         ) {
-          updateUser(response.data.user);
+          updateUser(response.data.data);
         }
 
         showNotification("Éxito", "Usuario editado", "success");
@@ -156,7 +157,7 @@ export function FormUsuario({ mode, userId }) {
           navigate(isAdmin ? "/adminPanel/usuarios" : "/adminPanel");
         }, 2500);
       } else {
-        await axios.post("http://127.0.0.1:8000/api/company/users", payload, {
+        await axios.post(`${API_URL}/api/company/users`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",

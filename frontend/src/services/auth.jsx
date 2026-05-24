@@ -7,7 +7,7 @@ const AUTH_LOGIN_URL = `${API_URL}/api/login`;
 export const loginUsuario = async (data) => {
   try {
     const response = await axios.post(AUTH_LOGIN_URL, data);
-    return response.data; // { mensaje, usuario }
+    return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       // Error enviado por el backend

@@ -35,10 +35,11 @@ export function Login() {
         password: password,
       });
 
-      login(res.user, res.token, res.role);
+      const authData = res?.data ?? {};
+      login(authData.user, authData.token, authData.role);
       console.log("LOGIN RESPONSE:", res);
 
-      if (res.role === "super_admin") {
+      if (authData.role === "super_admin") {
         navigate("/superadminPanel", { replace: true });
         return;
       }

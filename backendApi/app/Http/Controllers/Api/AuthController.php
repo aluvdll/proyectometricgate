@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -12,41 +13,42 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 
+// Controla la autenticación: login, usuario autenticado, logout y recuperación/cambio de contraseña.
 class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        // 🔎 validar
+        // validar
         $request->validate([
             'email' => 'required|email',
             'password' => 'required'
         ]);
 
-        // 🔍 buscar usuario
+        // buscar usuario
         $user = User::where('email', $request->email)->first();
 
-        // ❌ usuario no registrado
+        // error usuario no registrado
         if (!$user) {
             return response()->json([
                 'error' => 'Usuario no registrado'
             ], 404);
         }
 
-        // ❌ contraseña incorrecta
+        // error contraseña incorrecta
         if (!Hash::check($request->password, $user->password)) {
             return response()->json([
                 'error' => 'Usuario o contraseña incorrecta'
             ], 401);
         }
 
-        // ❌ usuario inactivo
+        // error usuario inactivo
         if (!$user->active) {
             return response()->json([
                 'error' => 'Usuario inactivo'
             ], 403);
         }
 
-        // ❌ empresa inactiva (solo aplica a usuarios de empresa)
+        //  error empresa inactiva (solo aplica a usuarios de empresa)
         if ($user->company_id) {
             $company = Company::find($user->company_id);
 
@@ -57,19 +59,34 @@ class AuthController extends Controller
             }
         }
 
-        // 🔐 crear token
+        // 1) Creo un token de acceso para que el frontend pueda autenticarse
+        // en las siguientes peticiones (Authorization: Bearer ...).
         $token = $user->createToken('api-token')->plainTextToken;
 
+        // 2) Devuelvo la respuesta del login.
+        // - user: lo paso por UserResource para que salga con el mismo formato
+        //   que en /me y en los endpoints de usuarios.
+        // - role: lo envío aparte porque el frontend lo usa rápido para permisos.
+        // - token: el frontend lo guarda y lo manda en cada request protegida.
         return response()->json([
-            'user' => $user,
-            'role' => $user->role,
-            'token' => $token
+            'message' => 'Login correcto',
+            'data' => [
+                // toArray($request) convierte el Resource en array dentro del bloque data.
+                'user' => (new UserResource($user->load('company')))->toArray($request),
+                'role' => $user->role,
+                'token' => $token,
+            ],
         ]);
     }
 
     public function me(Request $request)
     {
-        return response()->json($request->user()->load('company'));
+        // Entrada: usuario autenticado que llega desde el token (request->user()).
+        // Salida: ese usuario en formato Resource, igual que el resto de endpoints.
+        return (new UserResource($request->user()->load('company')))
+            ->additional([
+                'message' => 'Usuario autenticado obtenido correctamente',
+            ]);
     }
 
     public function logout(Request $request)

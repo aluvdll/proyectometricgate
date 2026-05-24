@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -11,16 +12,39 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Company;
 
-
 class UserController extends Controller
 {
-    // 📄 listar usuarios (superadmin)
+    // listar usuarios (superadmin)
     public function index()
     {
-        return User::with('company')->get();
+        $users = User::with('company')->paginate(10);
+
+ 
+// Esa consulta devuelve una colección paginada de usuarios
+// junto con la relación company cargada.
+//
+// UserResource::collection($users) recorre automáticamente
+// cada usuario de la colección y aplica el formato definido
+// dentro de UserResource.
+//
+// Gracias a collection(), no devuelvo directamente el modelo,
+// sino una respuesta JSON controlada y consistente.
+//
+// Además, como $users viene de paginate(),
+// Laravel añade automáticamente:
+// - data
+// - links
+// - meta
+//
+// Esto facilita la paginación en el frontend.
+
+        return UserResource::collection($users)
+            ->additional([
+                'message' => 'Listado de usuarios obtenido correctamente',
+            ]);
     }
 
-    // ➕ crear usuario desde superadmin
+    // crear usuario desde superadmin
     public function store(Request $request)
     {
         $request->validate([
@@ -55,11 +79,13 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Usuario creado correctamente',
-            'user' => $user
+            // Entrada: usuario recién creado en BD.
+            // Salida: ese usuario transformado por Resource para mantener contrato fijo.
+            'data' => (new UserResource($user->load('company')))->toArray($request)
         ], 201);
     }
 
-    // ❌ eliminar usuario (superadmin)
+    // eliminar usuario (superadmin)
     public function destroy($id)
     {
         $authUser = request()->user();
@@ -81,10 +107,10 @@ class UserController extends Controller
         ]);
     }
 
-    // 📄 listar todos los usuarios de la empresa (admin )
+    // listar todos los usuarios de la empresa (admin )
     // listar solo su empresa
-    // 📄 listar usuarios de la empresa del usuario logueado (admin)
-    // 📄 listar usuarios de la empresa del admin logueado
+    // listar usuarios de la empresa del usuario logueado (admin)
+    // listar usuarios de la empresa del admin logueado
     public function companyUsers(Request $request)
     {
         $user = $request->user();
@@ -101,12 +127,19 @@ class UserController extends Controller
             ], 403);
         }
 
-        $users = User::where('company_id', $user->company_id)->get();
+        $users = User::with('company')
+            ->where('company_id', $user->company_id)
+            ->paginate(10);
 
-        return response()->json($users);
+        // Entrada: usuarios de mi empresa, ya paginados.
+        // Salida: data con Resource + links/meta para que frontend pagine fácil.
+        return UserResource::collection($users)
+            ->additional([
+                'message' => 'Listado de usuarios de la empresa obtenido correctamente',
+            ]);
     }
 
-    // 👁️ ver usuario por id dentro de la empresa (admin)
+    // ver usuario por id dentro de la empresa (admin)
     public function showByCompany(Request $request, $id)
     {
         $user = $request->user();
@@ -136,11 +169,16 @@ class UserController extends Controller
             ], 404);
         }
 
-        return response()->json($companyUser);
+        // Entrada: un usuario concreto (filtrado por empresa e id).
+        // Salida: un único objeto user con formato limpio y consistente.
+        return (new UserResource($companyUser->load('company')))
+            ->additional([
+                'message' => 'Usuario obtenido correctamente',
+            ]);
     }
 
 
-    // ➕ crear usuario dentro de la empresa (admin)
+    // crear usuario dentro de la empresa (admin)
     public function storeByCompany(Request $request)
     {
         $user = $request->user();
@@ -213,11 +251,13 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Usuario creado correctamente',
-            'user' => $newUser
+            // Entrada: nuevo usuario de la empresa creado por admin.
+            // Salida: user normalizado por Resource para no romper el frontend.
+            'data' => (new UserResource($newUser->load('company')))->toArray($request)
         ], 201);
     }
 
-    // ✏️ actualizar usuario dentro de la empresa (admin)
+    // actualizar usuario dentro de la empresa (admin)
     public function updateByCompany(Request $request, $id)
     {
         $user = $request->user();
@@ -294,7 +334,9 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Usuario actualizado correctamente',
-            'user' => $existingUser
+            // Entrada: usuario ya actualizado con los cambios enviados.
+            // Salida: usuario actualizado transformado por Resource.
+            'data' => (new UserResource($existingUser->load('company')))->toArray($request)
         ], 200);
     }
     public function destroyByCompany(Request $request, $id)
@@ -313,7 +355,7 @@ class UserController extends Controller
             ], 403);
         }
 
-        // 🔐 IMPORTANTE: filtrado por empresa
+        //  IMPORTANTE: filtrado por empresa
         $targetUser = User::where('id', $id)
             ->where('company_id', $user->company_id)
             ->first();
@@ -324,7 +366,7 @@ class UserController extends Controller
             ], 404);
         }
 
-        // ❌ opcional: evitar que se borre a sí mismo
+        // evitar que se borre a sí mismo
         if ($targetUser->id === $user->id) {
             return response()->json([
                 'error' => 'No puedes eliminarte a ti mismo'
