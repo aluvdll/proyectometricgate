@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { NotificationModal } from "../modals/NotificationModal";
 import { UserSearch } from "../shared/UserSearch.jsx";
-import { obtenerClientesEmpresa } from "../../services/clientes";
+import { ControlesPaginacion } from "../shared/ControlesPaginacion.jsx";
+import { obtenerClientesEmpresaPaginados } from "../../services/clientes";
 
 
 export const ClientesPanel = () => {
@@ -10,6 +11,11 @@ export const ClientesPanel = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [fichaClienteDesplegable, setFichaClienteDesplegable] = useState(null);
+  const [metaPaginacion, setMetaPaginacion] = useState({
+    current_page: 1,
+    last_page: 1,
+    total: 0,
+  });
 
   // Notificación
   const [notificacionVisible, setNotificacionVisible] = useState(false);
@@ -21,36 +27,54 @@ export const ClientesPanel = () => {
 
   // Busqueda
   const [textoBusqueda, setTextoBusqueda] = useState("");
+  const [paginaActual, setPaginaActual] = useState(1);
+  const clientesPorPagina = 10;
 
-  useEffect(() => {
-    obtenerClientesEmpresa()
-      .then((response) => {
-        setClientes(response);
-        setCargando(false);
-      })
-      .catch((err) => {
-        setError("Error cargando clientes: " + err.message);
-        setCargando(false);
+  // Aqui cargo una pagina de clientes desde backend, incluyendo busqueda.
+  const cargarClientesPaginados = async ({ pagina, busqueda }) => {
+    setCargando(true);
+    setError(null);
+
+    try {
+      const respuesta = await obtenerClientesEmpresaPaginados({
+        pagina,
+        porPagina: clientesPorPagina,
+        busqueda,
       });
-  }, []);
 
+      setClientes(respuesta.clientes);
+      setMetaPaginacion(respuesta.meta);
+    } catch (err) {
+      setError("Error cargando clientes: " + err.message);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // Aqui escucho cambios de pagina o busqueda para pedir datos al backend.
+  useEffect(() => {
+    cargarClientesPaginados({ pagina: paginaActual, busqueda: textoBusqueda });
+  }, [paginaActual, textoBusqueda]);
+
+  // Aqui redirijo a la pantalla de editar cliente.
   const editarCliente = (id) => {
     navigate(`/adminPanel/clientes/vereditarcliente/${id}`);
   };
 
+  // Aqui abro o cierro la ficha desplegable de un cliente.
   const alternarCliente = (id) => {
     setFichaClienteDesplegable((actual) => (actual === id ? null : id));
   };
 
+  // Aqui cambio la busqueda y vuelvo a pagina 1 para ver resultados correctos.
+  const manejarBusqueda = (texto) => {
+    setTextoBusqueda(texto);
+    setPaginaActual(1);
+    setFichaClienteDesplegable(null);
+  };
+
   if (cargando) return <div>Cargando...</div>;
   if (error) return <div>{error}</div>;
-
-  const clientesFiltrados = clientes.filter((cliente) =>
-    Object.values(cliente)
-      .join(" ")
-      .toLowerCase()
-      .includes(textoBusqueda.toLowerCase()),
-  );
 
   return (
     <div className="container w-full mt-1">
@@ -63,7 +87,7 @@ export const ClientesPanel = () => {
           {/* Componente de búsqueda */}
             <div className="flex items-center gap-2">
             <div className="w-56">
-              <UserSearch value={textoBusqueda} onChange={setTextoBusqueda} />
+              <UserSearch value={textoBusqueda} onChange={manejarBusqueda} />
             </div>
 
             {/* Botón para crear nuevo cliente, visible solo para admin*/}
@@ -78,12 +102,12 @@ export const ClientesPanel = () => {
         </div>
 
         <div className="space-y-2">
-          {clientesFiltrados.length === 0 ? (
+          {clientes.length === 0 ? (
             <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-4 text-center text-sm text-orange-800">
               No hay clientes que coincidan con la búsqueda.
             </div>
           ) : (
-            clientesFiltrados.map((cliente) => (
+            clientes.map((cliente) => (
               <article
                 key={cliente.id}
                 className="rounded-lg border border-orange-200 bg-white px-3 py-2 shadow-sm transition-shadow hover:shadow-md"
@@ -188,6 +212,15 @@ export const ClientesPanel = () => {
             ))
           )}
         </div>
+
+        <ControlesPaginacion
+          paginaActual={paginaActual}
+          ultimaPagina={metaPaginacion.last_page || 1}
+          totalRegistros={metaPaginacion.total || 0}
+          cargando={cargando}
+          onCambiarPagina={setPaginaActual}
+          etiquetaTotal="clientes"
+        />
       </div>
 
       {/* Toast de notificación */}

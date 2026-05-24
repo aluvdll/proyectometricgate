@@ -54,7 +54,50 @@ export async function obtenerClientesEmpresa() {
     const response = await axios.get(API_BASE, {
       headers: headersJson(),
     });
-    return response.data.clients || [];
+    const clientsPayload = response.data.clients;
+
+    // Compatibilidad con ambos contratos:
+    // - clients: []
+    // - clients: { data: [] } al usar JsonResource::collection
+    if (Array.isArray(clientsPayload)) {
+      return clientsPayload;
+    }
+
+    if (Array.isArray(clientsPayload?.data)) {
+      return clientsPayload.data;
+    }
+
+    return [];
+  } catch (error) {
+    throw construirErrorApi(error);
+  }
+}
+
+// Aqui pido clientes paginados al backend para no traer todos de golpe.
+export async function obtenerClientesEmpresaPaginados({
+  pagina = 1,
+  porPagina = 10,
+  busqueda = "",
+} = {}) {
+  try {
+    const response = await axios.get(API_BASE, {
+      headers: headersJson(),
+      params: {
+        paginate: true,
+        page: pagina,
+        per_page: porPagina,
+        search: busqueda,
+      },
+    });
+
+    return {
+      clientes: response.data?.data || [],
+      meta: response.data?.meta || {
+        current_page: 1,
+        last_page: 1,
+        total: 0,
+      },
+    };
   } catch (error) {
     throw construirErrorApi(error);
   }

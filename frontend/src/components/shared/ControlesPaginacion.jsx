@@ -3,6 +3,7 @@ export function ControlesPaginacion({
   ultimaPagina,
   totalRegistros,
   cargando = false,
+  etiquetaTotal = "usuarios",
   onCambiarPagina,
 }) {
   // Aqui valido el cambio de pagina para no pedir paginas invalidas.
@@ -15,7 +16,7 @@ export function ControlesPaginacion({
   return (
     <div className="mt-4 flex items-center justify-between gap-3">
       <p className="text-sm text-gray-600 dark:text-white">
-        Pagina {paginaActual} de {ultimaPagina} · Total usuarios: {totalRegistros}
+        Pagina {paginaActual} de {ultimaPagina} · Total {etiquetaTotal}: {totalRegistros}
       </p>
 
       <div className="flex items-center gap-2">

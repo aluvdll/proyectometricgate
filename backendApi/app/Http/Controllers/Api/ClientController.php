@@ -3,70 +3,134 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ClientResource;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
+    // Aqui valido permisos base para todas las acciones de clientes.
+    // Solo dejo pasar si hay usuario autenticado, rol correcto y empresa asignada.
     private function authorizeAdminOrCommercial(Request $request)
     {
+        // Aqui recojo el usuario autenticado desde el token de la request.
         $user = $request->user();
 
+        // Si no hay usuario, corto con 401 para evitar seguir con logica interna.
         if (!$user) {
             return response()->json([
                 'error' => 'No autenticado',
             ], 401);
         }
 
+        // Solo permito admin/commercial para gestionar clientes de empresa.
         if (!in_array($user->role, ['admin', 'commercial'], true)) {
             return response()->json([
                 'error' => 'No autorizado. Solo admin o commercial.',
             ], 403);
         }
 
+        // Si el usuario no tiene empresa, no puedo acotar consultas por company_id.
         if (!$user->company_id) {
             return response()->json([
                 'error' => 'Usuario sin empresa asignada.',
             ], 422);
         }
 
+        // Si todo esta bien, devuelvo null para que el flujo continue.
         return null;
     }
 
-    // Listar clientes de la empresa del usuario logueado
+    // Aqui listo clientes de la empresa logueada con busqueda y paginacion opcional.
     public function index(Request $request)
     {
+        // Primero valido permisos comunes antes de tocar datos.
         $authError = $this->authorizeAdminOrCommercial($request);
         if ($authError) {
             return $authError;
         }
 
+        // Aqui saco datos base de contexto para construir la consulta.
         $companyId = $request->user()->company_id;
+        $search = trim((string) $request->query('search', ''));
 
-        $clients = Client::where('company_id', $companyId)
-            ->orderBy('client_number')
-            ->get();
+        // Empiezo siempre acotando por empresa para no mezclar clientes de otras cuentas.
+        $clientsQuery = Client::where('company_id', $companyId);
+
+        // Si llega texto de busqueda, filtro por los campos mas usados en panel.
+        if ($search !== '') {
+            $clientsQuery->where(function ($query) use ($search) {
+                $query->where('client_number', 'like', "%{$search}%")
+                    ->orWhere('dni', 'like', "%{$search}%")
+                    ->orWhere('nombre', 'like', "%{$search}%")
+                    ->orWhere('direccion', 'like', "%{$search}%")
+                    ->orWhere('poblacion', 'like', "%{$search}%")
+                    ->orWhere('codigo_postal', 'like', "%{$search}%")
+                    ->orWhere('provincia', 'like', "%{$search}%")
+                    ->orWhere('telefono', 'like', "%{$search}%")
+                    ->orWhere('telefono2', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Ordeno por numero de cliente para mantener consistencia visual en frontend.
+        $clientsQuery->orderBy('client_number');
+
+        // Si llega paginate=1, devuelvo solo una página y metadatos.
+        // Si no llega, mantengo respuesta completa para no romper otros módulos.
+        $usarPaginacion = filter_var($request->query('paginate', false), FILTER_VALIDATE_BOOLEAN);
+
+        // En modo paginado devuelvo data+meta+links para ControlesPaginacion.
+        if ($usarPaginacion) {
+            // Protejo per_page con minimo y maximo para evitar cargas extremas.
+            $perPage = (int) $request->query('per_page', 10);
+            if ($perPage < 1) {
+                $perPage = 10;
+            }
+            if ($perPage > 100) {
+                $perPage = 100;
+            }
+
+            // Pagino y conservo query params para que links/meta respeten filtros activos.
+            $clients = $clientsQuery
+                ->paginate($perPage)
+                ->appends($request->query());
+
+            // Devuelvo Resource collection paginada con mensaje uniforme de API.
+            return ClientResource::collection($clients)
+                ->additional([
+                    'message' => 'Listado de clientes obtenido correctamente',
+                ]);
+        }
+
+        // En modo legacy devuelvo la coleccion completa para endpoints antiguos.
+        $clients = $clientsQuery->get();
 
         return response()->json([
-            'clients' => $clients,
+            // Entrada: colección completa de clientes de la empresa autenticada.
+            // Salida: colección transformada por Resource con formato estable.
+            'clients' => ClientResource::collection($clients),
         ]);
     }
 
-    // Ver un cliente de la empresa del usuario logueado
+    // Aqui obtengo un cliente concreto por id, siempre dentro de la empresa del usuario.
     public function show(Request $request, int $id)
     {
+        // Reutilizo la misma puerta de seguridad para no repetir validaciones.
         $authError = $this->authorizeAdminOrCommercial($request);
         if ($authError) {
             return $authError;
         }
 
+        // Acoto la busqueda por empresa + id para evitar fugas de datos entre empresas.
         $companyId = $request->user()->company_id;
 
         $client = Client::where('company_id', $companyId)
             ->where('id', $id)
             ->first();
 
+        // Si no existe en esta empresa, respondo 404 claro.
         if (!$client) {
             return response()->json([
                 'error' => 'Cliente no encontrado en tu empresa',
@@ -74,20 +138,26 @@ class ClientController extends Controller
         }
 
         return response()->json([
-            'client' => $client,
+            // Entrada: cliente encontrado por empresa + id.
+            // Salida: objeto cliente transformado por Resource.
+            'client' => new ClientResource($client),
         ]);
     }
 
-    // Crear cliente con numero consecutivo por empresa (0 reservado para contado)
+    // Aqui creo un cliente nuevo y le asigno numero consecutivo por empresa.
+    // Nota: el 00000 se reserva para cliente contado.
     public function store(Request $request)
     {
+        // Valido permisos de entrada antes de crear nada.
         $authError = $this->authorizeAdminOrCommercial($request);
         if ($authError) {
             return $authError;
         }
 
+        // Saco company_id desde usuario autenticado para no confiar en datos del frontend.
         $companyId = $request->user()->company_id;
 
+        // Aqui valido datos de negocio y unicidad de DNI dentro de la misma empresa.
         $request->validate([
             'dni' => [
                 'required',
@@ -108,15 +178,19 @@ class ClientController extends Controller
             'dni.unique' => 'Ya existe un cliente con ese DNI en tu empresa.',
         ]);
 
+        // Calculo siguiente numero correlativo de cliente dentro de la empresa.
         $maxNumber = (int) Client::where('company_id', $companyId)->max('client_number');
         $nextNumber = $maxNumber + 1;
 
+        // Dejo un minimo de 1 para evitar numeracion invalida.
         if ($nextNumber < 1) {
             $nextNumber = 1;
         }
 
+        // Formateo a 5 digitos (ej: 00001) para mantener convencion visual.
         $nextNumberFormatted = str_pad((string) $nextNumber, 5, '0', STR_PAD_LEFT);
 
+        // Creo cliente con company_id forzado desde backend.
         $client = Client::create([
             'company_id' => $companyId,
             'client_number' => $nextNumberFormatted,
@@ -134,30 +208,37 @@ class ClientController extends Controller
 
         return response()->json([
             'message' => 'Cliente creado correctamente',
-            'client' => $client,
+            // Entrada: cliente recién creado.
+            // Salida: cliente transformado por Resource.
+            'client' => new ClientResource($client),
         ], 201);
     }
 
-    // Editar cliente de la misma empresa
+    // Aqui actualizo un cliente existente, siempre limitado a la misma empresa.
     public function update(Request $request, int $id)
     {
+        // Revalido permisos comunes para esta operacion.
         $authError = $this->authorizeAdminOrCommercial($request);
         if ($authError) {
             return $authError;
         }
 
+        // Trabajo con company_id del usuario para proteger multiempresa.
         $companyId = $request->user()->company_id;
 
+        // Busco cliente exacto por empresa + id.
         $client = Client::where('company_id', $companyId)
             ->where('id', $id)
             ->first();
 
+        // Si no existe en esta empresa, corto con 404.
         if (!$client) {
             return response()->json([
                 'error' => 'Cliente no encontrado en tu empresa',
             ], 404);
         }
 
+        // Validacion parcial (sometimes) para permitir updates por campos sueltos.
         $request->validate([
             'dni' => [
                 'sometimes',
@@ -187,6 +268,7 @@ class ClientController extends Controller
             ], 422);
         }
 
+        // Actualizo campo a campo, manteniendo valor actual cuando no llega en la request.
         $client->update([
             'dni' => $request->has('dni') ? $request->dni : $client->dni,
             'nombre' => $request->has('nombre') ? $request->nombre : $client->nombre,
@@ -202,7 +284,9 @@ class ClientController extends Controller
 
         return response()->json([
             'message' => 'Cliente actualizado correctamente',
-            'client' => $client->fresh(),
+            // Entrada: cliente actualizado en BD.
+            // Salida: cliente actualizado transformado por Resource.
+            'client' => new ClientResource($client->fresh()),
         ]);
     }
 }
