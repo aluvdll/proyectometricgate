@@ -14,6 +14,7 @@ export function BtnUserMenu() {
   const auth = useAuth();
   // Referencia al contenedor del menú para detectar clics fuera de él
   const menuRef = useRef(null);
+  const esSuperAdmin = auth.user?.role === "super_admin";
 
   // Cierra el dropdown al hacer clic fuera del componente.
   // useEffect con [] se ejecuta solo una vez al montar el componente.
@@ -117,31 +118,33 @@ export function BtnUserMenu() {
           open ? "" : "hidden"
         } absolute right-0 mt-2 w-48 bg-orange-300 border rounded shadow-lg text-gray-900 border-amber-300 `}
       >
-        {/* Enlace al panel según el rol del usuario */}
-        <Link
-          to={auth.user?.role === "super_admin" ? "/superadminPanel" : "/adminPanel"}
-          onClick={() => setOpen(false)}
-          className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
-        >
-          {auth.user?.role === "super_admin"
-            ? "SuperAdminPanel"
-            : auth.user?.role === "admin"
-              ? "AdminPanel"
-              : auth.user?.role === "commercial"
-                ? "ComerPanel"
-                : auth.user?.role === "technician"
-                  ? "TecniPanel"
-                  : ""}
-        </Link>
+        {!esSuperAdmin && (
+          <>
+            {/* Enlace al panel según el rol del usuario */}
+            <Link
+              to="/adminPanel"
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
+            >
+              {auth.user?.role === "admin"
+                ? "AdminPanel"
+                : auth.user?.role === "commercial"
+                  ? "ComerPanel"
+                  : auth.user?.role === "technician"
+                    ? "TecniPanel"
+                    : "Panel"}
+            </Link>
 
-        {/* Enlace al perfil del usuario autenticado */}
-        <Link
-          to={`/adminPanel/usuarios/vereditarusuario/${auth.user?.id}`}
-          onClick={() => setOpen(false)}
-          className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
-        >
-          Mi Perfil
-        </Link>
+            {/* Enlace al perfil del usuario autenticado */}
+            <Link
+              to={`/adminPanel/usuarios/vereditarusuario/${auth.user?.id}`}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 hover:bg-orange-400 text-gray-900 hover:text-white"
+            >
+              Mi Perfil
+            </Link>
+          </>
+        )}
 
         {/* Botón de cierre de sesión: limpia estado y redirige a /home */}
         <button
