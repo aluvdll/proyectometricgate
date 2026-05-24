@@ -8,6 +8,8 @@ export default function AvatarInput({ value, avatarUrl, onChange }) {
   const [previewUrl, setPreviewUrl] = useState(avatarUrl || null);
   const [cameraOn, setCameraOn] = useState(false);
   const [stream, setStream] = useState(null);
+  const [videoReady, setVideoReady] = useState(false);
+  const [cameraError, setCameraError] = useState("");
 
   useEffect(() => {
     if (value instanceof File) {
@@ -25,7 +27,15 @@ export default function AvatarInput({ value, avatarUrl, onChange }) {
 
   useEffect(() => {
     if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
+      try {
+        // En Firefox puede lanzar DOMException si el stream ya no es valido.
+        videoRef.current.srcObject = stream;
+      } catch (error) {
+        setCameraError(
+          "No he podido conectar la camara con el video. Cierra y vuelve a abrir la camara.",
+        );
+        setVideoReady(false);
+      }
     }
   }, [stream]);
 
@@ -44,22 +54,56 @@ export default function AvatarInput({ value, avatarUrl, onChange }) {
 
   const startCamera = async () => {
     try {
+      setCameraError("");
+      setVideoReady(false);
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError("Este navegador no soporta acceso a camara. Usa Subir imagen.");
+        return;
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user" },
       });
       setStream(mediaStream);
       setCameraOn(true);
     } catch (error) {
-      console.error(error);
+      const errorName = error?.name || "";
+
+      if (errorName === "NotAllowedError" || errorName === "SecurityError") {
+        setCameraError("No tengo permiso para usar la camara. Activalo en el navegador.");
+        return;
+      }
+
+      if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
+        setCameraError("No he encontrado ninguna camara en este dispositivo.");
+        return;
+      }
+
+      if (errorName === "NotReadableError" || errorName === "TrackStartError") {
+        setCameraError("La camara esta en uso por otra aplicacion. Cierra esa app e intentalo de nuevo.");
+        return;
+      }
+
+      setCameraError("No he podido abrir la camara. Revisa permisos del navegador o usa Subir imagen.");
     }
   };
 
   const stopCamera = () => {
+    if (videoRef.current) {
+      try {
+        videoRef.current.srcObject = null;
+      } catch (error) {
+        // Algunos navegadores lanzan error si el stream ya esta cerrado.
+      }
+    }
+
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
     }
     setStream(null);
     setCameraOn(false);
+    setVideoReady(false);
   };
 
   const takePhoto = () => {
@@ -70,7 +114,8 @@ export default function AvatarInput({ value, avatarUrl, onChange }) {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (!video.videoWidth || !video.videoHeight) {
+    if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+      setCameraError("La camara aun no esta lista. Espera un segundo y vuelve a capturar.");
       return;
     }
 
@@ -82,16 +127,23 @@ export default function AvatarInput({ value, avatarUrl, onChange }) {
       return;
     }
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    try {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    } catch (error) {
+      setCameraError("No he podido capturar la foto. Vuelve a abrir la camara e intentalo otra vez.");
+      return;
+    }
 
     canvas.toBlob(
       (blob) => {
         if (!blob) {
+          setCameraError("No he podido generar la imagen de la camara.");
           return;
         }
 
         const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
         onChange(file);
+        setCameraError("");
         stopCamera();
       },
       "image/jpeg",
@@ -123,7 +175,8 @@ export default function AvatarInput({ value, avatarUrl, onChange }) {
             <button
               type="button"
               onClick={takePhoto}
-              className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500"
+              disabled={!videoReady}
+              className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Capturar
             </button>
@@ -156,8 +209,16 @@ export default function AvatarInput({ value, avatarUrl, onChange }) {
             ref={videoRef}
             autoPlay
             playsInline
+            onLoadedData={() => {
+              setVideoReady(true);
+              setCameraError("");
+            }}
             className="mt-1 h-44 w-60 rounded-md border object-cover"
           />
+        )}
+
+        {cameraError && (
+          <p className="text-sm text-red-500">{cameraError}</p>
         )}
       </div>
 

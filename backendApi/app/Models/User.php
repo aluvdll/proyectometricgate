@@ -11,7 +11,9 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory;
+    use Notifiable;
+    use HasApiTokens;
 
     protected $fillable = [
         'company_id',
@@ -39,6 +41,18 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // Normalizo avatar antes de guardar para evitar valores inválidos como "0".
+    public function setAvatarAttribute($value): void
+    {
+        if ($value === null || $value === '' || $value === '0' || $value === 0) {
+            $this->attributes['avatar'] = null;
+
+            return;
+        }
+
+        $this->attributes['avatar'] = $value;
     }
 
     // 🏢 RELACIÓN CON EMPRESA

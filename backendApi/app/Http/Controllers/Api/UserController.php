@@ -19,24 +19,24 @@ class UserController extends Controller
     {
         $users = User::with('company')->paginate(10);
 
- 
-// Esa consulta devuelve una colección paginada de usuarios
-// junto con la relación company cargada.
-//
-// UserResource::collection($users) recorre automáticamente
-// cada usuario de la colección y aplica el formato definido
-// dentro de UserResource.
-//
-// Gracias a collection(), no devuelvo directamente el modelo,
-// sino una respuesta JSON controlada y consistente.
-//
-// Además, como $users viene de paginate(),
-// Laravel añade automáticamente:
-// - data
-// - links
-// - meta
-//
-// Esto facilita la paginación en el frontend.
+
+        // Esa consulta devuelve una colección paginada de usuarios
+        // junto con la relación company cargada.
+        //
+        // UserResource::collection($users) recorre automáticamente
+        // cada usuario de la colección y aplica el formato definido
+        // dentro de UserResource.
+        //
+        // Gracias a collection(), no devuelvo directamente el modelo,
+        // sino una respuesta JSON controlada y consistente.
+        //
+        // Además, como $users viene de paginate(),
+        // Laravel añade automáticamente:
+        // - data
+        // - links
+        // - meta
+        //
+        // Esto facilita la paginación en el frontend.
 
         return UserResource::collection($users)
             ->additional([
@@ -60,6 +60,11 @@ class UserController extends Controller
         $avatarPath = null;
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            if ($avatarPath === false) {
+                return response()->json([
+                    'error' => 'No se pudo guardar el avatar en almacenamiento público'
+                ], 500);
+            }
         }
 
         $user = User::create([
@@ -232,6 +237,11 @@ class UserController extends Controller
         $avatarPath = null;
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            if ($avatarPath === false) {
+                return response()->json([
+                    'error' => 'No se pudo guardar el avatar en almacenamiento público'
+                ], 500);
+            }
         }
 
         $newUser = User::create([
@@ -304,7 +314,19 @@ class UserController extends Controller
             'remove_avatar' => 'sometimes|boolean',
         ]);
 
-        $avatarPath = $existingUser->avatar;
+        // Si llega 'avatar' pero no es archivo real, devolvemos error claro.
+        if ($request->has('avatar') && !$request->hasFile('avatar')) {
+            return response()->json([
+                'message' => 'El campo avatar debe enviarse como archivo.',
+                'errors' => [
+                    'avatar' => ['Avatar no válido: no se recibió un archivo.'],
+                ],
+            ], 422);
+        }
+
+        $avatarPath = in_array($existingUser->avatar, ['0', 0, ''], true)
+            ? null
+            : $existingUser->avatar;
         $removeAvatar = filter_var($request->input('remove_avatar', false), FILTER_VALIDATE_BOOLEAN);
 
         if ($removeAvatar && !empty($existingUser->avatar)) {
@@ -317,6 +339,11 @@ class UserController extends Controller
                 Storage::disk('public')->delete($existingUser->avatar);
             }
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            if ($avatarPath === false) {
+                return response()->json([
+                    'error' => 'No se pudo guardar el avatar en almacenamiento público'
+                ], 500);
+            }
         }
 
         $existingUser->update([

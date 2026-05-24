@@ -166,7 +166,7 @@ export const UsersPanel = () => {
                   <td className="px-4 py-2">
                     <img
                       src={
-                        usuario.avatar
+                        usuario.avatar && usuario.avatar !== "0"
                           ? `${API_URL}/storage/${usuario.avatar}`
                           : "/ico_avatar_default.png"
                       }

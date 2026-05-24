@@ -58,8 +58,8 @@ class UserResource extends JsonResource
             'city' => $this->city,
             'province' => $this->province,
 
-            // Imagen/avatar del usuario
-            'avatar' => $this->avatar,
+            // Imagen/avatar del usuario (si llega "0" por datos legacy, lo trato como null)
+            'avatar' => ($this->avatar === '0' || $this->avatar === 0 || $this->avatar === '') ? null : $this->avatar,
 
             // Rol del usuario dentro del sistema
             'role' => $this->role,

@@ -326,7 +326,7 @@ export function FormUsuario({ mode, userId }) {
             <label className="block text-sm font-bold mb-2">Avatar</label>
             <AvatarInput
               value={avatar}
-              avatarUrl={avatarUrl ? `${API_URL}/storage/${avatarUrl}` : null}
+              avatarUrl={avatarUrl && avatarUrl !== "0" ? `${API_URL}/storage/${avatarUrl}` : null}
               onChange={(newAvatar) => {
                 setAvatar(newAvatar);
                 setValue("avatar", newAvatar);

@@ -51,7 +51,7 @@ export function BtnUserMenu() {
     const avatar =
       auth.user?.avatar || auth.user?.avatarUrl || auth.user?.avatar_url || "";
 
-    if (!avatar) return "/ico_avatar_default.png";
+    if (!avatar || avatar === "0") return "/ico_avatar_default.png";
 
     // URL absoluta: se usa directamente
     if (avatar.startsWith("http://") || avatar.startsWith("https://")) {
