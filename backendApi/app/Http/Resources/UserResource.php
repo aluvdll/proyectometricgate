@@ -6,9 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 // Este Resource sirve para definir cómo se devuelve un usuario en la API.
-// Aquí decido qué campos mostrar y con qué formato.
+// Aquí decido qué campos mostrar y con que formato.
 //
-// Tener esta capa intermedia me ayuda a desacoplar backend y frontend.
+// Tener esta capa intermedia me ayda a desacoplar backend y frontend.
 // Así puedo cambiar campos internos de la base de datos o del modelo
 // sin romper el frontend, porque la API siempre devuelve el mismo formato.
 //
@@ -25,7 +25,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 // y la API seguiría devolviendo "name".
 //
 // Ejemplo frontend:
-// Si el frontend necesita un nuevo campo llamado "is_admin",
+// Si el frontend necessita un nuevo campo llamado "is_admin",
 // puedo construirlo aquí sin modificar la tabla:
 //
 // 'is_admin' => $this->role === 'admin'
@@ -42,7 +42,7 @@ class UserResource extends JsonResource
     {
         return [
 
-            // Datos principales del usuario
+            // Datos principales del usuario_
             'id' => $this->id,
             'company_id' => $this->company_id,
             'name' => $this->name,

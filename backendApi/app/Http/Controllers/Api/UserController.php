@@ -9,12 +9,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Company;
 
 class UserController extends Controller
 {
-    // listar usuarios (superadmin)
+    // Aquí devuelvo el listado paginado de usuarios para superadmin.
     public function index()
     {
         $users = User::with('company')->paginate(10);
@@ -44,7 +42,7 @@ class UserController extends Controller
             ]);
     }
 
-    // crear usuario desde superadmin
+    // Aquí creo un usuario nuevo cuando quien opera es superadmin.
     public function store(Request $request)
     {
         $request->validate([
@@ -90,7 +88,7 @@ class UserController extends Controller
         ], 201);
     }
 
-    // eliminar usuario (superadmin)
+    // Aquí elimino un usuario desde el contexto de superadmin.
     public function destroy($id)
     {
         $authUser = request()->user();
@@ -112,10 +110,7 @@ class UserController extends Controller
         ]);
     }
 
-    // listar todos los usuarios de la empresa (admin )
-    // listar solo su empresa
-    // listar usuarios de la empresa del usuario logueado (admin)
-    // listar usuarios de la empresa del admin logueado
+    // Aquí listo los usuarios de mi empresa (admin), con paginación y búsqueda.
     public function companyUsers(Request $request)
     {
         $user = $request->user();
@@ -132,9 +127,26 @@ class UserController extends Controller
             ], 403);
         }
 
-        $users = User::with('company')
-            ->where('company_id', $user->company_id)
-            ->paginate(10);
+        $search = trim((string) $request->query('search', ''));
+
+        $usersQuery = User::with('company')
+            ->where('company_id', $user->company_id);
+
+        if ($search !== '') {
+            $usersQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('dni', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('role', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhere('province', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $usersQuery
+            ->paginate(10)
+            ->appends($request->query());
 
         // Entrada: usuarios de mi empresa, ya paginados.
         // Salida: data con Resource + links/meta para que frontend pagine fácil.
@@ -144,7 +156,7 @@ class UserController extends Controller
             ]);
     }
 
-    // ver usuario por id dentro de la empresa (admin)
+    // Aquí obtengo un usuario concreto de mi empresa por su id.
     public function showByCompany(Request $request, $id)
     {
         $user = $request->user();
@@ -182,8 +194,7 @@ class UserController extends Controller
             ]);
     }
 
-
-    // crear usuario dentro de la empresa (admin)
+    // Aquí creo un usuario nuevo dentro de mi empresa como admin.
     public function storeByCompany(Request $request)
     {
         $user = $request->user();
@@ -267,7 +278,7 @@ class UserController extends Controller
         ], 201);
     }
 
-    // actualizar usuario dentro de la empresa (admin)
+    // Aquí actualizo un usuario de mi empresa respetando permisos y validaciones.
     public function updateByCompany(Request $request, $id)
     {
         $user = $request->user();
@@ -366,6 +377,8 @@ class UserController extends Controller
             'data' => (new UserResource($existingUser->load('company')))->toArray($request)
         ], 200);
     }
+
+    // Aquí elimino un usuario de mi empresa y bloqueo autoeliminación del admin.
     public function destroyByCompany(Request $request, $id)
     {
         $user = $request->user();

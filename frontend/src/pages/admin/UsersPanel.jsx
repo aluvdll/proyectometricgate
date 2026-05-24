@@ -27,13 +27,19 @@ export const UsersPanel = () => {
   const [search, setSearch] = useState("");
 
   // Aquí pido la página al backend y guardo lista + datos de paginación.
-  const fetchUsers = async (page = 1) => {
+  const fetchUsers = async (page = 1, searchTerm = "") => {
     if (!token) return;
 
     setLoading(true);
 
     try {
-      const response = await axios.get(`${API_URL}/api/company/users?page=${page}`, {
+      const normalizedSearch = searchTerm.trim();
+
+      const response = await axios.get(`${API_URL}/api/company/users`, {
+        params: {
+          page,
+          search: normalizedSearch || undefined,
+        },
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -72,8 +78,12 @@ export const UsersPanel = () => {
       return;
     }
 
-    fetchUsers(1);
-  }, [token, authLoading]);
+    const debounceId = setTimeout(() => {
+      fetchUsers(1, search);
+    }, 300);
+
+    return () => clearTimeout(debounceId);
+  }, [token, authLoading, search]);
 
   const handlerClickEdit = (id) => {
     navigate(`/adminPanel/usuarios/vereditarusuario/${id}`);
@@ -90,7 +100,7 @@ export const UsersPanel = () => {
       });
 
       // Aquí recargo la página actual para no desajustar tabla y contador.
-      fetchUsers(currentPage);
+      fetchUsers(currentPage, search);
 
       setNotifyTitle("Éxito");
       setNotifyMessage("Usuario eliminado correctamente");
@@ -114,17 +124,10 @@ export const UsersPanel = () => {
   if (loading) return <div>Cargando...</div>;
   if (error) return <div>{error}</div>;
 
-  const filteredUsuarios = usuarios.filter((usuario) =>
-    Object.values(usuario)
-      .join(" ")
-      .toLowerCase()
-      .includes(search.toLowerCase()),
-  );
-
   // Aqui cambio de pagina desde el componente reutilizable.
   const handlePageChange = (page) => {
     if (page < 1 || page > lastPage) return;
-    fetchUsers(page);
+    fetchUsers(page, search);
   };
 
   return (
@@ -154,7 +157,7 @@ export const UsersPanel = () => {
           </thead>
 
           <tbody>
-            {filteredUsuarios
+            {usuarios
               .filter((usuario) => usuario.id !== user?.id)
               .map((usuario, index) => (
                 <tr
