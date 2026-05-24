@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { API_URL } from "../../services/apiBase";
 
-const RAW_API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-const API_URL = RAW_API_URL.replace(/\/api\/?$/, "");
+const RAW_API_URL = API_URL.replace(/\/api\/?$/, "");
 
 // Menú desplegable del usuario autenticado: muestra avatar, nombre, rol
 // y enlaces a panel, perfil y cierre de sesión.

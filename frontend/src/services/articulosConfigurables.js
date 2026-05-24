@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "./apiBase";
+
 const BASE = `${API_URL}/api/company/configurable-articles`;
 
 function tokenSesion() {

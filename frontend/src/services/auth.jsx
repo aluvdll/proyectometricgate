@@ -1,6 +1,6 @@
 import axios from "axios";
+import { API_URL } from "./apiBase";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 const AUTH_LOGIN_URL = `${API_URL}/api/login`;
 
 // Funcion que llama al backend para login

@@ -11,7 +11,8 @@ import {
   obtenerPresupuestoEmpresa,
 } from "../../services/presupuestos";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "../../services/apiBase";
+
 
 const estados = [
   { value: "pendiente", label: "Pendiente" },

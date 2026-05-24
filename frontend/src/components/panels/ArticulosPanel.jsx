@@ -6,7 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 import { obtenerArticulosEmpresa } from "../../services/articulos";
 import { listarArticulosConfigurables } from "../../services/articulosConfigurables";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "../../services/apiBase";
+
 
 export function ArticulosPanel() {
   const navigate = useNavigate();

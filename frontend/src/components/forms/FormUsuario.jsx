@@ -6,7 +6,8 @@ import AvatarInput from "../shared/AvatarInput";
 import { useAuth } from "../../context/AuthContext";
 import { NotificationModal } from "../modals/NotificationModal";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "../../services/apiBase";
+
 
 const valoresIniciales = {
   name: "",

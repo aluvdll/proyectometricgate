@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { obtenerPedido, actualizarEstadoPedido } from "../../services/pedidos";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "../../services/apiBase";
+
 
 //obtener empresa
 export async function obtenerEmpresa() {
