@@ -105,3 +105,15 @@ export async function reactivarEmpresa(token, idEmpresa) {
     body: JSON.stringify({}),
   });
 }
+
+export async function obtenerUsuariosEmpresa(token, idEmpresa) {
+  const respuesta = await llamarApi(
+    `${API_URL}/api/users?company_id=${encodeURIComponent(idEmpresa)}&per_page=200`,
+    {
+      method: "GET",
+      headers: crearHeaders(token),
+    },
+  );
+
+  return respuesta?.data || [];
+}

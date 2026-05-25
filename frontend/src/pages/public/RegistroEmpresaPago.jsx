@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { NotificationModal } from "../../components/modals/NotificationModal";
 
@@ -7,6 +7,7 @@ const initialForm = {
   fiscal_name: "",
   commercial_name: "",
   cif_nif: "",
+  logo: null,
   email: "",
   address: "",
   phone: "",
@@ -53,6 +54,7 @@ function buildErrorMessage(error, fallback) {
 }
 
 export default function RegistroEmpresaPago() {
+  const navigate = useNavigate();
   const [loadingInfo, setLoadingInfo] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState(null);
@@ -70,7 +72,6 @@ export default function RegistroEmpresaPago() {
     register,
     handleSubmit,
     setValue,
-    reset,
     setError: setFormError,
     clearErrors,
     formState: { errors },
@@ -157,18 +158,30 @@ export default function RegistroEmpresaPago() {
     const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
     try {
+      const formData = new FormData();
+      formData.append("token", token);
+
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === "logo") {
+          if (value?.[0]) {
+            formData.append("logo", value[0]);
+          }
+          return;
+        }
+
+        if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
+      });
+
       const response = await fetch(
         `${apiUrl}/api/checkout/registration/complete`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify({
-            token,
-            ...data,
-          }),
+          body: formData,
         },
       );
 
@@ -207,11 +220,7 @@ export default function RegistroEmpresaPago() {
         "success",
       );
 
-      reset(initialForm);
-      if (paymentInfo?.customer_email) {
-        setValue("admin_email", paymentInfo.customer_email);
-        setValue("admin_email_confirmation", paymentInfo.customer_email);
-      }
+      navigate("/login", { replace: true });
     } catch (err) {
       const message = err?.message || "No se pudo completar el registro.";
       showNotification("Error", message, "error");
@@ -309,6 +318,24 @@ export default function RegistroEmpresaPago() {
               })}
             />
             {renderFieldError("cif_nif")}
+          </div>
+
+          <div>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className={errors.logo ? fieldErrorClassName : fieldClassName}
+              {...register("logo", {
+                required: "El logo de la empresa es obligatorio",
+                validate: (value) =>
+                  value?.[0] instanceof File ||
+                  "Debes seleccionar un archivo de logo válido",
+              })}
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Formatos permitidos: JPG, PNG o WEBP. Tamaño máximo: 5 MB.
+            </p>
+            {renderFieldError("logo")}
           </div>
 
           <div>

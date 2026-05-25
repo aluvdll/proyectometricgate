@@ -102,6 +102,8 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
     Route::middleware('company')->group(function () {
 
         // Rutas para que el admin de la empresa pueda gestionar sus usuarios dentro de su empresa
+        Route::get('/company/print-info', [CompanyController::class, 'companyPrintInfo']);
+        Route::get('/company/logo', [CompanyController::class, 'companyLogo']);
         Route::get('/company/users', [UserController::class, 'companyUsers']);
         Route::get('/company/users/{id}', [UserController::class, 'showByCompany']);
         Route::post('/company/users', [UserController::class, 'storeByCompany']);

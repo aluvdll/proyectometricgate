@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { obtenerPresupuestoEmpresa } from "../../services/presupuestos";
+import {
+  obtenerDatosEmpresaImpresion,
+  obtenerLogoEmpresaDataUrl,
+} from "../../services/companyLogo";
 
-const LOGO_SRC = "/logo_MetricGate.png";
+const FALLBACK_LOGO_SRC = "/logo_MetricGate.png";
 
 function formatCurrency(value) {
   return `${Number(value || 0).toFixed(2)} €`;
@@ -44,6 +48,8 @@ export default function BudgetPrintPage() {
   const [error, setError] = useState("");
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfError, setPdfError] = useState("");
+  const [companyLogoSrc, setCompanyLogoSrc] = useState("");
+  const [companyInfo, setCompanyInfo] = useState(null);
 
   // Aqui intento volver con historial y, si no existe, redirijo al listado de presupuestos.
   function handleBack() {
@@ -82,6 +88,35 @@ export default function BudgetPrintPage() {
       active = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCompanyLogo() {
+      const [logoDataUrl, printInfo] = await Promise.all([
+        obtenerLogoEmpresaDataUrl(),
+        obtenerDatosEmpresaImpresion(),
+      ]);
+
+      if (!active) return;
+
+      if (logoDataUrl) {
+        setCompanyLogoSrc(logoDataUrl);
+      } else {
+        setCompanyLogoSrc("");
+      }
+
+      if (printInfo) {
+        setCompanyInfo(printInfo);
+      }
+    }
+
+    loadCompanyLogo();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const clientName = useMemo(() => {
     return budget?.client?.nombre || "Cliente";
@@ -156,7 +191,34 @@ export default function BudgetPrintPage() {
       >
         <div className="mb-8 flex items-start justify-between gap-4 border-b pb-4">
           <div className="flex flex-col items-start">
-            <img src={LOGO_SRC} alt="MetricGate" className="h-32 w-auto" />
+            {companyLogoSrc ? (
+              <img
+                src={companyLogoSrc}
+                alt="Logo empresa"
+                className="h-32 w-auto"
+              />
+            ) : companyInfo ? (
+              <div className="rounded border border-[#d1d5db] bg-[#f9fafb] px-4 py-3 text-sm text-[#111827]">
+                <div className="font-bold">
+                  {companyInfo.commercial_name ||
+                    companyInfo.fiscal_name ||
+                    "Empresa"}
+                </div>
+                <div>{companyInfo.address || ""}</div>
+                <div>
+                  {[companyInfo.city, companyInfo.province]
+                    .filter(Boolean)
+                    .join(", ")}
+                </div>
+                <div>{companyInfo.phone || ""}</div>
+              </div>
+            ) : (
+              <img
+                src={FALLBACK_LOGO_SRC}
+                alt="MetricGate"
+                className="h-32 w-auto"
+              />
+            )}
             <h1 className="mt-2 text-base font-bold text-[#111827]">
               Presupuesto
             </h1>

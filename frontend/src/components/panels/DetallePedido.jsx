@@ -1,23 +1,10 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { obtenerPedido, actualizarEstadoPedido } from "../../services/pedidos";
-
-import { API_URL } from "../../services/apiBase";
-
-
-//obtener empresa
-export async function obtenerEmpresa() {
-  const res = await axios.get(`${API_URL}/api/me`, {
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  });
-  // El backend devuelve el usuario; si incluye la relación company la usamos
-  return res.data.company;
-}
+import {
+  obtenerDatosEmpresaImpresion,
+  obtenerLogoEmpresaDataUrl,
+} from "../../services/companyLogo";
 
 export function DetallePedido() {
   const { id } = useParams();
@@ -78,11 +65,18 @@ export function DetallePedido() {
   const generarMatricula = async () => {
     try {
       const html2pdf = (await import("html2pdf.js")).default;
+      const [logoEmpresaDataUrl, datosEmpresaImpresion] = await Promise.all([
+        obtenerLogoEmpresaDataUrl(),
+        obtenerDatosEmpresaImpresion(),
+      ]);
+
+      const empresa = datosEmpresaImpresion || {};
 
       // Crear HTML del PDF
       const element = document.createElement("div");
       element.style.width = "105mm";
-      element.style.height = "148mm";
+      // Dejo un pequeño margen tecnico para evitar que html2pdf cree una 2ª pagina en blanco.
+      element.style.height = "147mm";
       element.style.padding = "8mm";
       element.style.boxSizing = "border-box";
       element.style.fontFamily = "Arial, sans-serif";
@@ -96,7 +90,7 @@ export function DetallePedido() {
 
       // Logo
       const logo = document.createElement("img");
-      logo.src = "/logo_MetricGate.png";
+      logo.src = logoEmpresaDataUrl || "";
       logo.style.display = "block";
       logo.style.maxWidth = "65mm";
       logo.style.width = "100%";
@@ -104,6 +98,29 @@ export function DetallePedido() {
       logo.onerror = () => {
         logo.style.display = "none";
       };
+
+      const cuadroEmpresa = document.createElement("div");
+      cuadroEmpresa.style.display = "none";
+      cuadroEmpresa.style.width = "100%";
+      cuadroEmpresa.style.border = "1px solid #d1d5db";
+      cuadroEmpresa.style.borderRadius = "6px";
+      cuadroEmpresa.style.padding = "3mm";
+      cuadroEmpresa.style.margin = "0 auto 4mm auto";
+      cuadroEmpresa.style.background = "#f9fafb";
+      cuadroEmpresa.style.fontSize = "9px";
+      cuadroEmpresa.style.color = "#111827";
+
+      const nombreEmpresa =
+        datosEmpresaImpresion?.commercial_name ||
+        datosEmpresaImpresion?.fiscal_name ||
+        "Empresa";
+
+      cuadroEmpresa.innerHTML = `
+        <p style="margin: 0 0 1.5mm 0; font-size: 10px; font-weight: bold;">${nombreEmpresa}</p>
+        <p style="margin: 0 0 1mm 0;">${empresa.address || ""}</p>
+        <p style="margin: 0 0 1mm 0;">${[empresa.city || "", empresa.province || ""].filter(Boolean).join(", ")}</p>
+        <p style="margin: 0;">${empresa.phone || ""}</p>
+      `;
 
       // Número de matrícula
       const numeroMatricula = document.createElement("div");
@@ -118,41 +135,77 @@ export function DetallePedido() {
       `;
 
       // Datos de la empresa
-      const empresa = await obtenerEmpresa();
       const datosEmpresa = document.createElement("div");
       datosEmpresa.style.textAlign = "center";
       datosEmpresa.innerHTML = `
         <p style="font-size: 14px; font-weight: bold; color: #000; margin: 6mm 0 2mm 0;">
-          ${empresa.fiscal_name}
+          ${empresa.commercial_name || empresa.fiscal_name || ""}
         </p>
         <p style="font-size: 9px; color: #666; margin: 0 0 1mm 0;">
-          ${empresa.address} 
+          ${empresa.address || ""}
         </p>
         
         <p style="font-size: 9px; color: #666; margin: 0 0 1mm 0;">
-         ${empresa.city} · ${empresa.postal_code} · 
+         ${empresa.city || ""} ${empresa.province ? `· ${empresa.province}` : ""}
         </p>
-        
-        <p style="font-size: 9px; color: #666; margin: 0 0 1mm 0;">
-          ${empresa.province}
-        </p>
-        
+
         <p style="font-size: 9px; color: #666; margin: 0;">
-          CIF: ${empresa.cif_nif} · Tel: ${empresa.phone}
+          Tel: ${empresa.phone || ""}
         </p>
       `;
 
-      element.appendChild(logo);
+      // Logo pequeño de MetricGate con datos de contacto del footer.
+      const pieContenedor = document.createElement("div");
+      pieContenedor.style.marginTop = "auto";
+      pieContenedor.style.width = "100%";
+      pieContenedor.style.display = "flex";
+      pieContenedor.style.justifyContent = "flex-end";
+      pieContenedor.style.alignItems = "flex-end";
+      pieContenedor.style.gap = "2.5mm";
+      pieContenedor.style.paddingTop = "4mm";
+
+      const contactoMetricGate = document.createElement("div");
+      contactoMetricGate.style.textAlign = "right";
+      contactoMetricGate.style.fontSize = "7px";
+      contactoMetricGate.style.lineHeight = "1.2";
+      contactoMetricGate.style.color = "#4b5563";
+      contactoMetricGate.innerHTML = `
+        <p style="margin: 0; font-weight: 600; color: #111827;">MetricGate</p>
+        <p style="margin: 0;">Tel: +34 637 14 10 76</p>
+        <p style="margin: 0;">Ramon y Cajal 1, Alicante, España</p>
+      `;
+
+      const logoMetricGate = document.createElement("img");
+      logoMetricGate.src = "/logo_MetricGate.png";
+      logoMetricGate.alt = "MetricGate";
+      logoMetricGate.style.width = "18mm";
+      logoMetricGate.style.height = "auto";
+      logoMetricGate.style.opacity = "0.95";
+      logoMetricGate.onerror = () => {
+        logoMetricGate.style.display = "none";
+      };
+
+      pieContenedor.appendChild(contactoMetricGate);
+      pieContenedor.appendChild(logoMetricGate);
+
+      if (logoEmpresaDataUrl) {
+        element.appendChild(logo);
+      } else {
+        cuadroEmpresa.style.display = "block";
+        element.appendChild(cuadroEmpresa);
+      }
       element.appendChild(numeroMatricula);
       element.appendChild(datosEmpresa);
+      element.appendChild(pieContenedor);
 
       // Opciones de html2pdf
       const options = {
-        margin: 0,
+        margin: [0, 0, 0, 0],
         filename: `matricula_${pedido.order_number}.pdf`,
         image: { type: "image/png", quality: 0.98 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: "mm", format: "a6", orientation: "portrait" },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
       };
 
       // Generar PDF

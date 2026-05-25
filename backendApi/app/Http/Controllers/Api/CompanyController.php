@@ -7,7 +7,6 @@ use App\Http\Resources\CompanyResource;
 use App\Http\Resources\UserResource;
 use App\Models\Company;
 use Illuminate\Http\Request;
-
 // Estos imports quedan comentados porque hoy no se usan:
 // dependen del destroy con cascade fisico, y ese bloque esta desactivado abajo.
 // use Illuminate\Support\Facades\DB;
@@ -27,9 +26,75 @@ use Illuminate\Http\Request;
 // use App\Models\StandardArticle;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller
 {
+    // Aquí devuelvo los datos de cabecera de la empresa autenticada para impresión.
+    public function companyPrintInfo(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user || !$user->company_id) {
+            return response()->json([
+                'error' => 'No autorizado para ver datos de empresa'
+            ], 403);
+        }
+
+        $company = Company::find($user->company_id);
+
+        if (!$company) {
+            return response()->json([
+                'error' => 'Empresa no encontrada'
+            ], 404);
+        }
+
+        return response()->json([
+            'company' => [
+                'fiscal_name' => $company->fiscal_name,
+                'commercial_name' => $company->commercial_name,
+                'address' => $company->address,
+                'city' => $company->city,
+                'province' => $company->province,
+                'phone' => $company->phone,
+            ],
+        ]);
+    }
+
+    // Aquí devuelvo el logo privado de la empresa del usuario autenticado.
+    public function companyLogo(Request $request)
+    {
+        $user = $request->user();
+
+        // Solo usuarios asociados a empresa pueden ver su logo.
+        if (!$user || !$user->company_id) {
+            return response()->json([
+                'error' => 'No autorizado para ver logos de empresa'
+            ], 403);
+        }
+
+        $company = Company::find($user->company_id);
+
+        if (!$company || !$company->logo) {
+            return response()->json([
+                'error' => 'Logo no disponible'
+            ], 404);
+        }
+
+        if (!Storage::disk('local')->exists($company->logo)) {
+            return response()->json([
+                'error' => 'Archivo de logo no encontrado'
+            ], 404);
+        }
+
+        return response()->file(
+            Storage::disk('local')->path($company->logo),
+            [
+                'Cache-Control' => 'private, max-age=3600',
+            ]
+        );
+    }
+
     // Aqui listo todas las empresas para superadmin y las devuelvo con Resource.
     public function index()
     {

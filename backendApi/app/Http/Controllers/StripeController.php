@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
@@ -17,7 +18,6 @@ use Stripe\Webhook;
 
 class StripeController extends Controller
 {
-
     // Yo recibo y valido el webhook de Stripe para confirmar eventos de pago de forma segura.
     public function webhook(Request $request)
     {
@@ -234,12 +234,12 @@ class StripeController extends Controller
     public function completeRegistration(Request $request)
     {
         $validated = $request->validate([
-            
             'token' => 'required|string',
 
             'fiscal_name' => 'required|string|max:255',
             'commercial_name' => 'nullable|string|max:255',
             'cif_nif' => 'required|string|max:50|unique:companies,cif_nif',
+            'logo' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
             'email' => 'required|email|unique:companies,email',
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
@@ -275,6 +275,7 @@ class StripeController extends Controller
             'fiscal_name' => 'nombre fiscal',
             'commercial_name' => 'nombre comercial',
             'cif_nif' => 'CIF/NIF',
+            'logo' => 'logo de empresa',
             'email' => 'email de empresa',
             'address' => 'dirección',
             'phone' => 'teléfono',
@@ -316,43 +317,58 @@ class StripeController extends Controller
             ], 422);
         }
 
-        $resultado = DB::transaction(function () use ($validated, $registration) {
-            $maxUsers = stripos($registration['plan_name'] ?? '', 'extendida') !== false ? 25 : 5;
+        $logoPath = $request->file('logo')->store('company-logos', 'local');
 
-            $empresa = Company::create([
-                'fiscal_name' => $validated['fiscal_name'],
-                'commercial_name' => $validated['commercial_name'] ?? null,
-                'cif_nif' => $validated['cif_nif'],
-                'email' => $validated['email'],
-                'address' => $validated['address'],
-                'phone' => $validated['phone'],
-                'phone2' => $validated['phone2'] ?? null,
-                'city' => $validated['city'],
-                'province' => $validated['province'],
-                'postal_code' => $validated['postal_code'],
-                'active' => true,
-                'max_users' => $maxUsers,
-            ]);
+        if ($logoPath === false) {
+            return response()->json([
+                'message' => 'No se pudo guardar el logo de la empresa.',
+            ], 500);
+        }
 
-            $administrador = User::create([
-                'company_id' => $empresa->id,
-                'name' => $validated['admin_name'],
-                'email' => $validated['admin_email'],
-                'password' => Hash::make($validated['admin_password']),
-                'dni' => $validated['admin_dni'],
-                'phone' => $validated['admin_phone'] ?? '',
-                'address' => $validated['admin_address'] ?? '',
-                'city' => $validated['admin_city'] ?? '',
-                'province' => $validated['admin_province'] ?? '',
-                'role' => 'admin',
-                'active' => true,
-            ]);
+        try {
+            $resultado = DB::transaction(function () use ($validated, $registration, $logoPath) {
+                $maxUsers = stripos($registration['plan_name'] ?? '', 'extendida') !== false ? 25 : 5;
 
-            return [
-                'empresa' => $empresa,
-                'administrador' => $administrador,
-            ];
-        });
+                $empresa = Company::create([
+                    'fiscal_name' => $validated['fiscal_name'],
+                    'commercial_name' => $validated['commercial_name'] ?? null,
+                    'cif_nif' => $validated['cif_nif'],
+                    'email' => $validated['email'],
+                    'address' => $validated['address'],
+                    'phone' => $validated['phone'],
+                    'phone2' => $validated['phone2'] ?? null,
+                    'city' => $validated['city'],
+                    'province' => $validated['province'],
+                    'postal_code' => $validated['postal_code'],
+                    'logo' => $logoPath,
+                    'active' => true,
+                    'max_users' => $maxUsers,
+                ]);
+
+                $administrador = User::create([
+                    'company_id' => $empresa->id,
+                    'name' => $validated['admin_name'],
+                    'email' => $validated['admin_email'],
+                    'password' => Hash::make($validated['admin_password']),
+                    'dni' => $validated['admin_dni'],
+                    'phone' => $validated['admin_phone'] ?? '',
+                    'address' => $validated['admin_address'] ?? '',
+                    'city' => $validated['admin_city'] ?? '',
+                    'province' => $validated['admin_province'] ?? '',
+                    'role' => 'admin',
+                    'active' => true,
+                ]);
+
+                return [
+                    'empresa' => $empresa,
+                    'administrador' => $administrador,
+                ];
+            });
+        } catch (\Throwable $e) {
+            Storage::disk('local')->delete($logoPath);
+
+            throw $e;
+        }
 
         Cache::forget($tokenCacheKey);
         Cache::put($completedCacheKey, true, now()->addDays(30));

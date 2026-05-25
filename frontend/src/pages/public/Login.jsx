@@ -141,17 +141,6 @@ export function Login() {
             </button>
           </div>
         </form>
-
-        {/* Enlace para registrarse */}
-        <p className="mt-10 text-center text-sm/6 text-gray-900 dark:text-gray-100">
-          ¿No tienes una cuenta?{" "}
-          <a
-            href="#"
-            className="font-semibold text-orange-300 hover:text-orange-500 hover:underline dark:text-orange-200 dark:hover:text-white dark:hover:underline"
-          >
-            Solicítala aquí.
-          </a>
-        </p>
       </div>
 
       {notifyVisible && (

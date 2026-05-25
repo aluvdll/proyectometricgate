@@ -13,9 +13,25 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     // Aquí devuelvo el listado paginado de usuarios para superadmin.
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('company')->paginate(10);
+        $perPage = (int) $request->query('per_page', 10);
+
+        if ($perPage < 1) {
+            $perPage = 10;
+        }
+
+        if ($perPage > 200) {
+            $perPage = 200;
+        }
+
+        $usersQuery = User::with('company');
+
+        if ($request->filled('company_id')) {
+            $usersQuery->where('company_id', (int) $request->query('company_id'));
+        }
+
+        $users = $usersQuery->paginate($perPage)->appends($request->query());
 
 
         // Esa consulta devuelve una colección paginada de usuarios

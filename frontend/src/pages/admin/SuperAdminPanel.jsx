@@ -5,6 +5,7 @@ import {
   darAltaEmpresa,
   darBajaEmpresa,
   obtenerEmpresas,
+  obtenerUsuariosEmpresa,
   reactivarEmpresa,
 } from "../../services/panelEmpresas";
 import { NotificationModal } from "../../components/modals/NotificationModal";
@@ -55,6 +56,10 @@ export function SuperAdminPanel() {
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyTitle, setNotifyTitle] = useState("");
   const [notifyType, setNotifyType] = useState("success");
+  const [empresaUsuariosActiva, setEmpresaUsuariosActiva] = useState(null);
+  const [usuariosEmpresa, setUsuariosEmpresa] = useState([]);
+  const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
+  const [errorUsuarios, setErrorUsuarios] = useState("");
 
   const showNotification = (title, message, type = "success") => {
     setNotifyTitle(title);
@@ -167,6 +172,36 @@ export function SuperAdminPanel() {
     }
   };
 
+  const abrirUsuariosEmpresa = async (empresa) => {
+    if (!tokenSesion) return;
+
+    setEmpresaUsuariosActiva(empresa);
+    setUsuariosEmpresa([]);
+    setErrorUsuarios("");
+    setCargandoUsuarios(true);
+
+    try {
+      const listaUsuarios = await obtenerUsuariosEmpresa(
+        tokenSesion,
+        empresa.id,
+      );
+      setUsuariosEmpresa(listaUsuarios);
+    } catch (err) {
+      const mensajeError = obtenerMensajeError(err);
+      setErrorUsuarios(mensajeError);
+      showNotification("Error", mensajeError, "error");
+    } finally {
+      setCargandoUsuarios(false);
+    }
+  };
+
+  const cerrarUsuariosEmpresa = () => {
+    setEmpresaUsuariosActiva(null);
+    setUsuariosEmpresa([]);
+    setErrorUsuarios("");
+    setCargandoUsuarios(false);
+  };
+
   if (!esSuperAdmin) {
     return (
       <div className="mt-24 px-6">
@@ -259,7 +294,7 @@ export function SuperAdminPanel() {
                     <th className="px-3 py-2">Email</th>
                     <th className="px-3 py-2">Ciudad</th>
                     <th className="px-3 py-2">Estado</th>
-                    <th className="px-3 py-2">Accion</th>
+                    <th className="px-3 py-2">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -284,16 +319,24 @@ export function SuperAdminPanel() {
                         </span>
                       </td>
                       <td className="px-3 py-2">
-                        <button
-                          onClick={() => void cambiarEstadoEmpresa(empresa)}
-                          className={`rounded-md px-3 py-1.5 text-xs font-semibold text-white ${
-                            empresa.active
-                              ? "bg-red-500 hover:bg-red-600"
-                              : "bg-green-600 hover:bg-green-700"
-                          }`}
-                        >
-                          {empresa.active ? "Dar de baja" : "Reactivar"}
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => void abrirUsuariosEmpresa(empresa)}
+                            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                          >
+                            Usuarios
+                          </button>
+                          <button
+                            onClick={() => void cambiarEstadoEmpresa(empresa)}
+                            className={`rounded-md px-3 py-1.5 text-xs font-semibold text-white ${
+                              empresa.active
+                                ? "bg-red-500 hover:bg-red-600"
+                                : "bg-green-600 hover:bg-green-700"
+                            }`}
+                          >
+                            {empresa.active ? "Dar de baja" : "Reactivar"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -302,6 +345,82 @@ export function SuperAdminPanel() {
             </div>
           )}
         </section>
+
+        {empresaUsuariosActiva && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <div className="w-full max-w-4xl rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Usuarios de {empresaUsuariosActiva.fiscal_name}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    Empresa ID: {empresaUsuariosActiva.id}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={cerrarUsuariosEmpresa}
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-slate-600 dark:text-gray-100 dark:hover:bg-slate-800"
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              {cargandoUsuarios ? (
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Cargando usuarios...
+                </p>
+              ) : errorUsuarios ? (
+                <p className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+                  {errorUsuarios}
+                </p>
+              ) : usuariosEmpresa.length === 0 ? (
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Esta empresa no tiene usuarios.
+                </p>
+              ) : (
+                <div className="max-h-[60vh] overflow-auto">
+                  <table className="min-w-full border-collapse text-sm dark:text-gray-100">
+                    <thead>
+                      <tr className="border-b bg-gray-50 text-left dark:border-slate-700 dark:bg-slate-800">
+                        <th className="px-3 py-2">ID</th>
+                        <th className="px-3 py-2">Nombre</th>
+                        <th className="px-3 py-2">Email</th>
+                        <th className="px-3 py-2">Rol</th>
+                        <th className="px-3 py-2">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usuariosEmpresa.map((usuario) => (
+                        <tr
+                          key={usuario.id}
+                          className="border-b dark:border-slate-700"
+                        >
+                          <td className="px-3 py-2">{usuario.id}</td>
+                          <td className="px-3 py-2">{usuario.name}</td>
+                          <td className="px-3 py-2">{usuario.email}</td>
+                          <td className="px-3 py-2">{usuario.role}</td>
+                          <td className="px-3 py-2">
+                            <span
+                              className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                                usuario.active
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {usuario.active ? "Activo" : "Inactivo"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {mostrarFormulario && (
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
