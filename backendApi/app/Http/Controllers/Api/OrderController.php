@@ -3,28 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderListadoResource;
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
-use App\Models\OrderLine;
-use App\Models\OrderLineConfiguration;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
-    // ╔════════════════════════════════════════════════════════════════╗
-    // ║ AUTORIZACIÓN (solo admin, commercial, technician)            ║
-    // ╚════════════════════════════════════════════════════════════════╝
+    // Aqui valido acceso a pedidos para roles permitidos de la empresa.
 
     private function authorize(Request $request)
     {
+        // Aqui leo el usuario autenticado de la request.
         $user = $request->user();
 
         if (!$user) {
             return response()->json(['error' => 'No autenticado'], 401);
         }
 
-        // Permitir estos roles
+        // Aqui limito acceso solo a admin, commercial y technician.
         $allowed = ['admin', 'commercial', 'technician'];
         if (!in_array($user->role, $allowed, true)) {
             return response()->json(['error' => 'No autorizado. Solo admin, commercial o technician.'], 403);
@@ -37,14 +35,11 @@ class OrderController extends Controller
         return null; // Sin error = autorizado
     }
 
-    // ╔════════════════════════════════════════════════════════════════╗
-    // ║ GET /api/company/orders                                        ║
-    // ║ Listar pedidos de la empresa                                   ║
-    // ╚════════════════════════════════════════════════════════════════╝
+    // Aqui listo pedidos de la empresa con filtro opcional por estado.
 
     public function index(Request $request)
     {
-        // Verificar autorización
+        // Aqui valido permisos antes de consultar pedidos.
         $authError = $this->authorize($request);
         if ($authError) {
             return $authError;
@@ -52,15 +47,16 @@ class OrderController extends Controller
 
         $companyId = $request->user()->company_id;
 
-        // Filtro por estado (opcional)
+        // Aqui leo filtro opcional por estado.
         $status = $request->query('status'); // 'pendiente', 'en_curso', 'finalizado'
 
-        // Construir consulta
+        // Aqui construyo consulta minima para el panel de listado.
         $query = Order::where('company_id', $companyId)
-            ->with(['client', 'createdBy', 'lines.standardArticle', 'lines.configurableArticle', 'lines.configuration'])
+            ->select(['id', 'company_id', 'client_id', 'order_number', 'order_date', 'status', 'total_amount'])
+            ->with(['client:id,nombre'])
             ->orderByDesc('order_date');
 
-        // Si viene filtro de estado, aplicarlo
+        // Si llega estado valido, aplico el filtro.
         if ($status && in_array($status, ['pendiente', 'en_curso', 'finalizado'])) {
             $query->where('status', $status);
         }
@@ -68,18 +64,17 @@ class OrderController extends Controller
         $orders = $query->get();
 
         return response()->json([
-            'orders' => $orders,
+            // Entrada: pedidos de la empresa para la tabla.
+            // Salida: listado transformado por Resource.
+            'orders' => OrderListadoResource::collection($orders)->resolve($request),
         ]);
     }
 
-    // ╔════════════════════════════════════════════════════════════════╗
-    // ║ GET /api/company/orders/{id}                                   ║
-    // ║ Ver detalle de un pedido                                       ║
-    // ╚════════════════════════════════════════════════════════════════╝
+    // Aqui devuelvo el detalle de un pedido de la empresa autenticada.
 
     public function show(Request $request, int $id)
     {
-        // Verificar autorización
+        // Aqui valido permisos antes de ver detalle.
         $authError = $this->authorize($request);
         if ($authError) {
             return $authError;
@@ -87,9 +82,9 @@ class OrderController extends Controller
 
         $companyId = $request->user()->company_id;
 
-        // Buscar pedido en la empresa del usuario
+        // Aqui cargo solo relaciones necesarias para pantalla de detalle.
         $order = Order::where('company_id', $companyId)
-            ->with(['client', 'createdBy', 'lines.standardArticle', 'lines.configurableArticle', 'lines.configuration'])
+            ->with(['client:id,nombre', 'lines.configuration'])
             ->find($id);
 
         if (!$order) {
@@ -97,19 +92,17 @@ class OrderController extends Controller
         }
 
         return response()->json([
-            'order' => $order,
+            // Entrada: pedido encontrado con datos necesarios.
+            // Salida: pedido transformado por Resource de detalle.
+            'order' => (new OrderResource($order))->resolve($request),
         ]);
     }
 
-    // ╔════════════════════════════════════════════════════════════════╗
-    // ║ PUT /api/company/orders/{id}                                   ║
-    // ║ Actualizar estado del pedido                                   ║
-    // ║ Estados: pendiente → en_curso → finalizado                    ║
-    // ╚════════════════════════════════════════════════════════════════╝
+    // Aqui actualizo estado y fecha de entrega de un pedido.
 
     public function update(Request $request, int $id)
     {
-        // Verificar autorización
+        // Aqui valido permisos antes de actualizar.
         $authError = $this->authorize($request);
         if ($authError) {
             return $authError;
@@ -117,14 +110,14 @@ class OrderController extends Controller
 
         $companyId = $request->user()->company_id;
 
-        // Buscar pedido
+        // Aqui busco el pedido dentro de la empresa actual.
         $order = Order::where('company_id', $companyId)->find($id);
 
         if (!$order) {
             return response()->json(['error' => 'Pedido no encontrado en tu empresa.'], 404);
         }
 
-        // Validar nuevo estado
+        // Aqui valido estado nuevo y fecha de entrega opcional.
         $validated = $request->validate([
             'status' => [
                 'required',
@@ -133,7 +126,7 @@ class OrderController extends Controller
             'delivery_date' => 'nullable|date',
         ]);
 
-        // Actualizar estado
+        // Aqui persisto cambios de estado y entrega.
         $order->update([
             'status' => $validated['status'],
             'delivery_date' => $validated['delivery_date'] ?? null,
@@ -141,7 +134,11 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Pedido actualizado correctamente.',
-            'order' => $order->fresh()->load(['client', 'createdBy', 'lines.standardArticle', 'lines.configurableArticle', 'lines.configuration']),
+            // Entrada: pedido actualizado.
+            // Salida: pedido actualizado transformado por Resource.
+            'order' => (new OrderResource(
+                $order->fresh()->load(['client:id,nombre', 'lines.configuration'])
+            ))->resolve($request),
         ]);
     }
 }

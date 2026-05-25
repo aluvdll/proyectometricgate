@@ -73,9 +73,6 @@ export const ClientesPanel = () => {
     setFichaClienteDesplegable(null);
   };
 
-  if (cargando) return <div>Cargando...</div>;
-  if (error) return <div>{error}</div>;
-
   return (
     <div className="container w-full mt-1">
       <div className="w-full mx-auto rounded-md border border-orange-400 p-3 shadow-amber-600">
@@ -101,8 +98,18 @@ export const ClientesPanel = () => {
           </div>
         </div>
 
+        {error && (
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         <div className="space-y-2">
-          {clientes.length === 0 ? (
+          {cargando ? (
+            <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-4 text-center text-sm text-orange-800">
+              Buscando clientes...
+            </div>
+          ) : clientes.length === 0 ? (
             <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-4 text-center text-sm text-orange-800">
               No hay clientes que coincidan con la búsqueda.
             </div>

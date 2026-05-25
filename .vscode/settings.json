@@ -9,5 +9,8 @@
   "php-cs-fixer.executablePath": "/var/www/proyectometricgate/backendApi/vendor/bin/php-cs-fixer",
   "php-cs-fixer.documentFormattingProvider": true,
   "php-cs-fixer.onsave": true,
-  "php-cs-fixer.rules": "@PSR12,array_indentation"
+  "php-cs-fixer.rules": "@PSR12,array_indentation",
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

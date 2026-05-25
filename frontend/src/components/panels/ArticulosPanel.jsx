@@ -148,9 +148,6 @@ export function ArticulosPanel() {
                 <th className="px-3 py-2 text-left text-gray-800">Código</th>
                 <th className="px-3 py-2 text-left text-gray-800">Familia</th>
                 <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
-                <th className="px-3 py-2 text-left text-gray-800">
-                  Descripción
-                </th>
                 <th className="px-3 py-2 text-center text-gray-800">Base</th>
                 <th className="px-3 py-2 text-center text-gray-800">IVA</th>
                 <th className="px-3 py-2 text-center text-gray-800">Estado</th>
@@ -185,9 +182,6 @@ export function ArticulosPanel() {
                   </td>
                   <td className="border border-orange-400 px-3 py-2 text-gray-700">
                     {a.name}
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                    {a.description || "-"}
                   </td>
                   <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
                     {Number(a.base_price).toFixed(2)} €
@@ -234,9 +228,6 @@ export function ArticulosPanel() {
               <tr>
                 <th className="px-3 py-2 text-left text-gray-800">Código</th>
                 <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
-                <th className="px-3 py-2 text-left text-gray-800">
-                  Descripción
-                </th>
                 <th className="px-3 py-2 text-center text-gray-800">IVA</th>
                 <th className="px-3 py-2 text-center text-gray-800">Estado</th>
                 <th className="px-3 py-2 text-center text-gray-800">
@@ -257,9 +248,7 @@ export function ArticulosPanel() {
                   <td className="border border-orange-400 px-3 py-2 text-gray-700">
                     {a.name}
                   </td>
-                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                    {a.description || "-"}
-                  </td>
+
                   <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
                     {Number(a.tax_percentage || 0).toFixed(2)}%
                   </td>

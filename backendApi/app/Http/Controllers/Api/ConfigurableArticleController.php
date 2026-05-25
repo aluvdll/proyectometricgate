@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ConfigurableArticleListadoResource;
+use App\Http\Resources\ConfigurableArticleResource;
 use App\Models\ConfigurableArticle;
 use App\Models\ConfigurableArticleOptionPrice;
 use Illuminate\Http\Request;
@@ -16,18 +18,20 @@ class ConfigurableArticleController extends Controller
     // ─────────────────────────────────────────────────────────────────
     public function index()
     {
-        // Empresa del usuario autenticado (multitenancy por empresa)
+        // Aqui obtengo la empresa del usuario autenticado (multitenancy por empresa).
         $companyId = Auth::user()->company_id;
 
-        // Solo artículos activos de esa empresa, incluyendo partes y opciones
+        // Aqui solo busco articulos activos de su empresa.
         $articles = ConfigurableArticle::where('company_id', $companyId)
             ->where('active', true)
-            ->with(['parts.options'])
             ->orderBy('code')
             ->get();
 
-        // Respuesta directa en JSON para consumo del frontend
-        return response()->json($articles);
+        // Entrada: coleccion de articulos configurables.
+        // Salida: listado minimo para panel y selectores del frontend.
+        return response()->json(
+            ConfigurableArticleListadoResource::collection($articles)->resolve(request())
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -36,15 +40,17 @@ class ConfigurableArticleController extends Controller
     // ─────────────────────────────────────────────────────────────────
     public function show(int $id)
     {
-        // Se vuelve a filtrar por empresa para evitar acceso cruzado entre compañías
+        // Aqui vuelvo a filtrar por empresa para evitar acceso cruzado entre companias.
         $companyId = Auth::user()->company_id;
 
-        // Carga completa para pintar formulario: partes, opciones y reglas de validación
+        // Aqui cargo partes, opciones y reglas porque el modal de configuracion las necesita.
         $article = ConfigurableArticle::where('company_id', $companyId)
             ->with(['parts.options', 'rules'])
             ->findOrFail($id);
 
-        return response()->json($article);
+        // Entrada: articulo configurable completo con relaciones necesarias.
+        // Salida: detalle transformado por Resource con campos minimos.
+        return response()->json((new ConfigurableArticleResource($article))->resolve(request()));
     }
 
     // ─────────────────────────────────────────────────────────────────

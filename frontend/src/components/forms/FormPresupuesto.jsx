@@ -13,7 +13,6 @@ import {
 
 import { API_URL } from "../../services/apiBase";
 
-
 const estados = [
   { value: "pendiente", label: "Pendiente" },
   { value: "aceptado", label: "Aceptado" },
@@ -21,6 +20,7 @@ const estados = [
 
 const hoy = new Date().toISOString().slice(0, 10);
 
+// Aqui creo la estructura base de una linea nueva del presupuesto.
 function crearLinea() {
   return {
     standard_article_id: "",
@@ -33,6 +33,7 @@ function crearLinea() {
   };
 }
 
+// Aqui construyo el texto que uso para buscar y mostrar clientes en el modal.
 function construirTextoCliente(cliente) {
   return [
     cliente.client_number,
@@ -47,6 +48,7 @@ function construirTextoCliente(cliente) {
     .join(" - ");
 }
 
+// Aqui construyo el texto que uso para buscar y mostrar articulos en el modal.
 function construirTextoArticulo(articulo) {
   return [
     articulo.code,
@@ -58,6 +60,7 @@ function construirTextoArticulo(articulo) {
     .join(" - ");
 }
 
+// Aqui preparo la URL absoluta de la imagen del articulo para mostrar miniatura.
 function obtenerUrlImagenArticulo(articulo) {
   if (!articulo?.image) {
     return "";
@@ -67,10 +70,12 @@ function obtenerUrlImagenArticulo(articulo) {
 }
 
 export function FormPresupuesto({ mode, presupuestoId = undefined }) {
+  // Aqui preparo utilidades de navegacion y deteccion de modo edicion.
   const navigate = useNavigate();
   const location = useLocation();
   const isEdit = mode === "edit";
 
+  // Aqui guardo todos los estados del formulario, modales y notificaciones.
   const [clientes, setClientes] = useState([]);
   const [articulos, setArticulos] = useState([]);
   const [articulosConfigurables, setArticulosConfigurables] = useState([]);
@@ -97,6 +102,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
   });
   const [lines, setLines] = useState([crearLinea()]);
 
+  // Aqui muestro notificaciones unificadas de exito/error para el usuario.
   const showNotification = (title, message, type) => {
     setNotifyTitle(title);
     setNotifyMessage(message);
@@ -105,6 +111,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     setTimeout(() => setNotifyVisible(false), 2500);
   };
 
+  // Aqui cargo datos base (clientes, articulos y configurables) y, si edito, hidrato el presupuesto.
   useEffect(() => {
     Promise.all([
       obtenerClientesEmpresa(),
@@ -182,12 +189,13 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       .finally(() => setLoadingForm(false));
   }, [isEdit, presupuestoId]);
 
+  // Aqui escucho la tecla ESC para cerrar modales de forma rapida.
   useEffect(() => {
     if (!isClientModalOpen && !isArticleModalOpen && !isConfigListModalOpen) {
       return;
     }
 
-    // Permite cerrar modales con la tecla Esc para una UX más rápida.
+    // Permite cerrar modales con la tecla Esc para una experiencia más rápida.
     const handleEscape = (event) => {
       if (event.key === "Escape") {
         setIsClientModalOpen(false);
@@ -200,12 +208,14 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isClientModalOpen, isArticleModalOpen, isConfigListModalOpen]);
 
+  // Aqui localizo el cliente seleccionado a partir del id guardado en el formulario.
   const clienteSeleccionado = useMemo(() => {
     return clientes.find(
       (cliente) => String(cliente.id) === String(formData.client_id),
     );
   }, [clientes, formData.client_id]);
 
+  // Aqui filtro clientes para el modal y limito resultados para mantenerlo agil.
   const clientesFiltrados = useMemo(() => {
     const texto = clientSearch.trim().toLowerCase();
 
@@ -220,6 +230,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       .slice(0, 8);
   }, [clientes, clientSearch]);
 
+  // Aqui filtro articulos estandar para el modal con buscador.
   const articulosFiltrados = useMemo(() => {
     const texto = articleSearch.trim().toLowerCase();
 
@@ -234,6 +245,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       .slice(0, 20);
   }, [articulos, articleSearch]);
 
+  // Aqui filtro articulos configurables para el modal correspondiente.
   const configurablesFiltrados = useMemo(() => {
     const texto = configSearch.trim().toLowerCase();
 
@@ -250,6 +262,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     });
   }, [articulosConfigurables, configSearch]);
 
+  // Aqui recalculo resumen economico del presupuesto cada vez que cambian lineas.
   const resumen = useMemo(() => {
     return lines.reduce(
       (acc, line) => {
@@ -273,6 +286,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     );
   }, [lines]);
 
+  // Aqui actualizo un campo concreto de una linea sin tocar el resto.
   const actualizarLinea = (index, field, value) => {
     setLines((prev) => {
       const copy = [...prev];
@@ -284,6 +298,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     });
   };
 
+  // Aqui aplico un articulo estandar a la linea activa y relleno sus datos principales.
   const seleccionarArticuloEnLinea = (index, articulo) => {
     if (!articulo) {
       return;
@@ -303,6 +318,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     });
   };
 
+  // Aqui abro modal de articulos y precargo el texto del articulo actual si existe.
   const abrirModalArticulos = (lineIndex) => {
     setActiveLineIndex(lineIndex);
 
@@ -317,11 +333,13 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     setIsArticleModalOpen(true);
   };
 
+  // Aqui cierro modal de articulos y limpio el indice de linea activa.
   const cerrarModalArticulos = () => {
     setIsArticleModalOpen(false);
     setActiveLineIndex(null);
   };
 
+  // Aqui selecciono articulo desde modal y lo aplico a la linea activa.
   const seleccionarArticuloDesdeModal = (articulo) => {
     if (activeLineIndex === null) {
       return;
@@ -331,6 +349,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     cerrarModalArticulos();
   };
 
+  // Aqui convierto la linea en manual quitando articulo estandar seleccionado.
   const dejarLineaManualDesdeModal = () => {
     if (activeLineIndex === null) {
       return;
@@ -348,6 +367,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     cerrarModalArticulos();
   };
 
+  // Aqui aplico el resultado de configuracion avanzada dentro de una linea.
   const aplicarConfiguracionEnLinea = (index, config) => {
     if (index === null || index === undefined) {
       return;
@@ -381,6 +401,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     });
   };
 
+  // Aqui navego a la pantalla de configuracion y envio el estado para no perder datos.
   const abrirPaginaConfigurable = (
     articuloId,
     lineIndex,
@@ -399,6 +420,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     });
   };
 
+  // Aqui reabro la edicion de una linea configurable existente.
   const abrirEdicionConfigurable = (index) => {
     const line = lines[index];
     if (!line?._isConfigurable || !line?._configurable_article_id) {
@@ -412,6 +434,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     );
   };
 
+  // Aqui creo una nueva linea configurable usando el primer articulo configurable disponible.
   const abrirNuevoConfigurable = () => {
     const primerConfigurable = articulosConfigurables[0];
     if (!primerConfigurable) {
@@ -426,6 +449,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     abrirPaginaConfigurable(primerConfigurable.id, lines.length, null);
   };
 
+  // Aqui recupero resultado de la pantalla configurable y restauro el formulario al volver.
   useEffect(() => {
     const result = location.state?.configurableResult;
     const lineIndex = location.state?.lineIndex;
@@ -471,10 +495,12 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     });
   }, [location.state, location.pathname, navigate]);
 
+  // Aqui anado una linea nueva al presupuesto.
   const addLinea = () => {
     setLines((prev) => [...prev, crearLinea()]);
   };
 
+  // Aqui elimino una linea concreta del presupuesto.
   const removeLinea = (index) => {
     setLines((prev) =>
       prev.filter((_, currentIndex) => currentIndex !== index),
@@ -496,6 +522,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     setIsClientModalOpen(true);
   };
 
+  // Aqui valido el formulario, construyo payload y envio create/update al backend.
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -565,10 +592,12 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     }
   };
 
+  // Aqui muestro estado de carga inicial mientras hidrato datos del formulario.
   if (loadingForm) {
     return <div className="container w-full mt-1">Cargando presupuesto...</div>;
   }
 
+  // Aqui renderizo el formulario completo con modales, lineas y resumen de importes.
   return (
     <div className="container w-full mt-1">
       <form
@@ -727,13 +756,25 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                 <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">
                   Seleccionar cliente
                 </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsClientModalOpen(false)}
-                  className="rounded-md bg-gray-100 px-2 py-1 text-sm text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                >
-                  Cerrar
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({ ...prev, client_id: null }));
+                      setClientSearch("");
+                    }}
+                    className="rounded-md bg-gray-100 px-2 py-1 text-sm text-gray-800 hover:bg-blue-200 dark:bg-blue-800 dark:text-gray-200 dark:hover:bg-blue-700"
+                  >
+                    Limpiar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsClientModalOpen(false)}
+                    className="rounded-md bg-gray-100 px-2 py-1 text-sm text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  >
+                    Cerrar
+                  </button>
+                </div>
               </div>
 
               <div className="p-4">
