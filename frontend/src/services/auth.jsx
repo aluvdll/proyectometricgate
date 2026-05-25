@@ -18,31 +18,3 @@ export const loginUsuario = async (data) => {
     throw new Error("Error de conexion con el servidor");
   }
 };
-
-export const addUsuario = async (data, file) => {
-  try {
-    const formData = new FormData();
-
-    formData.append("name", data.name);
-    formData.append("apellido1", data.apellido1);
-    formData.append("apellido2", data.apellido2);
-    formData.append("email", data.email);
-    formData.append("password", data.password || "");
-
-    if (file) {
-      formData.append("avatar", file);
-    }
-
-    const response = await axios.post(AUTH_LOGIN_URL, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.error);
-    }
-
-    throw new Error("Error de conexion con el servidor");
-  }
-};

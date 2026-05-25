@@ -9,6 +9,16 @@ const estadosTexto = {
   aceptado: "Aceptado",
 };
 
+// Aqui convierto fecha ISO (YYYY-MM-DD) a formato visible DD/MM/AAAA.
+function formatearFechaPresupuesto(fecha) {
+  if (!fecha) return "-";
+
+  const [anio, mes, dia] = String(fecha).split("-");
+  if (!anio || !mes || !dia) return String(fecha);
+
+  return `${dia}/${mes}/${anio}`;
+}
+
 export function PresupuestosPanel() {
   const navigate = useNavigate();
   const [presupuestos, setPresupuestos] = useState([]);
@@ -50,6 +60,7 @@ export function PresupuestosPanel() {
         presupuesto.client?.nombre,
         presupuesto.status,
         presupuesto.budget_date,
+        formatearFechaPresupuesto(presupuesto.budget_date),
         presupuesto.total_amount,
       ]
         .join(" ")
@@ -113,7 +124,7 @@ export function PresupuestosPanel() {
                   {presupuesto.client?.nombre || "Cliente eliminado"}
                 </td>
                 <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {presupuesto.budget_date}
+                  {formatearFechaPresupuesto(presupuesto.budget_date)}
                 </td>
                 <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
                   {estadosTexto[presupuesto.status] || presupuesto.status}
@@ -132,7 +143,7 @@ export function PresupuestosPanel() {
                       }
                       className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
                     >
-                      Ver
+                      Editar
                     </button>
                     <button
                       type="button"

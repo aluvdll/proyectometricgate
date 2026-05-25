@@ -10,7 +10,11 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   if (!value) return "-";
-  return value;
+
+  const [year, month, day] = String(value).split("-");
+  if (!year || !month || !day) return String(value);
+
+  return `${day}/${month}/${year}`;
 }
 
 function waitForImagesLoaded(container) {
@@ -40,6 +44,16 @@ export default function BudgetPrintPage() {
   const [error, setError] = useState("");
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfError, setPdfError] = useState("");
+
+  // Aqui intento volver con historial y, si no existe, redirijo al listado de presupuestos.
+  function handleBack() {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/adminPanel/presupuestos", { replace: true });
+  }
 
   useEffect(() => {
     let active = true;
@@ -125,7 +139,7 @@ export default function BudgetPrintPage() {
         </div>
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           className="mt-4 rounded bg-[#374151] px-4 py-2 text-white"
         >
           Volver
@@ -334,31 +348,31 @@ export default function BudgetPrintPage() {
             </p>
           </section>
         )}
-
-        <div className="mt-8 flex gap-3 print:hidden" data-pdf-ignore="true">
-          <button
-            type="button"
-            onClick={handleGeneratePdf}
-            disabled={generatingPdf}
-            className="rounded bg-[#f97316] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ea580c] disabled:opacity-50"
-          >
-            {generatingPdf ? "Generando PDF..." : "Descargar PDF"}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="rounded bg-[#374151] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1f2937]"
-          >
-            Volver
-          </button>
-        </div>
-
-        {pdfError && (
-          <div className="mt-3 rounded border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-sm text-[#b91c1c] print:hidden">
-            {pdfError}
-          </div>
-        )}
       </div>
+
+      <div className="mx-auto mt-8 flex max-w-4xl gap-3 print:hidden">
+        <button
+          type="button"
+          onClick={handleGeneratePdf}
+          disabled={generatingPdf}
+          className="rounded bg-[#f97316] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ea580c] disabled:opacity-50"
+        >
+          {generatingPdf ? "Generando PDF..." : "Descargar PDF"}
+        </button>
+        <button
+          type="button"
+          onClick={handleBack}
+          className="rounded bg-[#374151] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1f2937]"
+        >
+          Volver
+        </button>
+      </div>
+
+      {pdfError && (
+        <div className="mx-auto mt-3 max-w-4xl rounded border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-sm text-[#b91c1c] print:hidden">
+          {pdfError}
+        </div>
+      )}
     </div>
   );
 }

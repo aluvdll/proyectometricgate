@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ArticleFamily;
+use App\Http\Resources\StandardArticleResource;
 use App\Models\StandardArticle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -64,11 +64,13 @@ class StandardArticleController extends Controller
     // Listar artículos de la empresa (admin/commercial/technician)
     public function index(Request $request)
     {
+        // Aqui valido permisos de lectura antes de consultar articulos.
         $authError = $this->authorizeReadAccess($request);
         if ($authError) {
             return $authError;
         }
 
+        // Aqui acoto por empresa y solo cargo lo necesario para panel/frontend.
         $companyId = $request->user()->company_id;
 
         $articles = StandardArticle::with('family')
@@ -77,18 +79,22 @@ class StandardArticleController extends Controller
             ->get();
 
         return response()->json([
-            'articles' => $articles,
+            // Entrada: coleccion de articulos de la empresa autenticada.
+            // Salida: coleccion transformada por Resource con contrato estable.
+            'articles' => StandardArticleResource::collection($articles)->resolve($request),
         ]);
     }
 
     // Ver artículo de la empresa (admin/commercial/technician)
     public function show(Request $request, int $id)
     {
+        // Aqui valido permisos de lectura antes de ver un articulo puntual.
         $authError = $this->authorizeReadAccess($request);
         if ($authError) {
             return $authError;
         }
 
+        // Aqui busco por empresa + id para evitar cruces entre empresas.
         $companyId = $request->user()->company_id;
 
         $article = StandardArticle::with('family')
@@ -103,13 +109,16 @@ class StandardArticleController extends Controller
         }
 
         return response()->json([
-            'article' => $article,
+            // Entrada: articulo encontrado con su familia.
+            // Salida: objeto transformado por Resource.
+            'article' => (new StandardArticleResource($article))->resolve($request),
         ]);
     }
 
     // Crear artículo (solo admin)
     public function store(Request $request)
     {
+        // Aqui valido permisos de admin antes de crear articulos.
         $authError = $this->authorizeAdmin($request);
         if ($authError) {
             return $authError;
@@ -154,6 +163,7 @@ class StandardArticleController extends Controller
             $imagePath = $request->file('image')->store('standard-articles', 'public');
         }
 
+        // Aqui creo el articulo forzando company_id desde backend.
         $article = StandardArticle::create([
             'company_id' => $companyId,
             'family_id' => $validated['family_id'] ?? null,
@@ -168,13 +178,16 @@ class StandardArticleController extends Controller
 
         return response()->json([
             'message' => 'Artículo creado correctamente.',
-            'article' => $article->load('family'),
+            // Entrada: articulo recien creado con familia cargada.
+            // Salida: articulo transformado por Resource.
+            'article' => (new StandardArticleResource($article->load('family')))->resolve($request),
         ], 201);
     }
 
     // Editar artículo (solo admin)
     public function update(Request $request, int $id)
     {
+        // Aqui valido permisos de admin antes de editar articulos.
         $authError = $this->authorizeAdmin($request);
         if ($authError) {
             return $authError;
@@ -249,7 +262,9 @@ class StandardArticleController extends Controller
 
         return response()->json([
             'message' => 'Artículo actualizado correctamente.',
-            'article' => $article->fresh()->load('family'),
+            // Entrada: articulo actualizado refrescado con familia.
+            // Salida: articulo transformado por Resource.
+            'article' => (new StandardArticleResource($article->fresh()->load('family')))->resolve($request),
         ]);
     }
 }

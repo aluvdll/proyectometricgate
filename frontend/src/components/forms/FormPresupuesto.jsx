@@ -20,6 +20,16 @@ const estados = [
 
 const hoy = new Date().toISOString().slice(0, 10);
 
+// Aqui convierto fecha ISO (YYYY-MM-DD) a formato visible DD/MM/AAAA.
+function formatearFechaPresupuesto(fecha) {
+  if (!fecha) return "-";
+
+  const [anio, mes, dia] = String(fecha).split("-");
+  if (!anio || !mes || !dia) return String(fecha);
+
+  return `${dia}/${mes}/${anio}`;
+}
+
 // Aqui creo la estructura base de una linea nueva del presupuesto.
 function crearLinea() {
   return {
@@ -367,40 +377,6 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     cerrarModalArticulos();
   };
 
-  // Aqui aplico el resultado de configuracion avanzada dentro de una linea.
-  const aplicarConfiguracionEnLinea = (index, config) => {
-    if (index === null || index === undefined) {
-      return;
-    }
-
-    setLines((prev) => {
-      const copy = [...prev];
-      const lineaConfigurable = {
-        ...copy[index],
-        standard_article_id: "", // No hay ID de artículo estándar
-        name: config.name,
-        description: config.description,
-        quantity: copy[index]?.quantity || "1",
-        unit_price: String(config.unit_price),
-        discount_percentage: copy[index]?.discount_percentage || "0",
-        tax_percentage: String(config.tax_percentage),
-        // Guardamos la configuración en un campo especial
-        _configurable_article_id: config.configurable_article_id,
-        _configuration: config.configuration,
-        _isConfigurable: true,
-      };
-
-      // Si el índice activo no existe aún, añadimos una línea nueva.
-      if (index >= copy.length) {
-        copy.push(lineaConfigurable);
-      } else {
-        copy[index] = lineaConfigurable;
-      }
-
-      return copy;
-    });
-  };
-
   // Aqui navego a la pantalla de configuracion y envio el estado para no perder datos.
   const abrirPaginaConfigurable = (
     articuloId,
@@ -708,6 +684,10 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
               }
               className="w-full rounded-md border border-orange-500 px-3 py-2"
             />
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+              Fecha en formato DD/MM/AAAA:{" "}
+              {formatearFechaPresupuesto(formData.budget_date)}
+            </p>
 
             <div className="mt-4">
               <label className="mb-2 block text-sm font-bold">Estado</label>

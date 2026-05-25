@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ArticleFamilyResource;
 use App\Models\ArticleFamily;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -61,22 +62,27 @@ class ArticleFamilyController extends Controller
 
     public function index(Request $request)
     {
+        // Aqui valido permisos antes de listar familias.
         $authError = $this->authorizeAdminOrCommercial($request);
         if ($authError) {
             return $authError;
         }
 
+        // Aqui traigo solo familias de la empresa autenticada ordenadas por nombre.
         $families = ArticleFamily::where('company_id', $request->user()->company_id)
             ->orderBy('name')
             ->get();
 
         return response()->json([
-            'families' => $families,
+            // Entrada: coleccion de familias de la empresa.
+            // Salida: coleccion transformada por Resource.
+            'families' => ArticleFamilyResource::collection($families)->resolve($request),
         ]);
     }
 
     public function show(Request $request, int $id)
     {
+        // Aqui valido permisos antes de ver una familia puntual.
         $authError = $this->authorizeAdminOrCommercial($request);
         if ($authError) {
             return $authError;
@@ -93,12 +99,15 @@ class ArticleFamilyController extends Controller
         }
 
         return response()->json([
-            'family' => $family,
+            // Entrada: familia encontrada por empresa + id.
+            // Salida: familia transformada por Resource.
+            'family' => (new ArticleFamilyResource($family))->resolve($request),
         ]);
     }
 
     public function store(Request $request)
     {
+        // Aqui valido permisos de admin antes de crear familias.
         $authError = $this->authorizeAdmin($request);
         if ($authError) {
             return $authError;
@@ -131,12 +140,15 @@ class ArticleFamilyController extends Controller
 
         return response()->json([
             'message' => 'Familia creada correctamente.',
-            'family' => $family,
+            // Entrada: familia recien creada.
+            // Salida: familia transformada por Resource.
+            'family' => (new ArticleFamilyResource($family))->resolve($request),
         ], 201);
     }
 
     public function update(Request $request, int $id)
     {
+        // Aqui valido permisos de admin antes de editar familias.
         $authError = $this->authorizeAdmin($request);
         if ($authError) {
             return $authError;
@@ -181,7 +193,9 @@ class ArticleFamilyController extends Controller
 
         return response()->json([
             'message' => 'Familia actualizada correctamente.',
-            'family' => $family->fresh(),
+            // Entrada: familia actualizada refrescada.
+            // Salida: familia transformada por Resource.
+            'family' => (new ArticleFamilyResource($family->fresh()))->resolve($request),
         ]);
     }
 }

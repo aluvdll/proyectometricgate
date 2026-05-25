@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PanelEmpresaAdminResource;
+use App\Http\Resources\PanelEmpresaListadoResource;
+use App\Http\Resources\PanelEmpresaResource;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -11,17 +14,23 @@ use Illuminate\Support\Facades\Hash;
 
 class PanelEmpresasController extends Controller
 {
-    // 📄 Listar empresas para el panel de superadmin
+    // Aqui listo empresas para la tabla del panel superadmin.
     public function listarEmpresas()
     {
-        $empresas = Company::orderByDesc('id')->get();
+        // Aqui cargo solo campos que consume la tabla del frontend.
+        $empresas = Company::query()
+            ->select(['id', 'fiscal_name', 'email', 'city', 'active'])
+            ->orderByDesc('id')
+            ->get();
 
         return response()->json([
-            'empresas' => $empresas,
+            // Entrada: coleccion de empresas para listado.
+            // Salida: listado transformado por Resource minimo.
+            'empresas' => PanelEmpresaListadoResource::collection($empresas)->resolve(request()),
         ]);
     }
 
-    // 👁️ Ver detalle de una empresa
+    // Aqui muestro detalle de una empresa concreta.
     public function verEmpresa(int $id)
     {
         $empresa = Company::find($id);
@@ -33,11 +42,13 @@ class PanelEmpresasController extends Controller
         }
 
         return response()->json([
-            'empresa' => $empresa,
+            // Entrada: empresa encontrada por id.
+            // Salida: empresa transformada por Resource de detalle.
+            'empresa' => (new PanelEmpresaResource($empresa))->resolve(request()),
         ]);
     }
 
-    // ➕ Dar de alta una empresa y su usuario admin
+    // Aqui doy de alta una empresa y su usuario admin inicial.
     public function darDeAltaEmpresa(Request $request)
     {
         $request->validate([
@@ -115,12 +126,14 @@ class PanelEmpresasController extends Controller
 
         return response()->json([
             'mensaje' => 'Empresa dada de alta correctamente',
-            'empresa' => $resultado['empresa'],
-            'administrador' => $resultado['administrador'],
+            // Entrada: empresa y admin creados en transaccion.
+            // Salida: ambos objetos transformados por Resource.
+            'empresa' => (new PanelEmpresaResource($resultado['empresa']))->resolve($request),
+            'administrador' => (new PanelEmpresaAdminResource($resultado['administrador']))->resolve($request),
         ], 201);
     }
 
-    // ✏️ Actualizar datos de empresa
+    // Aqui actualizo datos de una empresa existente.
     public function actualizarEmpresa(Request $request, int $id)
     {
         $empresa = Company::find($id);
@@ -151,11 +164,13 @@ class PanelEmpresasController extends Controller
 
         return response()->json([
             'mensaje' => 'Empresa actualizada correctamente',
-            'empresa' => $empresa,
+            // Entrada: empresa actualizada.
+            // Salida: empresa transformada por Resource de detalle.
+            'empresa' => (new PanelEmpresaResource($empresa))->resolve($request),
         ]);
     }
 
-    // ⛔ Dar de baja lógica (desactivar) empresa
+    // Aqui doy de baja logica una empresa (active = false).
     public function darDeBajaEmpresa(int $id)
     {
         $empresa = Company::find($id);
@@ -169,7 +184,7 @@ class PanelEmpresasController extends Controller
         if (!$empresa->active) {
             return response()->json([
                 'mensaje' => 'La empresa ya estaba dada de baja',
-                'empresa' => $empresa,
+                'empresa' => (new PanelEmpresaResource($empresa))->resolve(request()),
             ]);
         }
 
@@ -177,11 +192,13 @@ class PanelEmpresasController extends Controller
 
         return response()->json([
             'mensaje' => 'Empresa dada de baja correctamente',
-            'empresa' => $empresa->fresh(),
+            // Entrada: empresa dada de baja.
+            // Salida: empresa transformada por Resource de detalle.
+            'empresa' => (new PanelEmpresaResource($empresa->fresh()))->resolve(request()),
         ]);
     }
 
-    // ✅ Reactivar empresa dada de baja
+    // Aqui reactivo una empresa dada de baja.
     public function reactivarEmpresa(int $id)
     {
         $empresa = Company::find($id);
@@ -195,7 +212,7 @@ class PanelEmpresasController extends Controller
         if ($empresa->active) {
             return response()->json([
                 'mensaje' => 'La empresa ya estaba activa',
-                'empresa' => $empresa,
+                'empresa' => (new PanelEmpresaResource($empresa))->resolve(request()),
             ]);
         }
 
@@ -203,7 +220,9 @@ class PanelEmpresasController extends Controller
 
         return response()->json([
             'mensaje' => 'Empresa reactivada correctamente',
-            'empresa' => $empresa->fresh(),
+            // Entrada: empresa reactivada.
+            // Salida: empresa transformada por Resource de detalle.
+            'empresa' => (new PanelEmpresaResource($empresa->fresh()))->resolve(request()),
         ]);
     }
 }
