@@ -44,7 +44,7 @@ export function BtnUserMenu() {
     localStorage.clear();
     setOpen(false);
     auth.logout();
-    navigate("/home");
+    navigate("/");
   }
 
   // Resuelve la URL del avatar soportando rutas absolutas, relativas y de storage

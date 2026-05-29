@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { Usuario } from "../types/Usuarios";
 import "../services/axiosSetup.js";
+import axios from "axios";
+import { API_URL } from "../services/apiBase";
 
 const LAST_ACTIVITY_KEY = "last_activity";
 const MAX_INACTIVITY_MS = 1 * 60 * 60 * 1000; // 1 hora
@@ -33,16 +35,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 🔥 Cargar sesión al iniciar la app
   useEffect(() => {
+    const hydrateUserFromApi = async (storedToken: string) => {
+      try {
+        const response = await axios.get(`${API_URL}/api/me`, {
+          headers: {
+            Authorization: `Bearer ${storedToken}`,
+          },
+        });
+
+        const userFromApi = response?.data?.data ?? response?.data ?? null;
+
+        if (userFromApi) {
+          setUser(userFromApi);
+          localStorage.setItem("usuario", JSON.stringify(userFromApi));
+        }
+      } catch {
+        // Si falla /me, mantenemos los datos de sesión existentes.
+      }
+    };
+
     const storedUser = localStorage.getItem("usuario");
     const storedToken = localStorage.getItem("token");
     const storedRole = localStorage.getItem("role");
 
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-      setToken(storedToken);
-      setRole(storedRole ?? null);
-    }
-    setLoading(false);
+    const bootstrapSession = async () => {
+      if (storedUser && storedToken) {
+        setUser(JSON.parse(storedUser));
+        setToken(storedToken);
+        setRole(storedRole ?? null);
+        await hydrateUserFromApi(storedToken);
+      }
+
+      setLoading(false);
+    };
+
+    void bootstrapSession();
   }, []);
 
   // 🔐 LOGIN CORRECTO

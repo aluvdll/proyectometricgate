@@ -11,4 +11,9 @@ export interface Usuario {
   // avatar?: string;
   avatar?: string;
   avatarUrl?: string;
+  company?: {
+    id: number;
+    name: string;
+    fiscal_name?: string;
+  };
 }

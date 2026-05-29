@@ -18,22 +18,22 @@ class EnsureCompanyAccess
     {
          $user = Auth::user();
 
-        // 🔐 si no hay usuario autenticado
+        // si no hay usuario autenticado
         if (!$user) {
             return response()->json(['error' => 'No autenticado'], 401);
         }
 
-        // 👑 super admin: acceso total
+        // super admin: acceso total
         if ($user->role === 'super_admin') {
             return $next($request);
         }
 
-        // 🏢 usuarios empresa deben tener company_id
+        // usuarios empresa deben tener company_id
         if (!$user->company_id) {
             return response()->json(['error' => 'Sin empresa asignada'], 403);
         }
 
-        // 📦 guardamos contexto de empresa (MUY ÚTIL)
+        // guardamos contexto de empresa (MUY ÚTIL)
         $request->merge([
             'company_id' => $user->company_id
         ]);
