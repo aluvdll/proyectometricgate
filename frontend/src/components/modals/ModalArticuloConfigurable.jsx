@@ -4,6 +4,7 @@ import {
   calcularArticuloConfigurable,
 } from "../../services/articulosConfigurables";
 
+// Aqui normalizo los params de cada regla porque a veces vienen ya como objeto y otras como JSON.
 function parseRuleParams(params) {
   if (!params) return {};
   if (typeof params === "object") return params;
@@ -14,9 +15,11 @@ function parseRuleParams(params) {
   }
 }
 
+// Aqui valido en frontend las medidas usando las reglas dinámicas que vienen del backend.
 function validarMedidasConReglas(medidas, rules = [], touched = {}) {
   const errors = {};
 
+  // Solo añado errores a campos ya tocados para no ensuciar la UI antes de tiempo.
   const addError = (field, message) => {
     if (!touched[field]) return;
     if (!errors[field]) errors[field] = [];
@@ -24,6 +27,7 @@ function validarMedidasConReglas(medidas, rules = [], touched = {}) {
     errors[field].push(message);
   };
 
+  // Convierto a número de forma segura para poder comparar medidas sin NaN raros.
   const toNumber = (value) => {
     if (value === "" || value === null || value === undefined) return null;
     const num = Number(value);
@@ -122,6 +126,7 @@ function validarMedidasConReglas(medidas, rules = [], touched = {}) {
   return errors;
 }
 
+// Aqui calculo al vuelo las medidas de fabricación para enseñarlas sin esperar al backend.
 function calcularMedidasFabricacionLive(medidas) {
   const c = Number(medidas.ancho_hueco);
   const d = Number(medidas.alto_hueco);
@@ -186,7 +191,7 @@ export function ModalArticuloConfigurable({
   const [articulo, setArticulo] = useState(null);
   const [cargando, setCargando] = useState(true);
 
-  // Medidas de entrada
+  // Aqui guardo las medidas que escribe el usuario.
   const [medidas, setMedidas] = useState({
     ancho_hueco: "",
     alto_hueco: "",
@@ -194,15 +199,16 @@ export function ModalArticuloConfigurable({
     alto_obra: "",
   });
 
-  // Opciones elegidas por parte: { cajon: "ral_premium", hojas_moviles: "incoloro", ... }
+  // Aqui guardo la opcion elegida en cada parte configurable.
   const [opciones, setOpciones] = useState({});
 
-  // Resultado del cálculo
+  // Aqui guardo el resultado del cálculo de precio y validación.
   const [resultado, setResultado] = useState(null);
   const [errores, setErrores] = useState({});
   const [calculando, setCalculando] = useState(false);
   const [touched, setTouched] = useState({});
 
+  // Este objeto me sirve para forzar una validacion completa cuando recalculo automáticamente.
   const touchedAll = {
     ancho_hueco: true,
     alto_hueco: true,
@@ -210,7 +216,7 @@ export function ModalArticuloConfigurable({
     alto_obra: true,
   };
 
-  // ── Cargar artículo al abrir ────────────────────────────────────
+  // Aqui cargo el artículo configurable al abrir el modal o la página.
   useEffect(() => {
     if (!articuloId) return;
 
@@ -230,7 +236,7 @@ export function ModalArticuloConfigurable({
     obtenerArticuloConfigurable(articuloId)
       .then((data) => {
         setArticulo(data);
-        // Preseleccionar la opción default de cada parte
+        // Aqui preselecciono la opción por defecto de cada parte para no empezar vacío.
         const defaults = {};
         data.parts?.forEach((part) => {
           const def =
@@ -238,10 +244,12 @@ export function ModalArticuloConfigurable({
           if (def) defaults[part.key] = def.key;
         });
 
+        // Si vengo de una edición previa, mezclo lo que ya había elegido con los defaults.
         const initialOptions = initialConfiguration?.options_chosen ?? {};
         setOpciones({ ...defaults, ...initialOptions });
 
         if (initialConfiguration) {
+          // Si estoy reabriendo una línea ya configurada, restauro medidas y desglose previo.
           setMedidas({
             ancho_hueco: initialConfiguration.ancho_hueco ?? "",
             alto_hueco: initialConfiguration.alto_hueco ?? "",
@@ -267,7 +275,7 @@ export function ModalArticuloConfigurable({
       .finally(() => setCargando(false));
   }, [articuloId, initialConfiguration]);
 
-  // ── Handlers ────────────────────────────────────────────────────
+  // Aqui actualizo una medida, marco el campo como tocado y vuelvo a validar.
   function handleMedida(e) {
     const { name, value } = e.target;
     const nextTouched = { ...touched, [name]: true };
@@ -281,15 +289,17 @@ export function ModalArticuloConfigurable({
     setResultado(null);
   }
 
+  // Aqui guardo la opción elegida en una parte y fuerzo recálculo del precio.
   function handleOpcion(partKey, optionKey) {
     setOpciones((prev) => ({ ...prev, [partKey]: optionKey }));
     setResultado(null);
   }
 
-  // Recalcula precio automáticamente al cambiar medidas u opciones.
+  // Aqui recalculo el precio automáticamente cuando cambian medidas u opciones válidas.
   useEffect(() => {
     if (!articuloId || !articulo) return;
 
+    // Primero detecto qué campos son obligatorios según las reglas activas del artículo.
     const rules = articulo.rules ?? [];
     const requiredFields = [
       ...new Set(
@@ -299,20 +309,24 @@ export function ModalArticuloConfigurable({
       ),
     ];
 
+    // No llamo al backend hasta que todos los obligatorios tengan valor.
     const hasRequiredValues = requiredFields.every((field) => {
       const value = medidas[field];
       return value !== "" && value !== null && value !== undefined;
     });
 
+    // Hago una validación completa antes de disparar el cálculo remoto.
     const frontErrors = validarMedidasConReglas(medidas, rules, touchedAll);
     if (!hasRequiredValues || Object.keys(frontErrors).length > 0) {
       setResultado(null);
       return;
     }
 
+    // Meto un pequeño debounce para no bombardear al backend en cada tecla.
     const timerId = setTimeout(async () => {
       setCalculando(true);
       try {
+        // Solo envío medidas rellenas y las opciones actualmente elegidas.
         const payload = {
           ...Object.fromEntries(
             Object.entries(medidas).filter(([, v]) => v !== ""),
@@ -334,6 +348,7 @@ export function ModalArticuloConfigurable({
     return () => clearTimeout(timerId);
   }, [articuloId, articulo, medidas, opciones]);
 
+  // Aqui empaqueto toda la configuración final y se la devuelvo al presupuesto padre.
   function handleConfirmar() {
     if (!resultado?.valid) return;
 
@@ -362,6 +377,7 @@ export function ModalArticuloConfigurable({
     });
   }
 
+  // Aqui construyo una descripción resumida para que la línea configurable quede legible en el presupuesto.
   function construirDescripcion() {
     const lineas = [];
     if (medidas.ancho_hueco)
@@ -375,13 +391,15 @@ export function ModalArticuloConfigurable({
     return lineas.join(" | ");
   }
 
-  // ── Render ───────────────────────────────────────────────────────
+  // Si no tengo artículo, no renderizo nada porque este modal depende totalmente de ese contexto.
   if (!articuloId) return null;
 
+  // Aqui resuelvo la imagen guía de cotas según el código del artículo.
   const cotasImageUrl = articulo?.code
     ? (COTAS_IMAGE_BY_CODE[articulo.code] ?? "")
     : "";
 
+  // Estas clases cambian el contenedor según si lo renderizo como página completa o como modal flotante.
   const shellClasses = asPage
     ? "min-h-[calc(100vh-96px)] w-full bg-white px-4 py-4 dark:bg-gray-950 md:px-6"
     : "fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4";
@@ -395,7 +413,7 @@ export function ModalArticuloConfigurable({
   return (
     <div className={shellClasses}>
       <div className={cardClasses}>
-        {/* Cabecera */}
+        {/* Aqui muestro la cabecera con título dinámico y el botón para volver o cerrar. */}
         <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700">
           <h2 className="text-lg font-bold dark:text-white">
             {cargando
@@ -422,6 +440,7 @@ export function ModalArticuloConfigurable({
           <div className="p-6 space-y-6">
             {cotasImageUrl && (
               <section>
+                {/* Aqui enseño la guía visual de cotas solo si existe una imagen asociada al código. */}
                 <h3 className="font-semibold mb-3 dark:text-white">
                   Guía de cotas ({articulo.code})
                 </h3>
@@ -433,7 +452,7 @@ export function ModalArticuloConfigurable({
               </section>
             )}
 
-            {/* Medidas de entrada */}
+            {/* Aqui pinto las medidas que el usuario tiene que informar para configurar el artículo. */}
             <section>
               <h3 className="font-semibold mb-3 dark:text-white">
                 Medidas (en mm)
@@ -468,7 +487,7 @@ export function ModalArticuloConfigurable({
               </div>
             </section>
 
-            {/* Opciones por parte */}
+            {/* Aqui pinto los grupos de opciones configurables por cada parte del artículo. */}
             <section>
               <h3 className="font-semibold mb-3 dark:text-white">Opciones</h3>
               <div className="space-y-3">
@@ -499,6 +518,7 @@ export function ModalArticuloConfigurable({
             </section>
 
             <section className="border rounded-lg p-4 dark:border-gray-700">
+              {/* Aqui enseño las medidas de fabricación calculadas en directo para que el usuario vea el resultado técnico. */}
               <h3 className="font-semibold mb-3 dark:text-white">
                 Medidas de fabricación
               </h3>
@@ -526,7 +546,7 @@ export function ModalArticuloConfigurable({
               </div>
             </section>
 
-            {/* Resultado desglosado */}
+            {/* Aqui muestro el desglose de precio que devuelve el cálculo del configurable. */}
             <section className="border rounded-lg p-4 dark:border-gray-700 space-y-2">
               <h3 className="font-semibold dark:text-white">Desglose</h3>
               {calculando && (
@@ -565,7 +585,7 @@ export function ModalArticuloConfigurable({
           </div>
         )}
 
-        {/* Footer */}
+        {/* Aqui dejo las acciones finales: cancelar o confirmar y añadir la línea al presupuesto. */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t dark:border-gray-700">
           <button
             type="button"
