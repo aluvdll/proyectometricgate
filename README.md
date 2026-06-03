@@ -58,10 +58,31 @@ Ahora configura la base de datos en el archivo `.env` (nombre BD, usuario y cont
 - `DB_USERNAME`
 - `DB_PASSWORD`
 
+Base de datos recomendada para este proyecto:
+- `DB_DATABASE=backendapi`
+
+Si aún no existe, créala en MySQL antes de migrar:
+```sql
+CREATE DATABASE backendapi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
 Después ejecuta migraciones:
 ```bash
 php artisan migrate
 ```
+
+Crear datos iniciales (incluye usuario superadmin):
+```bash
+php artisan db:seed
+```
+
+Acceso inicial de superadmin (entorno local):
+- Email: `admin@admin.com`
+- Contraseña: `12345678`
+
+Importante:
+- Cambia estas credenciales después del primer acceso.
+- No uses estas credenciales por defecto en producción.
 
 Arranca el backend:
 ```bash
@@ -145,6 +166,15 @@ Ejemplo rápido para desarrollo local (sin SMTP real):
 - `MAIL_MAILER=log`
 
 Con `MAIL_MAILER=log`, Laravel no envía correos reales: los deja en logs para pruebas.
+
+### Cómo probar recuperar contraseña (rápido)
+1. Arranca el backend (`php artisan serve`) y el frontend (`npm run dev`).
+2. En la pantalla de login, pulsa en “¿Olvidaste tu contraseña?” (o equivalente).
+3. Introduce un correo de usuario existente y envía la solicitud.
+4. Si estás en local con `MAIL_MAILER=log`, revisa el log de Laravel para ver el enlace de recuperación:
+  - Archivo: `backendApi/storage/logs/laravel.log`
+5. Abre ese enlace, establece una nueva contraseña y confirma el cambio.
+6. Vuelve al login e inicia sesión con la contraseña nueva.
 
 ## Problemas típicos y solución rápida
 - Error de conexión con base de datos:
