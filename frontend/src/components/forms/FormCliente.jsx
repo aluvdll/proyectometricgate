@@ -32,10 +32,15 @@ export function FormCliente({ mode, clientId }) {
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyType, setNotifyType] = useState("success");
 
+  // Aqui inicializo React Hook Form con los valores por defecto de mi formulario.
   const {
+    // Con register conecto cada input al estado interno del formulario.
     register,
+    // Con handleSubmit valido todo y solo si pasa ejecuto onSubmit.
     handleSubmit,
+    // Con reset relleno o limpio el formulario de una sola vez.
     reset,
+    // Aqui leo los errores por campo para pintar los mensajes debajo del input.
     formState: { errors },
   } = useForm({
     defaultValues: valoresIniciales,
@@ -60,6 +65,7 @@ export function FormCliente({ mode, clientId }) {
     obtenerClienteEmpresa(clientId)
       .then((cliente) => {
         setClientNumber(cliente.client_number ?? null);
+        // En modo edicion vuelco los datos del cliente al formulario con reset.
         reset({
           nombre: cliente.nombre ?? "",
           direccion: cliente.direccion ?? "",
@@ -84,6 +90,7 @@ export function FormCliente({ mode, clientId }) {
       });
   }, [clientId, isEdit, reset]);
 
+  // Este metodo solo se ejecuta si React Hook Form valida bien todos los campos.
   const onSubmit = async (data) => {
     setSaving(true);
 
@@ -132,7 +139,9 @@ export function FormCliente({ mode, clientId }) {
   return (
     <div className="container mt-1 w-full rounded-md border border-orange-500">
       <form
+        // Paso onSubmit por handleSubmit para que React Hook Form controle la validacion.
         onSubmit={handleSubmit(onSubmit)}
+        noValidate
         className="w-full mx-auto rounded-md p-8 shadow-md"
       >
         <h2 className="mb-6 text-xl font-bold text-gray-700 dark:text-gray-200">
@@ -157,6 +166,7 @@ export function FormCliente({ mode, clientId }) {
             <input
               type="text"
               className="w-full rounded-md border border-orange-500 px-3 py-2"
+              // Aqui registro el input y defino sus reglas de validacion.
               {...register(field, {
                 required: `El campo ${label} es obligatorio`,
                 ...(field === "codigo_postal"
@@ -169,6 +179,7 @@ export function FormCliente({ mode, clientId }) {
                   : {}),
               })}
             />
+            {/* Si este campo falla, aqui muestro su mensaje de error */}
             {errors[field] && (
               <p className="mt-1 text-sm text-red-500">
                 {errors[field].message}
@@ -183,6 +194,7 @@ export function FormCliente({ mode, clientId }) {
             type="text"
             disabled={isEdit && clientNumber === "00000"}
             className="w-full rounded-md border border-orange-500 px-3 py-2"
+            // En este campo ajusto reglas dinamicas segun si es cliente contado o no.
             {...register("dni", {
               required:
                 isEdit && clientNumber === "00000"
@@ -202,6 +214,7 @@ export function FormCliente({ mode, clientId }) {
               El DNI del cliente contado (nº 00000) no se puede modificar.
             </p>
           )}
+          {/* Aqui pinto el error del DNI cuando la regla no se cumple */}
           {errors.dni && (
             <p className="mt-1 text-sm text-red-500">{errors.dni.message}</p>
           )}
@@ -213,6 +226,7 @@ export function FormCliente({ mode, clientId }) {
             type="email"
             className="w-full rounded-md border border-orange-500 px-3 py-2"
             placeholder="Opcional"
+            // Registro el email como opcional, pero valido formato si se informa.
             {...register("email", {
               pattern: {
                 value: /^\S+@\S+\.\S+$/,
@@ -220,6 +234,7 @@ export function FormCliente({ mode, clientId }) {
               },
             })}
           />
+          {/* Si el formato de email no es valido, lo enseño aqui */}
           {errors.email && (
             <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
           )}
@@ -231,6 +246,7 @@ export function FormCliente({ mode, clientId }) {
             type="text"
             className="w-full rounded-md border border-orange-500 px-3 py-2"
             placeholder="Opcional"
+            // Telefono opcional con validacion de formato si viene valor.
             {...register("telefono", {
               pattern: {
                 value: /^$|^[0-9+ ]{9,15}$/,
@@ -238,6 +254,7 @@ export function FormCliente({ mode, clientId }) {
               },
             })}
           />
+          {/* Mensaje de error del telefono */}
           {errors.telefono && (
             <p className="mt-1 text-sm text-red-500">
               {errors.telefono.message}
@@ -251,6 +268,7 @@ export function FormCliente({ mode, clientId }) {
             type="text"
             className="w-full rounded-md border border-orange-500 px-3 py-2"
             placeholder="Opcional"
+            // Telefono secundario opcional con la misma validacion de formato.
             {...register("telefono2", {
               pattern: {
                 value: /^$|^[0-9+ ]{9,15}$/,
@@ -258,6 +276,7 @@ export function FormCliente({ mode, clientId }) {
               },
             })}
           />
+          {/* Mensaje de error del telefono 2 */}
           {errors.telefono2 && (
             <p className="mt-1 text-sm text-red-500">
               {errors.telefono2.message}

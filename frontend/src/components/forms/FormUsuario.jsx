@@ -35,12 +35,19 @@ export function FormUsuario({ mode, userId }) {
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyType, setNotifyType] = useState("success");
 
+  // Aqui inicializo React Hook Form con los valores por defecto de mi formulario.
   const {
+    // Con register conecto cada input al estado interno del formulario.
     register,
+    // Con handleSubmit valido todo y solo si pasa ejecuto onSubmit.
     handleSubmit,
+    // Con setValue puedo actualizar campos del form desde codigo (ej: avatar).
     setValue,
+    // Con watch puedo comparar valores en vivo (ej: confirmar password).
     watch,
+    // Con reset relleno o limpio el formulario de una sola vez.
     reset,
+    // Aqui leo los errores por campo para pintar los mensajes debajo del input.
     formState: { errors },
   } = useForm({
     defaultValues: valoresIniciales,
@@ -65,6 +72,7 @@ export function FormUsuario({ mode, userId }) {
         })
         .then((res) => {
           const usuario = res?.data?.data ?? {};
+          // En modo edicion vuelco los datos del usuario al formulario con reset.
           reset({
             name: usuario.name ?? "",
             dni: usuario.dni ?? "",
@@ -92,6 +100,7 @@ export function FormUsuario({ mode, userId }) {
     }
   }, [isEdit, userId, token, reset]);
 
+  // Este metodo solo se ejecuta si React Hook Form valida bien todos los campos.
   const onSubmit = async (data) => {
     if (!token) {
       showNotification(
@@ -197,6 +206,7 @@ export function FormUsuario({ mode, userId }) {
   return (
     <div className="container mt-1 w-full rounded-md border border-orange-500">
       <form
+        // Paso onSubmit por handleSubmit para que React Hook Form controle la validacion.
         onSubmit={handleSubmit(onSubmit)}
         className="w-full mx-auto p-8 rounded-md shadow-md"
       >
@@ -217,6 +227,7 @@ export function FormUsuario({ mode, userId }) {
             <input
               type="text"
               className="w-full px-3 py-2 rounded-md border border-orange-500"
+              // Aqui registro el input y defino sus reglas de validacion.
               {...register(field, {
                 required:
                 //excluyo estos campos.. no son obligatorios, pero si se rellenan, deben tener un formato correcto (ejemplo: teléfono))
@@ -226,6 +237,7 @@ export function FormUsuario({ mode, userId }) {
                     : `El campo ${label} es obligatorio`,
               })}
             />
+            {/* Si este campo falla, aqui muestro su mensaje de error */}
             {errors[field] && (
               <p className="mt-1 text-sm text-red-500">
                 {errors[field].message}
@@ -314,6 +326,7 @@ export function FormUsuario({ mode, userId }) {
                 className="w-full px-3 py-2 rounded-md border border-orange-500 appearance-none"
                 {...register("confirmPassword", {
                   required: "Debes confirmar la contraseña",
+                  // Con watch comparo contra password para validar coincidencia.
                   validate: (value) =>
                     value === watch("password") ||
                     "Las contraseñas no coinciden",

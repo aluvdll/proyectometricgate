@@ -71,11 +71,17 @@ export function SuperAdminPanel() {
     }, 2500);
   };
 
+  // Aqui inicializo React Hook Form con los valores por defecto de mi formulario.
   const {
+    // Con register conecto cada input al estado interno del formulario.
     register,
+    // Con handleSubmit valido todo y solo si pasa ejecuto crearEmpresa.
     handleSubmit,
+    // Con reset limpio el formulario cuando el alta sale bien.
     reset,
+    // Con watch puedo leer valores en vivo si necesito reglas entre campos.
     watch,
+    // Aqui leo los errores por campo para pintar los mensajes debajo del input.
     formState: { errors },
   } = useForm({
     defaultValues: formularioInicial,
@@ -116,6 +122,7 @@ export function SuperAdminPanel() {
     void cargarEmpresas();
   }, [tokenSesion]);
 
+  // Este metodo solo se ejecuta si React Hook Form valida bien todos los campos.
   const crearEmpresa = (data) => {
     if (!tokenSesion) return;
 
@@ -429,6 +436,7 @@ export function SuperAdminPanel() {
             </h2>
 
             <form
+              // Paso crearEmpresa por handleSubmit para que React Hook Form controle la validacion.
               onSubmit={handleSubmit(crearEmpresa)}
               className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2"
             >
@@ -441,11 +449,13 @@ export function SuperAdminPanel() {
                 </label>
                 <input
                   id="fiscal_name"
+                  // Aqui registro el input y defino sus reglas de validacion.
                   {...register("fiscal_name", {
                     required: "El nombre fiscal es obligatorio",
                   })}
                   className={`w-full rounded-lg border px-3 py-2 dark:bg-slate-800 dark:text-white ${errors.fiscal_name ? "border-red-500" : "border-gray-300 dark:border-slate-600"}`}
                 />
+                {/* Si este campo falla, aqui muestro su mensaje de error */}
                 {errors.fiscal_name && (
                   <p className="mt-1 text-sm text-red-500">
                     {errors.fiscal_name.message}

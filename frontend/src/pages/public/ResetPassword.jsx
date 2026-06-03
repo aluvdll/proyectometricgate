@@ -1,18 +1,35 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import axios from "axios";
+import { API_URL } from "../../services/apiBase";
 
 export function ResetPassword() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
+
+  // Aqui inicializo React Hook Form con los valores por defecto de mi formulario.
+  const {
+    // Con register conecto cada input al estado interno del formulario.
+    register,
+    // Con handleSubmit valido todo y solo si pasa ejecuto onSubmit.
+    handleSubmit,
+    // Con watch comparo valores en vivo (ej: confirmacion de password).
+    watch,
+    // Aqui leo los errores por campo para pintar los mensajes debajo del input.
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
   // Validar que el token exista en la URL
   if (!token) {
@@ -37,36 +54,20 @@ export function ResetPassword() {
     );
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Este metodo solo se ejecuta si React Hook Form valida bien todos los campos.
+  const onSubmit = async (data) => {
     setError("");
     setMensaje("");
-
-    // Validaciones básicas
-    if (!email.trim()) {
-      setError("Por favor ingresa tu email");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden");
-      return;
-    }
 
     setCargando(true);
 
     try {
       // Enviamos la nueva contraseña, email y el token al backend
-      await axios.post("http://127.0.0.1:8000/api/reset-password", {
+      await axios.post(`${API_URL}/api/reset-password`, {
         token: token,
-        email: email,
-        password: password,
-        password_confirmation: confirmPassword,
+        email: data.email,
+        password: data.password,
+        password_confirmation: data.confirmPassword,
       });
 
       setMensaje("Contraseña actualizada exitosamente");
@@ -80,7 +81,7 @@ export function ResetPassword() {
         setError(
           err.response?.data?.error ||
             err.response?.data?.message ||
-            "Error al actualizar la contraseña"
+            "Error al actualizar la contraseña",
         );
       } else {
         setError("Error de conexión con el servidor");
@@ -102,7 +103,12 @@ export function ResetPassword() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Paso onSubmit por handleSubmit para que React Hook Form controle la validacion. */}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-6"
+          noValidate
+        >
           {/* Campo de email */}
           <div>
             <label
@@ -115,14 +121,24 @@ export function ResetPassword() {
               <input
                 id="email"
                 type="email"
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
                 autoComplete="email"
                 disabled={cargando || !!mensaje}
+                // Aqui registro el input y defino sus reglas de validacion.
+                {...register("email", {
+                  required: "El correo es obligatorio",
+                  pattern: {
+                    value: /^\S+@\S+\.\S+$/,
+                    message: "Correo no válido",
+                  },
+                })}
                 className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-400 sm:text-sm/6 dark:bg-white/5 dark:text-white dark:outline-white/10 dark:placeholder:text-gray-500 dark:focus:outline-orange-400 disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              {/* Si este campo falla, aqui muestro su mensaje de error */}
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -138,14 +154,22 @@ export function ResetPassword() {
               <input
                 id="password"
                 type="password"
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
                 autoComplete="new-password"
                 disabled={cargando || !!mensaje}
+                {...register("password", {
+                  required: "La contraseña es obligatoria",
+                  minLength: {
+                    value: 6,
+                    message: "La contraseña debe tener al menos 6 caracteres",
+                  },
+                })}
                 className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-400 sm:text-sm/6 dark:bg-white/5 dark:text-white dark:outline-white/10 dark:placeholder:text-gray-500 dark:focus:outline-orange-400 disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -161,14 +185,22 @@ export function ResetPassword() {
               <input
                 id="confirmPassword"
                 type="password"
-                name="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
                 autoComplete="new-password"
                 disabled={cargando || !!mensaje}
+                {...register("confirmPassword", {
+                  required: "Debes confirmar la contraseña",
+                  // Con watch comparo contra password para validar coincidencia.
+                  validate: (value) =>
+                    value === watch("password") ||
+                    "Las contraseñas no coinciden",
+                })}
                 className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-400 sm:text-sm/6 dark:bg-white/5 dark:text-white dark:outline-white/10 dark:placeholder:text-gray-500 dark:focus:outline-orange-400 disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
           </div>
 

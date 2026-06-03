@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { loginUsuario } from "../../services/auth";
 import { useAuth } from "../../context/AuthContext";
 import { NotificationModal } from "../../components/modals/NotificationModal";
 
 export function Login() {
-  const [correo, setCorreo] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [notifyVisible, setNotifyVisible] = useState(false);
   const [notifyTitle, setNotifyTitle] = useState("");
@@ -15,6 +14,21 @@ export function Login() {
 
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // Aqui inicializo React Hook Form con los valores por defecto de mi formulario.
+  const {
+    // Con register conecto cada input al estado interno del formulario.
+    register,
+    // Con handleSubmit valido todo y solo si pasa ejecuto onSubmit.
+    handleSubmit,
+    // Aqui leo los errores por campo para pintar los mensajes debajo del input.
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   const showNotification = (title, message, type = "error") => {
     setNotifyTitle(title);
@@ -25,14 +39,14 @@ export function Login() {
     setTimeout(() => setNotifyVisible(false), 3500);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Este metodo solo se ejecuta si React Hook Form valida bien todos los campos.
+  const onSubmit = async (data) => {
     setError("");
 
     try {
       const res = await loginUsuario({
-        email: correo,
-        password: password,
+        email: data.email,
+        password: data.password,
       });
 
       const authData = res?.data ?? {};
@@ -74,7 +88,12 @@ export function Login() {
   return (
     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Paso onSubmit por handleSubmit para que React Hook Form controle la validacion. */}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-6"
+          noValidate
+        >
           {/* Campo de correo */}
           <div>
             <label
@@ -87,13 +106,23 @@ export function Login() {
               <input
                 id="email"
                 type="email"
-                name="email"
-                value={correo}
-                required
                 autoComplete="email"
-                onChange={(e) => setCorreo(e.target.value)}
+                // Aqui registro el input y defino sus reglas de validacion.
+                {...register("email", {
+                  required: "El correo es obligatorio",
+                  pattern: {
+                    value: /^\S+@\S+\.\S+$/,
+                    message: "Correo no válido",
+                  },
+                })}
                 className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-400 sm:text-sm/6 dark:bg-white/5 dark:text-white dark:outline-white/10 dark:placeholder:text-gray-500 dark:focus:outline-orange-400"
               />
+              {/* Si este campo falla, aqui muestro su mensaje de error */}
+              {errors.email && (
+                <p className="text-red-500 mt-1 text-sm">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -120,13 +149,17 @@ export function Login() {
               <input
                 id="password"
                 type="password"
-                name="password"
-                value={password}
-                required
                 autoComplete="current-password"
-                onChange={(e) => setPassword(e.target.value)}
+                {...register("password", {
+                  required: "La contraseña es obligatoria",
+                })}
                 className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-400 sm:text-sm/6 dark:bg-white/5 dark:text-white dark:outline-white/10 dark:placeholder:text-gray-500 dark:focus:outline-orange-400"
               />
+              {errors.password && (
+                <p className="text-red-500 mt-1 text-sm">
+                  {errors.password.message}
+                </p>
+              )}
               {error && <p className="text-red-500 mt-1">{error}</p>}
             </div>
           </div>

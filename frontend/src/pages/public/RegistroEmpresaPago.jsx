@@ -68,12 +68,19 @@ export default function RegistroEmpresaPago() {
     return params.get("token") || "";
   }, []);
 
+  // Aqui inicializo React Hook Form con los valores por defecto de mi formulario.
   const {
+    // Con register conecto cada input al estado interno del formulario.
     register,
+    // Con handleSubmit valido todo y solo si pasa ejecuto onSubmit.
     handleSubmit,
+    // Con setValue puedo rellenar campos automaticamente (ej: email de pago).
     setValue,
+    // Renombro setError para mapear errores del backend a campos concretos.
     setError: setFormError,
+    // Limpio errores previos antes de reintentar envio.
     clearErrors,
+    // Aqui leo los errores por campo para pintar los mensajes debajo del input.
     formState: { errors },
   } = useForm({
     defaultValues: initialForm,
@@ -144,6 +151,7 @@ export default function RegistroEmpresaPago() {
     void cargarInfo();
   }, [token, setValue]);
 
+  // Este metodo solo se ejecuta si React Hook Form valida bien todos los campos.
   const onSubmit = async (data) => {
     clearErrors();
     setSubmitting(true);
@@ -161,6 +169,7 @@ export default function RegistroEmpresaPago() {
       const formData = new FormData();
       formData.append("token", token);
 
+      // Recorro todos los campos del formulario y los convierto en FormData.
       Object.entries(data).forEach(([key, value]) => {
         if (key === "logo") {
           if (value?.[0]) {
@@ -237,6 +246,7 @@ export default function RegistroEmpresaPago() {
     }
 
     return (
+      // Este helper me evita repetir el mismo bloque de error en cada campo.
       <p className="mt-1 text-sm text-red-500 dark:text-red-300">
         {fieldError.message}
       </p>
@@ -284,6 +294,7 @@ export default function RegistroEmpresaPago() {
         )}
 
         <form
+          // Paso onSubmit por handleSubmit para que React Hook Form controle la validacion.
           onSubmit={handleSubmit(onSubmit)}
           className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2"
           noValidate
@@ -294,6 +305,7 @@ export default function RegistroEmpresaPago() {
               className={
                 errors.fiscal_name ? fieldErrorClassName : fieldClassName
               }
+              // Aqui registro el input y defino sus reglas de validacion.
               {...register("fiscal_name", {
                 required: "El nombre fiscal de la empresa es obligatorio",
               })}

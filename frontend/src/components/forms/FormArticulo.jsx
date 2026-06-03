@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { NotificationModal } from "../modals/NotificationModal";
@@ -10,7 +11,6 @@ import {
 } from "../../services/articulos";
 
 import { API_URL } from "../../services/apiBase";
-
 
 const valoresIniciales = {
   family_id: "",
@@ -28,7 +28,6 @@ export function FormArticulo({ mode, articuloId = undefined }) {
   const isEdit = mode === "edit";
   const esAdmin = user?.role === "admin";
 
-  const [formData, setFormData] = useState(valoresIniciales);
   const [familias, setFamilias] = useState([]);
   const [imagenFile, setImagenFile] = useState(null);
   const [imagenUrl, setImagenUrl] = useState(null);
@@ -38,6 +37,22 @@ export function FormArticulo({ mode, articuloId = undefined }) {
   const [notifyTitle, setNotifyTitle] = useState("");
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyType, setNotifyType] = useState("success");
+
+  // Aqui inicializo React Hook Form con los valores por defecto de mi formulario.
+  const {
+    // Con register conecto cada input al estado interno del formulario.
+    register,
+    // Con handleSubmit valido todo y solo si pasa ejecuto onSubmit.
+    handleSubmit,
+    // Con reset relleno o limpio el formulario de una sola vez.
+    reset,
+    // Con watch puedo leer valores en vivo si necesito reaccionar a cambios.
+    watch,
+    // Aqui leo los errores por campo para pintar los mensajes debajo del input.
+    formState: { errors },
+  } = useForm({
+    defaultValues: valoresIniciales,
+  });
 
   const previewImagen = useMemo(() => {
     if (imagenFile instanceof File) {
@@ -70,7 +85,8 @@ export function FormArticulo({ mode, articuloId = undefined }) {
     setLoadingArticulo(true);
     obtenerArticuloEmpresa(articuloId)
       .then((articulo) => {
-        setFormData({
+        // En modo edicion vuelco los datos del articulo al formulario con reset.
+        reset({
           family_id: articulo.family_id?.toString() ?? "",
           code: articulo.code ?? "",
           name: articulo.name ?? "",
@@ -94,7 +110,7 @@ export function FormArticulo({ mode, articuloId = undefined }) {
       .finally(() => {
         setLoadingArticulo(false);
       });
-  }, [isEdit, articuloId]);
+  }, [isEdit, articuloId, reset]);
 
   useEffect(() => {
     return () => {
@@ -104,17 +120,8 @@ export function FormArticulo({ mode, articuloId = undefined }) {
     };
   }, [imagenFile, previewImagen]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  // Este metodo solo se ejecuta si React Hook Form valida bien todos los campos.
+  const onSubmit = async (data) => {
     if (!esAdmin) {
       showNotification(
         "Error",
@@ -124,41 +131,28 @@ export function FormArticulo({ mode, articuloId = undefined }) {
       return;
     }
 
-    if (
-      !formData.code.trim() ||
-      !formData.name.trim() ||
-      !formData.base_price
-    ) {
-      showNotification(
-        "Error",
-        "Completa código, nombre y precio base.",
-        "error",
-      );
-      return;
+    const payload = new FormData();
+    if (data.family_id) {
+      payload.append("family_id", data.family_id);
     }
-
-    const data = new FormData();
-    if (formData.family_id) {
-      data.append("family_id", formData.family_id);
-    }
-    data.append("code", formData.code.trim());
-    data.append("name", formData.name.trim());
-    data.append("description", formData.description?.trim() || "");
-    data.append("base_price", formData.base_price);
-    data.append("tax_percentage", formData.tax_percentage || "21");
-    data.append("active", formData.active ? "1" : "0");
+    payload.append("code", data.code.trim());
+    payload.append("name", data.name.trim());
+    payload.append("description", data.description?.trim() || "");
+    payload.append("base_price", data.base_price);
+    payload.append("tax_percentage", data.tax_percentage || "21");
+    payload.append("active", data.active ? "1" : "0");
 
     if (imagenFile) {
-      data.append("image", imagenFile);
+      payload.append("image", imagenFile);
     }
 
     setSaving(true);
     try {
       if (isEdit && articuloId) {
-        await actualizarArticuloEmpresa(articuloId, data);
+        await actualizarArticuloEmpresa(articuloId, payload);
         showNotification("Éxito", "Artículo actualizado", "success");
       } else {
-        await crearArticuloEmpresa(data);
+        await crearArticuloEmpresa(payload);
         showNotification("Éxito", "Artículo creado", "success");
       }
 
@@ -181,7 +175,9 @@ export function FormArticulo({ mode, articuloId = undefined }) {
   return (
     <div className="container w-full mt-1">
       <form
-        onSubmit={handleSubmit}
+        // Paso onSubmit por handleSubmit para que React Hook Form controle la validacion.
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
         className="w-full mx-auto rounded-md border border-orange-500 p-8"
       >
         <h2 className="mb-6 text-xl font-bold text-gray-700 dark:text-gray-200">
@@ -198,9 +194,7 @@ export function FormArticulo({ mode, articuloId = undefined }) {
         <div className="mb-4">
           <label className="mb-2 block text-sm font-bold">Familia</label>
           <select
-            name="family_id"
-            value={formData.family_id}
-            onChange={handleChange}
+            {...register("family_id")}
             disabled={!esAdmin}
             className="w-full rounded-md border border-orange-500 px-3 py-2"
           >
@@ -220,32 +214,38 @@ export function FormArticulo({ mode, articuloId = undefined }) {
           <label className="mb-2 block text-sm font-bold">Código</label>
           <input
             type="text"
-            name="code"
-            value={formData.code}
-            onChange={handleChange}
+            // Aqui registro el input y defino sus reglas de validacion.
+            {...register("code", {
+              required: "El código es obligatorio.",
+            })}
             disabled={!esAdmin}
-            className="w-full rounded-md border border-orange-500 px-3 py-2"
+            className={`w-full rounded-md px-3 py-2 ${errors.code ? "border border-red-500" : "border border-orange-500"}`}
           />
+          {/* Si este campo falla, aqui muestro su mensaje de error */}
+          {errors.code && (
+            <p className="mt-1 text-sm text-red-500">{errors.code.message}</p>
+          )}
         </div>
 
         <div className="mb-4">
           <label className="mb-2 block text-sm font-bold">Nombre</label>
           <input
             type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
+            {...register("name", {
+              required: "El nombre es obligatorio.",
+            })}
             disabled={!esAdmin}
-            className="w-full rounded-md border border-orange-500 px-3 py-2"
+            className={`w-full rounded-md px-3 py-2 ${errors.name ? "border border-red-500" : "border border-orange-500"}`}
           />
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>
+          )}
         </div>
 
         <div className="mb-4">
           <label className="mb-2 block text-sm font-bold">Descripción</label>
           <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
+            {...register("description")}
             disabled={!esAdmin}
             className="w-full rounded-md border border-orange-500 px-3 py-2"
           />
@@ -260,12 +260,17 @@ export function FormArticulo({ mode, articuloId = undefined }) {
               type="number"
               step="0.01"
               min="0"
-              name="base_price"
-              value={formData.base_price}
-              onChange={handleChange}
+              {...register("base_price", {
+                required: "El precio base es obligatorio.",
+              })}
               disabled={!esAdmin}
-              className="w-full rounded-md border border-orange-500 px-3 py-2"
+              className={`w-full rounded-md px-3 py-2 ${errors.base_price ? "border border-red-500" : "border border-orange-500"}`}
             />
+            {errors.base_price && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.base_price.message}
+              </p>
+            )}
           </div>
 
           <div>
@@ -275,12 +280,17 @@ export function FormArticulo({ mode, articuloId = undefined }) {
               step="0.01"
               min="0"
               max="100"
-              name="tax_percentage"
-              value={formData.tax_percentage}
-              onChange={handleChange}
+              {...register("tax_percentage", {
+                required: "El IVA es obligatorio.",
+              })}
               disabled={!esAdmin}
-              className="w-full rounded-md border border-orange-500 px-3 py-2"
+              className={`w-full rounded-md px-3 py-2 ${errors.tax_percentage ? "border border-red-500" : "border border-orange-500"}`}
             />
+            {errors.tax_percentage && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.tax_percentage.message}
+              </p>
+            )}
           </div>
         </div>
 
@@ -306,9 +316,8 @@ export function FormArticulo({ mode, articuloId = undefined }) {
           <input
             id="active"
             type="checkbox"
-            name="active"
-            checked={formData.active}
-            onChange={handleChange}
+            // Tambien registro checkboxes para que formen parte del submit.
+            {...register("active")}
             disabled={!esAdmin}
             className="h-4 w-4"
           />

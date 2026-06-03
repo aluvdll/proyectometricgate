@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { NotificationModal } from "../../components/modals/NotificationModal";
 import axios from "axios";
 import { API_URL } from "../../services/apiBase";
@@ -18,15 +19,28 @@ function getAlternateHostUrl(url) {
 }
 
 export function Contacto() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
   const [notifyVisible, setNotifyVisible] = useState(false);
   const [notifyTitle, setNotifyTitle] = useState("");
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyType, setNotifyType] = useState("success");
+
+  // Aqui inicializo React Hook Form con los valores por defecto de mi formulario.
+  const {
+    // Con register conecto cada input al estado interno del formulario.
+    register,
+    // Con handleSubmit valido todo y solo si pasa ejecuto onSubmit.
+    handleSubmit,
+    // Con reset limpio el formulario cuando envio correctamente.
+    reset,
+    // Aqui leo los errores por campo para pintar los mensajes debajo del input.
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      name: "",
+      email: "",
+      message: "",
+    },
+  });
 
   // Muestra el modal y lo cierra automaticamente tras unos segundos.
   const showNotification = (title, message, type = "success") => {
@@ -37,23 +51,14 @@ export function Contacto() {
     setTimeout(() => setNotifyVisible(false), 3500);
   };
 
-  // Mantiene sincronizados los campos del formulario con el estado local.
-  function handleChange(e) {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  }
-
+  // Este metodo solo se ejecuta si React Hook Form valida bien todos los campos.
   // Envia el formulario al backend y notifica el resultado con el modal global.
-  async function handleSubmit(e) {
-    e.preventDefault();
-
+  async function onSubmit(data) {
     try {
       const endpoint = `${CONTACT_API_URL}/api/contact/send-email`;
 
       try {
-        await axios.post(endpoint, formData, {
+        await axios.post(endpoint, data, {
           headers: { "Content-Type": "application/json" },
         });
       } catch (error) {
@@ -69,12 +74,12 @@ export function Contacto() {
           throw error;
         }
 
-        await axios.post(alternateEndpoint, formData, {
+        await axios.post(alternateEndpoint, data, {
           headers: { "Content-Type": "application/json" },
         });
       }
 
-      setFormData({ name: "", email: "", message: "" });
+      reset({ name: "", email: "", message: "" });
       showNotification(
         "Exito",
         "Mensaje enviado correctamente. Te responderemos lo antes posible.",
@@ -108,7 +113,9 @@ export function Contacto() {
                 <form
                   className="rounded-xl bg-orange-400 dark:bg-gray-700 p-5 transition-colors duration-300"
                   id="contactForm"
-                  onSubmit={handleSubmit}
+                  // Paso onSubmit por handleSubmit para que React Hook Form controle la validacion.
+                  onSubmit={handleSubmit(onSubmit)}
+                  noValidate
                 >
                   {/* <!-- Name --> */}
                   <div className="mb-6">
@@ -117,15 +124,26 @@ export function Contacto() {
                         <i className="fas fa-user text-gray-500 dark:text-gray-400"></i>
                       </div>
                       <input
-                        onChange={handleChange}
-                        value={formData.name}
                         type="text"
-                        name="name"
                         placeholder="Name"
+                        // Aqui registro el input y defino sus reglas de validacion.
+                        {...register("name", {
+                          required: "El nombre es obligatorio",
+                          maxLength: {
+                            value: 120,
+                            message:
+                              "El nombre no puede superar 120 caracteres",
+                          },
+                        })}
                         className="w-full pl-10 pr-3 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        required
                       />
                     </div>
+                    {/* Si este campo falla, aqui muestro su mensaje de error */}
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.name.message}
+                      </p>
+                    )}
                   </div>
 
                   {/* <!-- Email --> */}
@@ -135,15 +153,27 @@ export function Contacto() {
                         <i className="fas fa-envelope text-gray-500 dark:text-gray-400"></i>
                       </div>
                       <input
-                        onChange={handleChange}
-                        value={formData.email}
                         type="email"
-                        name="email"
                         placeholder="Email Address"
+                        {...register("email", {
+                          required: "El email es obligatorio",
+                          pattern: {
+                            value: /^\S+@\S+\.\S+$/,
+                            message: "Email no válido",
+                          },
+                          maxLength: {
+                            value: 180,
+                            message: "El email no puede superar 180 caracteres",
+                          },
+                        })}
                         className="w-full pl-10 pr-3 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        required
                       />
                     </div>
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.email.message}
+                      </p>
+                    )}
                   </div>
 
                   {/* <!-- Message --> */}
@@ -154,14 +184,23 @@ export function Contacto() {
                       </div>
                       <textarea
                         rows={6}
-                        name="message"
                         placeholder="Message"
-                        value={formData.message}
-                        onChange={handleChange}
+                        {...register("message", {
+                          required: "El mensaje es obligatorio",
+                          maxLength: {
+                            value: 3000,
+                            message:
+                              "El mensaje no puede superar 3000 caracteres",
+                          },
+                        })}
                         className="w-full pl-10 pr-3 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        required
                       ></textarea>
                     </div>
+                    {errors.message && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.message.message}
+                      </p>
+                    )}
                   </div>
 
                   {/* <!-- Submit --> */}
