@@ -290,12 +290,12 @@ export default function RegistroEmpresaPago() {
         >
           <div>
             <input
-              placeholder="Nombre fiscal"
+              placeholder="Nombre fiscal de la empresa"
               className={
                 errors.fiscal_name ? fieldErrorClassName : fieldClassName
               }
               {...register("fiscal_name", {
-                required: "El nombre fiscal es obligatorio",
+                required: "El nombre fiscal de la empresa es obligatorio",
               })}
             />
             {renderFieldError("fiscal_name")}
@@ -303,7 +303,7 @@ export default function RegistroEmpresaPago() {
 
           <div>
             <input
-              placeholder="Nombre comercial (opcional)"
+              placeholder="Nombre comercial de la empresa (opcional)"
               className={fieldClassName}
               {...register("commercial_name")}
             />
@@ -322,26 +322,34 @@ export default function RegistroEmpresaPago() {
 
           <div>
             <input
+              id="logo"
               type="file"
               accept="image/png,image/jpeg,image/webp"
-              className={errors.logo ? fieldErrorClassName : fieldClassName}
+              className="sr-only"
               {...register("logo", {
-                required: "El logo de la empresa es obligatorio",
                 validate: (value) =>
+                  !value?.[0] ||
                   value?.[0] instanceof File ||
                   "Debes seleccionar un archivo de logo válido",
               })}
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <label
+              htmlFor="logo"
+              className={`inline-flex cursor-pointer items-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${errors.logo ? "border-red-300 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-700 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/60" : "border-orange-500 bg-orange-500 text-white hover:bg-orange-600"}`}
+            >
+              Subir logo
+            </label>
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Logo de la empresa. Opcional. <br />
               Formatos permitidos: JPG, PNG o WEBP. Tamaño máximo: 5 MB.
             </p>
             {renderFieldError("logo")}
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <input
               type="email"
-              placeholder="Email de empresa"
+              placeholder="Email de empresa (Donde recibir facturas y notificaciones)"
               className={errors.email ? fieldErrorClassName : fieldClassName}
               {...register("email", {
                 required: "El email de empresa es obligatorio",
@@ -359,7 +367,7 @@ export default function RegistroEmpresaPago() {
               placeholder="Dirección"
               className={errors.address ? fieldErrorClassName : fieldClassName}
               {...register("address", {
-                required: "La dirección es obligatoria",
+                required: "La dirección de la empresa es obligatoria",
               })}
             />
             {renderFieldError("address")}
@@ -370,10 +378,10 @@ export default function RegistroEmpresaPago() {
               placeholder="Teléfono"
               className={errors.phone ? fieldErrorClassName : fieldClassName}
               {...register("phone", {
-                required: "El teléfono es obligatorio",
+                required: "El teléfono de la empresa es obligatorio",
                 pattern: {
                   value: /^$|^[0-9+ ]{9,15}$/,
-                  message: "El teléfono no es válido",
+                  message: "El teléfono de la empresa no es válido",
                 },
               })}
             />
@@ -382,12 +390,12 @@ export default function RegistroEmpresaPago() {
 
           <div>
             <input
-              placeholder="Teléfono secundario (opcional)"
+              placeholder="Teléfono secundario de la empresa (opcional)"
               className={fieldClassName}
               {...register("phone2", {
                 pattern: {
                   value: /^$|^[0-9+ ]{9,15}$/,
-                  message: "El teléfono secundario no es válido",
+                  message: "El teléfono secundario de la empresa no es válido",
                 },
               })}
             />
@@ -399,7 +407,7 @@ export default function RegistroEmpresaPago() {
               placeholder="Ciudad"
               className={errors.city ? fieldErrorClassName : fieldClassName}
               {...register("city", {
-                required: "La ciudad es obligatoria",
+                required: "La ciudad de la empresa es obligatoria",
               })}
             />
             {renderFieldError("city")}
@@ -410,7 +418,7 @@ export default function RegistroEmpresaPago() {
               placeholder="Provincia"
               className={errors.province ? fieldErrorClassName : fieldClassName}
               {...register("province", {
-                required: "La provincia es obligatoria",
+                required: "La provincia de la empresa es obligatoria",
               })}
             />
             {renderFieldError("province")}
@@ -423,10 +431,11 @@ export default function RegistroEmpresaPago() {
                 errors.postal_code ? fieldErrorClassName : fieldClassName
               }
               {...register("postal_code", {
-                required: "El código postal es obligatorio",
+                required: "El código postal de la empresa es obligatorio",
                 pattern: {
                   value: /^\d{5}$/,
-                  message: "El código postal debe tener 5 números",
+                  message:
+                    "El código postal de la empresa debe tener 5 números",
                 },
               })}
             />
@@ -435,6 +444,12 @@ export default function RegistroEmpresaPago() {
 
           <hr className="my-2 md:col-span-2 border-gray-200 dark:border-gray-700" />
 
+          {/********************************** */}
+          <div className="md:col-span-2">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Registro de usuario administrador de la empresa
+            </h3>
+          </div>
           <div>
             <input
               placeholder="Nombre del administrador"
@@ -461,10 +476,10 @@ export default function RegistroEmpresaPago() {
             {renderFieldError("admin_dni")}
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <input
               type="email"
-              placeholder="Email del administrador"
+              placeholder="Email del administrador, se utilizará para acceder al panel de control"
               className={
                 errors.admin_email ? fieldErrorClassName : fieldClassName
               }
@@ -479,7 +494,7 @@ export default function RegistroEmpresaPago() {
             {renderFieldError("admin_email")}
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <input
               type="email"
               placeholder="Confirmar email del administrador"

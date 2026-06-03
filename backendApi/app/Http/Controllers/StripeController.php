@@ -239,7 +239,7 @@ class StripeController extends Controller
             'fiscal_name' => 'required|string|max:255',
             'commercial_name' => 'nullable|string|max:255',
             'cif_nif' => 'required|string|max:50|unique:companies,cif_nif',
-            'logo' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'email' => 'required|email|unique:companies,email',
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
@@ -317,12 +317,15 @@ class StripeController extends Controller
             ], 422);
         }
 
-        $logoPath = $request->file('logo')->store('company-logos', 'local');
+        $logoPath = null;
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('company-logos', 'local');
 
-        if ($logoPath === false) {
-            return response()->json([
-                'message' => 'No se pudo guardar el logo de la empresa.',
-            ], 500);
+            if ($logoPath === false) {
+                return response()->json([
+                    'message' => 'No se pudo guardar el logo de la empresa.',
+                ], 500);
+            }
         }
 
         try {
@@ -365,7 +368,9 @@ class StripeController extends Controller
                 ];
             });
         } catch (\Throwable $e) {
-            Storage::disk('local')->delete($logoPath);
+            if ($logoPath) {
+                Storage::disk('local')->delete($logoPath);
+            }
 
             throw $e;
         }

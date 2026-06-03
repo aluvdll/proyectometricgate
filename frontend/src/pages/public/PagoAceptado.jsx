@@ -58,8 +58,11 @@ export default function PagoAceptado() {
           Gracias por tu compra. Hemos confirmado tu pago y tu plan ya esta
           activo.
         </p>
-        <p className="mt-3 text-sm text-gray-500 dark:text-gray-300">
-          {mensajeConfirmacion}
+        <p className="mt-4  px-4 py-3 text-base font-medium text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-200">
+          {mensajeConfirmacion ===
+          "Pago verificado y correo de registro enviado."
+            ? "Pago verificado y CORREO ELECTRÓNICO de registro enviado."
+            : mensajeConfirmacion}
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

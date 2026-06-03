@@ -143,7 +143,7 @@ class CompanyController extends Controller
             'active' => 'boolean',
             'max_users' => 'nullable|integer|min:1',
 
-            // 👤 ADMIN DE LA EMPRESA
+            //  ADMIN DE LA EMPRESA
             'admin_name' => 'required|string',
             'admin_email' => 'required|email|unique:users,email',
             'admin_password' => 'required|string|min:6',
