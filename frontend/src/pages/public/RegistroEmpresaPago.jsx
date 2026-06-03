@@ -126,7 +126,7 @@ export default function RegistroEmpresaPago() {
         if (!response.ok) {
           throw new Error(
             data?.message ||
-              "No se pudo validar el enlace. El servidor no devolvio JSON valido.",
+              "No se pudo validar el enlace. El servidor no devolvió JSON valido.",
           );
         }
 

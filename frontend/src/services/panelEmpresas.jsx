@@ -35,12 +35,12 @@ async function llamarApi(url, options) {
         respuesta = await fetch(urlAlterna, options);
       } catch {
         throw new Error(
-          "No se pudo conectar con el servidor. Revisa que el backend este encendido en el puerto 8000.",
+          "No se pudo conectar con el servidor. Revisa que el backend esté encendido en el puerto 8000.",
         );
       }
     } else {
       throw new Error(
-        "No se pudo conectar con el servidor. Revisa que el backend este encendido en el puerto 8000.",
+        "No se pudo conectar con el servidor. Revisa que el backend esté encendido en el puerto 8000.",
       );
     }
   }
@@ -56,9 +56,9 @@ async function llamarApi(url, options) {
   if (!respuesta.ok) {
     const errorData = data && typeof data === "object" ? data : {};
     const mensajePorEstado = {
-      401: "Sesion expirada o token invalido. Inicia sesion de nuevo.",
-      403: "No tienes permisos para esta accion.",
-      422: "Hay datos invalidos en el formulario.",
+      401: "Sesión expirada o token inválido. Inicia sesion de nuevo.",
+      403: "No tienes permisos para esta acción.",
+      422: "Hay datos inválidos en el formulario.",
     };
 
     const mensaje =

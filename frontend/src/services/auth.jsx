@@ -14,7 +14,7 @@ export const loginUsuario = async (data) => {
       throw new Error(error.response.data.error);
     }
 
-    // Error de conexion
-    throw new Error("Error de conexion con el servidor");
+    // Error de conexión
+    throw new Error("Error de conexión con el servidor");
   }
 };

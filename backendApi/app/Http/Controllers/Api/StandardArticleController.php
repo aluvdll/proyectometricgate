@@ -23,7 +23,7 @@ class StandardArticleController extends Controller
 
         if (!in_array($user->role, ['admin', 'commercial', 'technician'], true)) {
             return response()->json([
-                'error' => 'No autorizado. Solo admin, commercial o technician.',
+                'error' => 'No autorizado. Solo administrador, comercial o técnico.',
             ], 403);
         }
 
@@ -48,7 +48,7 @@ class StandardArticleController extends Controller
 
         if ($user->role !== 'admin') {
             return response()->json([
-                'error' => 'No autorizado. Solo admin puede crear o editar artículos.',
+                'error' => 'No autorizado. Solo el administrador puede crear o editar artículos.',
             ], 403);
         }
 

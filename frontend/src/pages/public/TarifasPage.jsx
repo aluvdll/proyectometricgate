@@ -56,7 +56,7 @@ export const Tarifas = () => {
       });
 
       if (!response.ok) {
-        throw new Error("No se pudo crear la sesion de pago.");
+        throw new Error("No se pudo crear la sesión de pago.");
       }
 
       const session = await response.json();
@@ -71,7 +71,7 @@ export const Tarifas = () => {
       showNotification(
         "Error en el pago",
         error?.message ||
-          "No se pudo iniciar el pago. Revisa backend, claves Stripe y red.",
+          "No se pudo iniciar el pago. Revisa el backend, las claves de Stripe y la red.",
         "error",
       );
     }

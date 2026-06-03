@@ -27,7 +27,7 @@ class ClientController extends Controller
         // Solo permito admin/commercial para gestionar clientes de empresa.
         if (!in_array($user->role, ['admin', 'commercial'], true)) {
             return response()->json([
-                'error' => 'No autorizado. Solo admin o commercial.',
+                'error' => 'No autorizado. Solo administrador o comercial.',
             ], 403);
         }
 

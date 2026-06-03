@@ -22,7 +22,7 @@ class ArticleFamilyController extends Controller
 
         if (!in_array($user->role, ['admin', 'commercial'], true)) {
             return response()->json([
-                'error' => 'No autorizado. Solo admin o commercial.',
+                'error' => 'No autorizado. Solo administrador o comercial.',
             ], 403);
         }
 
@@ -47,7 +47,7 @@ class ArticleFamilyController extends Controller
 
         if ($user->role !== 'admin') {
             return response()->json([
-                'error' => 'No autorizado. Solo admin puede crear o editar familias.',
+                'error' => 'No autorizado. Solo el administrador puede crear o editar familias.',
             ], 403);
         }
 

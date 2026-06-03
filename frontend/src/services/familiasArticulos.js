@@ -24,12 +24,12 @@ function construirErrorApi(error) {
       data?.error ||
       data?.message ||
       (error.response?.status === 401
-        ? "Sesion expirada o token invalido."
+        ? "Sesión expirada o token inválido."
         : error.response?.status === 403
-          ? "No tienes permisos para esta accion."
+          ? "No tienes permisos para esta acción."
           : error.response?.status === 422
-            ? "Hay datos invalidos en el formulario."
-            : error.message || "Error inesperado en la peticion");
+            ? "Hay datos inválidos en el formulario."
+            : error.message || "Error inesperado en la petición");
 
     const apiError = new Error(mensaje);
     if (data?.errors && typeof data.errors === "object") {

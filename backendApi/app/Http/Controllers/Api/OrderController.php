@@ -25,7 +25,7 @@ class OrderController extends Controller
         // Aqui limito acceso solo a admin, commercial y technician.
         $allowed = ['admin', 'commercial', 'technician'];
         if (!in_array($user->role, $allowed, true)) {
-            return response()->json(['error' => 'No autorizado. Solo admin, commercial o technician.'], 403);
+            return response()->json(['error' => 'No autorizado. Solo administrador, comercial o técnico.'], 403);
         }
 
         if (!$user->company_id) {

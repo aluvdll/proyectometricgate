@@ -32,7 +32,7 @@ class BudgetController extends Controller
         // Si el rol no esta permitido para presupuestos, corto con 403.
         if (!in_array($user->role, ['admin', 'commercial'], true)) {
             return response()->json([
-                'error' => 'No autorizado. Solo admin o commercial.',
+                'error' => 'No autorizado. Solo administrador o comercial.',
             ], 403);
         }
 

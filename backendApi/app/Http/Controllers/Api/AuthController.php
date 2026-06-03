@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 // Controla la autenticación: login, usuario autenticado, logout y recuperación/cambio de contraseña.
 class AuthController extends Controller
@@ -69,7 +70,7 @@ class AuthController extends Controller
         // - role: lo envío aparte porque el frontend lo usa rápido para permisos.
         // - token: el frontend lo guarda y lo manda en cada request protegida.
         return response()->json([
-            'message' => 'Login correcto',
+            'message' => 'Inicio de sesión correcto',
             'data' => [
                 // toArray($request) convierte el Resource en array dentro del bloque data.
                 'user' => (new UserResource($user->load('company')))->toArray($request),
@@ -94,7 +95,7 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
 
         return response()->json([
-            'message' => 'Logout correcto'
+            'message' => 'Cierre de sesión correcto'
         ]);
     }
 
@@ -150,9 +151,14 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Se ha enviado un correo con instrucciones para recuperar tu contraseña'
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('Error enviando email de recuperación de contraseña', [
+                'email' => $request->email,
+                'exception' => $e->getMessage(),
+            ]);
+
             return response()->json([
-                'error' => 'Error al enviar el email: ' . $e->getMessage()
+                'error' => 'No hemos podido enviar el correo de recuperación en este momento. Inténtalo de nuevo en unos minutos.'
             ], 500);
         }
     }
