@@ -1,106 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
-  <title id="title">Cotas PTA2H2FSP</title>
-  <desc id="desc">Guia visual de cotas A, B, C y D para puerta automatica PTA2H2FSP.</desc>
+<svg width="600" height="700" viewBox="0 0 600 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="700" fill="white"/>
+  
+  <path d="M100 500V150H500V500" stroke="#334155" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M160 500V210H440V500" stroke="#94A3B8" stroke-width="2" stroke-linejoin="round"/>
+  <line x1="50" y1="500" x2="550" y2="500" stroke="#334155" stroke-width="1"/>
 
-  <defs>
-    <style>
-      .bg { fill: #f5f7fb; }
-      .frame { fill: #ffffff; stroke: #cfd4df; stroke-width: 2; }
-      .wall { fill: #eceff5; stroke: #b9c0d0; stroke-width: 2; }
-      .line-a { stroke: #123e75; stroke-width: 4; }
-      .line-b { stroke: #3e9b3d; stroke-width: 4; }
-      .line-c { stroke: #ef7a1a; stroke-width: 4; }
-      .line-d { stroke: #48add7; stroke-width: 4; }
-      .label-a { fill: #123e75; }
-      .label-b { fill: #3e9b3d; }
-      .label-c { fill: #ef7a1a; }
-      .label-d { fill: #48add7; }
-      .text-light { fill: #ffffff; font: 700 26px Arial, sans-serif; }
-      .text-a { fill: #123e75; font: 700 30px Arial, sans-serif; }
-      .text-b { fill: #3e9b3d; font: 700 30px Arial, sans-serif; }
-      .text-c { fill: #ef7a1a; font: 700 30px Arial, sans-serif; }
-      .text-d { fill: #48add7; font: 700 30px Arial, sans-serif; }
-      .legend-title { fill: #1f2a3a; font: 700 24px Arial, sans-serif; }
-      .legend-body { fill: #3a4353; font: 400 20px Arial, sans-serif; }
-      .small { fill: #4a5262; font: 600 18px Arial, sans-serif; }
-    </style>
+  <g stroke="#2563EB" stroke-width="1.5">
+    <line x1="100" y1="100" x2="500" y2="100"/>
+    <line x1="100" y1="90" x2="100" y2="110"/>
+    <line x1="500" y1="90" x2="500" y2="110"/>
+  </g>
+  <rect x="285" y="85" width="30" height="30" rx="15" fill="#2563EB"/>
+  <text x="300" y="105" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold" font-size="14">B</text>
 
-    <marker id="arrowA" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-      <path d="M0,0 L10,5 L0,10 z" fill="#123e75" />
-    </marker>
-    <marker id="arrowB" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-      <path d="M0,0 L10,5 L0,10 z" fill="#3e9b3d" />
-    </marker>
-    <marker id="arrowC" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-      <path d="M0,0 L10,5 L0,10 z" fill="#ef7a1a" />
-    </marker>
-    <marker id="arrowD" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-      <path d="M0,0 L10,5 L0,10 z" fill="#48add7" />
-    </marker>
-  </defs>
+  <g stroke="#2563EB" stroke-width="1.5">
+    <line x1="60" y1="150" x2="60" y2="500"/>
+    <line x1="50" y1="150" x2="70" y2="150"/>
+    <line x1="50" y1="500" x2="70" y2="500"/>
+  </g>
+  <rect x="45" y="310" width="30" height="30" rx="15" fill="#2563EB"/>
+  <text x="60" y="330" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold" font-size="14">A</text>
 
-  <rect class="bg" x="0" y="0" width="1600" height="900" />
-  <rect class="frame" x="40" y="40" rx="18" ry="18" width="1180" height="820" />
+  <g stroke="#64748B" stroke-width="1.5" stroke-dasharray="4 2">
+    <line x1="160" y1="260" x2="440" y2="260"/>
+    <path d="M165 255L160 260L165 265" fill="none" stroke-dasharray="0"/>
+    <path d="M435 255L440 260L435 265" fill="none" stroke-dasharray="0"/>
+  </g>
+  <rect x="285" y="245" width="30" height="30" rx="4" fill="#64748B"/>
+  <text x="300" y="265" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold" font-size="14">C</text>
 
-  <!-- Estructura de obra -->
-  <line x1="90" y1="800" x2="1140" y2="800" stroke="#8d94a3" stroke-width="3" />
-  <rect class="wall" x="180" y="170" width="920" height="630" />
-  <rect x="330" y="260" width="620" height="540" fill="#ffffff" stroke="#c2c8d6" stroke-width="4" />
+  <g stroke="#64748B" stroke-width="1.5" stroke-dasharray="4 2">
+    <line x1="220" y1="210" x2="220" y2="500"/>
+    <path d="M215 215L220 210L225 215" fill="none" stroke-dasharray="0"/>
+    <path d="M215 495L220 500L225 495" fill="none" stroke-dasharray="0"/>
+  </g>
+  <rect x="205" y="340" width="30" height="30" rx="4" fill="#64748B"/>
+  <text x="220" y="360" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold" font-size="14">D</text>
 
-  <!-- Cota B (ancho obra) -->
-  <line class="line-b" x1="180" y1="105" x2="1100" y2="105" marker-start="url(#arrowB)" marker-end="url(#arrowB)" />
-  <circle class="label-b" cx="640" cy="92" r="22" />
-  <text class="text-light" x="633" y="100">B</text>
-  <text class="text-b" x="520" y="145">MEDIDA ANCHO OBRA DISPONIBLE</text>
-
-  <!-- Cota A (alto obra) -->
-  <line class="line-a" x1="120" y1="170" x2="120" y2="800" marker-start="url(#arrowA)" marker-end="url(#arrowA)" />
-  <circle class="label-a" cx="120" cy="420" r="22" />
-  <text class="text-light" x="113" y="428">A</text>
-  <text class="text-a" x="22" y="490">MEDIDA ALTO</text>
-  <text class="text-a" x="22" y="525">OBRA DISPONIBLE</text>
-
-  <!-- Cota C (ancho hueco) -->
-  <line class="line-c" x1="350" y1="360" x2="930" y2="360" marker-start="url(#arrowC)" marker-end="url(#arrowC)" />
-  <circle class="label-c" cx="640" cy="360" r="22" />
-  <text class="text-light" x="633" y="368">C</text>
-  <text class="text-c" x="560" y="430">MEDIDA ANCHO</text>
-  <text class="text-c" x="548" y="465">HUECO DISPONIBLE</text>
-
-  <!-- Cota D (alto hueco) -->
-  <line class="line-d" x1="435" y1="280" x2="435" y2="792" marker-start="url(#arrowD)" marker-end="url(#arrowD)" />
-  <circle class="label-d" cx="435" cy="550" r="22" />
-  <text class="text-light" x="428" y="558">D</text>
-  <text class="text-d" x="475" y="550">MEDIDA ALTO</text>
-  <text class="text-d" x="475" y="585">HUECO DISPONIBLE</text>
-
-  <!-- Leyenda lateral -->
-  <g transform="translate(1270, 120)">
-    <circle class="label-a" cx="20" cy="0" r="20" />
-    <text class="text-light" x="13" y="8">A</text>
-    <text class="legend-title" x="70" y="-8">MEDIDA ALTO OBRA DISPONIBLE</text>
-    <text class="legend-body" x="70" y="28">Altura total disponible.</text>
-
-    <line x1="0" y1="70" x2="280" y2="70" stroke="#d6dbe6" stroke-width="2" />
-    <circle class="label-b" cx="20" cy="115" r="20" />
-    <text class="text-light" x="13" y="123">B</text>
-    <text class="legend-title" x="70" y="107">MEDIDA ANCHO OBRA DISPONIBLE</text>
-    <text class="legend-body" x="70" y="143">Ancho total de muro a muro.</text>
-
-    <line x1="0" y1="185" x2="280" y2="185" stroke="#d6dbe6" stroke-width="2" />
-    <circle class="label-c" cx="20" cy="230" r="20" />
-    <text class="text-light" x="13" y="238">C</text>
-    <text class="legend-title" x="70" y="222">MEDIDA ANCHO HUECO DISPONIBLE</text>
-    <text class="legend-body" x="70" y="258">Ancho libre del hueco.</text>
-
-    <line x1="0" y1="300" x2="280" y2="300" stroke="#d6dbe6" stroke-width="2" />
-    <circle class="label-d" cx="20" cy="345" r="20" />
-    <text class="text-light" x="13" y="353">D</text>
-    <text class="legend-title" x="70" y="337">MEDIDA ALTO HUECO DISPONIBLE</text>
-    <text class="legend-body" x="70" y="373">Altura libre del hueco.</text>
-
-    <rect x="0" y="430" width="280" height="120" rx="10" ry="10" fill="#f8f9fc" stroke="#d6dbe6" stroke-width="2" />
-    <text class="small" x="20" y="470">IMPORTANTE</text>
-    <text class="legend-body" x="20" y="505">Introduzca las medidas en mm.</text>
+  <g transform="translate(60, 550)">
+    <text y="0" font-family="Arial" font-weight="bold" font-size="14" fill="#1E293B">GUÍA DE MEDICIÓN (mm)</text>
+    
+    <circle cx="10" cy="30" r="8" fill="#2563EB"/>
+    <text x="25" y="35" font-family="Arial" font-size="12" fill="#475569"><tspan font-weight="bold">A</tspan> - Medida Alto Obra Disponible</text>
+    
+    <circle cx="10" cy="60" r="8" fill="#2563EB"/>
+    <text x="25" y="65" font-family="Arial" font-size="12" fill="#475569"><tspan font-weight="bold">B</tspan> - Medida Ancho Obra Disponible</text>
+    
+    <rect x="2" y="82" width="16" height="16" rx="3" fill="#64748B"/>
+    <text x="25" y="95" font-family="Arial" font-size="12" fill="#475569"><tspan font-weight="bold">C</tspan> - Medida Ancho Hueco Libre</text>
+    
+    <rect x="2" y="112" width="16" height="16" rx="3" fill="#64748B"/>
+    <text x="25" y="125" font-family="Arial" font-size="12" fill="#475569"><tspan font-weight="bold">D</tspan> - Medida Alto Hueco Libre</text>
   </g>
 </svg>

@@ -447,7 +447,7 @@ export function ModalArticuloConfigurable({
                 <img
                   src={cotasImageUrl}
                   alt={`Cotas de instalación para ${articulo.code}`}
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
+                  className="w-full max-h-[650px] object-contain rounded-lg border border-gray-200 dark:border-gray-700"
                 />
               </section>
             )}
