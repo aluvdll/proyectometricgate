@@ -8,6 +8,7 @@ import { BtnUserMenu } from "../navigation/BtnUserMenu.jsx";
 import { useAuth } from "../../context/AuthContext";
 
 export function Nav() {
+  // Aquí yo guardo si el menú móvil está abierto o cerrado.
   const [open, setOpen] = useState(false);
   const { isLogged } = useAuth();
 
@@ -25,12 +26,12 @@ export function Nav() {
             {isLogged ? <BtnUserMenu /> : <AuthDescktop />}
           </div>
 
-          {/* Mobile Button */}
+          {/* Aquí yo renderizo el botón hamburguesa solo en móvil (el componente ya se encarga con md:hidden). */}
           <BtnToggler open={open} setOpen={setOpen} />
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Aquí yo paso `open` al menú móvil para mostrarlo/ocultarlo sin tocar navegación ni autenticación. */}
       <MenuMobile open={open} />
     </nav>
   );

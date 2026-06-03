@@ -74,11 +74,11 @@ export function BtnUserMenu() {
 
   return (
     // ref permite detectar clics fuera del menú completo (botón + dropdown)
-    <div className="relative" ref={menuRef}>
+    <div className="relative w-full md:w-auto" ref={menuRef}>
       {/* Botón principal: muestra avatar, nombre y rol del usuario */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center space-x-2 px-3 py-2 rounded border-2 border-orange-400 hover:bg-orange-300 text-gray-900 hover:text-white"
+        className="flex w-full md:w-auto items-center justify-between md:justify-start space-x-2 px-3 py-2 rounded border-2 border-orange-400 hover:bg-orange-300 text-gray-900 hover:text-white"
       >
         {/* Avatar con fallback a imagen por defecto si falla la carga */}
         <img
@@ -116,7 +116,7 @@ export function BtnUserMenu() {
       <div
         className={`${
           open ? "" : "hidden"
-        } absolute right-0 mt-2 w-48 bg-orange-300 border rounded shadow-lg text-gray-900 border-amber-300 `}
+        } mt-2 w-full md:w-48 md:absolute md:right-0 bg-orange-300 border rounded shadow-lg text-gray-900 border-amber-300 `}
       >
         {!esSuperAdmin && (
           <>

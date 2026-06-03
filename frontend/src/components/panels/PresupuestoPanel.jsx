@@ -100,78 +100,85 @@ export function PresupuestosPanel() {
           </div>
         </div>
 
-        <table className="min-w-full rounded-md border border-orange-400">
-          <thead className="border border-orange-400 bg-orange-500">
-            <tr>
-              <th className="px-3 py-2 text-left text-gray-800">Número</th>
-              <th className="px-3 py-2 text-left text-gray-800">Cliente</th>
-              <th className="px-3 py-2 text-left text-gray-800">Fecha</th>
-              <th className="px-3 py-2 text-center text-gray-800">Estado</th>
-              <th className="px-3 py-2 text-center text-gray-800">Total</th>
-              <th className="px-3 py-2 text-center text-gray-800">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="border border-orange-400">
-            {presupuestosFiltrados.map((presupuesto, index) => (
-              <tr
-                key={presupuesto.id}
-                className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
-              >
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {presupuesto.budget_number}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {presupuesto.client?.nombre || "Cliente eliminado"}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {formatearFechaPresupuesto(presupuesto.budget_date)}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                  {estadosTexto[presupuesto.status] || presupuesto.status}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                  {Number(presupuesto.total_amount).toFixed(2)} €
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          `/adminPanel/presupuestos/vereditarpresupuesto/${presupuesto.id}`,
-                        )
-                      }
-                      className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        window.open(
-                          `/adminPanel/presupuestos/imprimir/${presupuesto.id}`,
-                          "_blank",
-                          "noopener,noreferrer",
-                        )
-                      }
-                      className="rounded-md bg-gray-700 px-3 py-1 text-white hover:bg-gray-800"
-                    >
-                      Imprimir
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-
-            {presupuestosFiltrados.length === 0 && (
+        <div className="overflow-x-auto rounded-md border border-orange-400">
+          <table className="w-full min-w-[760px]">
+            <thead className="border border-orange-400 bg-orange-500">
               <tr>
-                <td colSpan={6} className="px-3 py-6 text-center text-gray-600">
-                  No hay presupuestos para mostrar
-                </td>
+                <th className="px-3 py-2 text-left text-gray-800">Número</th>
+                <th className="px-3 py-2 text-left text-gray-800">Cliente</th>
+                <th className="px-3 py-2 text-left text-gray-800">Fecha</th>
+                <th className="px-3 py-2 text-center text-gray-800">Estado</th>
+                <th className="px-3 py-2 text-center text-gray-800">Total</th>
+                <th className="px-3 py-2 text-center text-gray-800">
+                  Acciones
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="border border-orange-400">
+              {presupuestosFiltrados.map((presupuesto, index) => (
+                <tr
+                  key={presupuesto.id}
+                  className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
+                >
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {presupuesto.budget_number}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {presupuesto.client?.nombre || "Cliente eliminado"}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {formatearFechaPresupuesto(presupuesto.budget_date)}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                    {estadosTexto[presupuesto.status] || presupuesto.status}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                    {Number(presupuesto.total_amount).toFixed(2)} €
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/adminPanel/presupuestos/vereditarpresupuesto/${presupuesto.id}`,
+                          )
+                        }
+                        className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          window.open(
+                            `/adminPanel/presupuestos/imprimir/${presupuesto.id}`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
+                        className="rounded-md bg-gray-700 px-3 py-1 text-white hover:bg-gray-800"
+                      >
+                        Imprimir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {presupuestosFiltrados.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-3 py-6 text-center text-gray-600"
+                  >
+                    No hay presupuestos para mostrar
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {notifyVisible && (

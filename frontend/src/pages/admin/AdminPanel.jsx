@@ -19,6 +19,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 
 export function AdminPanel() {
+  // Aquí yo controlo si el menú lateral está expandido o contraído en escritorio.
   const [estaContraido, setEstaContraido] = useState(false);
   const { user: usuario } = useAuth();
   const rolUsuario = usuario?.role; // Admin | comercial | Tecnico
@@ -34,8 +35,9 @@ export function AdminPanel() {
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] pt-16">
+      {/* Aquí yo oculto el lateral en móvil (`hidden`) y lo muestro desde `md` en adelante. */}
       <aside
-        className={`sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto bg-orange-400 text-gray-800 dark:bg-gray-400 flex flex-col transition-all duration-300 ${
+        className={`sticky top-16 hidden h-[calc(100vh-4rem)] overflow-y-auto bg-orange-400 text-gray-800 dark:bg-gray-400 md:flex flex-col transition-all duration-300 ${
           estaContraido ? "w-20" : "w-72"
         }`}
       >
@@ -58,6 +60,7 @@ export function AdminPanel() {
 
           <button
             type="button"
+            // Aquí yo alterno el estado del lateral para contraer/expandir sin cambiar rutas ni contenido.
             onClick={() => setEstaContraido((anterior) => !anterior)}
             className="rounded p-2 hover:bg-gray-800 hover:text-white"
             aria-label={estaContraido ? "Expandir menu" : "Contraer menu"}
@@ -71,9 +74,7 @@ export function AdminPanel() {
           </button>
         </div>
 
-        <nav
-          className={`flex-1 space-y-1 ${estaContraido ? "px-2" : "px-6"}`}
-        >
+        <nav className={`flex-1 space-y-1 ${estaContraido ? "px-2" : "px-6"}`}>
           <Link to="/adminPanel" className={claseItemNav} title="Dashboard">
             <LayoutDashboard className={claseIcono} size={16} />
             {!estaContraido && "Dashboard"}
@@ -200,7 +201,8 @@ export function AdminPanel() {
         </nav>
       </aside>
 
-      <main className="min-h-[calc(100vh-4rem)] flex-1 p-6 overflow-y-auto">
+      {/* Aquí yo dejo el contenido principal ocupando todo el ancho cuando el lateral está oculto en móvil. */}
+      <main className="min-h-[calc(100vh-4rem)] flex-1 p-4 md:p-6 overflow-y-auto">
         <Outlet />
       </main>
     </div>

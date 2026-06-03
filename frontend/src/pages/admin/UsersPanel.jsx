@@ -149,91 +149,103 @@ export const UsersPanel = () => {
           </div>
         )}
 
-        <table className="min-w-full rounded-md border border-orange-400">
-          <thead className="bg-orange-400 border border-orange-400">
-            <tr>
-              <th className="px-4 py-1 text-left text-gray-700">Avatar</th>
-              <th className="px-4 py-1 text-left text-gray-700">Nombre</th>
-              <th className="px-4 py-1 text-left text-gray-700">Correo</th>
-              <th className="px-4 py-1 text-left text-gray-700">Rol</th>
-              <th className="px-4 py-1 text-center text-gray-700">Acciones</th>
-            </tr>
-          </thead>
+        <div className="overflow-x-auto rounded-md border border-orange-400">
+          <table className="w-full min-w-[680px]">
+            <thead className="bg-orange-400 border-b border-orange-400">
+              <tr>
+                <th className="px-2 sm:px-4 py-2 text-left text-gray-700">
+                  Avatar
+                </th>
+                <th className="px-2 sm:px-4 py-2 text-left text-gray-700">
+                  Nombre
+                </th>
+                <th className="px-2 sm:px-4 py-2 text-left text-gray-700">
+                  Correo
+                </th>
+                <th className="hidden sm:table-cell px-2 sm:px-4 py-2 text-left text-gray-700">
+                  Rol
+                </th>
+                <th className="px-2 sm:px-4 py-2 text-center text-gray-700">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
 
-          <tbody>
-            {loading ? (
-              <tr>
-                <td
-                  colSpan="5"
-                  className="px-4 py-4 text-center text-sm text-orange-800"
-                >
-                  Buscando usuarios...
-                </td>
-              </tr>
-            ) : usuarios.filter((usuario) => usuario.id !== user?.id).length ===
-              0 ? (
-              <tr>
-                <td
-                  colSpan="5"
-                  className="px-4 py-4 text-center text-sm text-orange-800"
-                >
-                  No hay usuarios para mostrar.
-                </td>
-              </tr>
-            ) : (
-              usuarios
-                .filter((usuario) => usuario.id !== user?.id)
-                .map((usuario, index) => (
-                  <tr
-                    key={usuario.id}
-                    className={`${
-                      index % 2 === 0 ? "bg-white" : "bg-orange-50"
-                    } border border-orange-400`}
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="5"
+                    className="px-4 py-4 text-center text-sm text-orange-800"
                   >
-                    <td className="px-4 py-2">
-                      <img
-                        src={
-                          usuario.avatar && usuario.avatar !== "0"
-                            ? `${API_URL}/storage/${usuario.avatar}`
-                            : "/ico_avatar_default.png"
-                        }
-                        alt="Avatar"
-                        className="h-12 w-12 rounded-full object-cover border-2 border-gray-300"
-                      />
-                    </td>
+                    Buscando usuarios...
+                  </td>
+                </tr>
+              ) : usuarios.filter((usuario) => usuario.id !== user?.id)
+                  .length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="5"
+                    className="px-4 py-4 text-center text-sm text-orange-800"
+                  >
+                    No hay usuarios para mostrar.
+                  </td>
+                </tr>
+              ) : (
+                usuarios
+                  .filter((usuario) => usuario.id !== user?.id)
+                  .map((usuario, index) => (
+                    <tr
+                      key={usuario.id}
+                      className={`${
+                        index % 2 === 0 ? "bg-white" : "bg-orange-50"
+                      } border border-orange-400`}
+                    >
+                      <td className="px-2 sm:px-4 py-2">
+                        <img
+                          src={
+                            usuario.avatar && usuario.avatar !== "0"
+                              ? `${API_URL}/storage/${usuario.avatar}`
+                              : "/ico_avatar_default.png"
+                          }
+                          alt="Avatar"
+                          className="h-9 w-9 sm:h-12 sm:w-12 rounded-full object-cover border-2 border-gray-300"
+                        />
+                      </td>
 
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-900">
-                      {usuario.name}
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-900">
-                      {usuario.email}
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-900">
-                      {usuario.role}
-                    </td>
+                      <td className="px-2 sm:px-4 py-2 text-gray-700 dark:text-gray-900">
+                        {usuario.name}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 text-gray-700 dark:text-gray-900">
+                        {usuario.email}
+                      </td>
+                      <td className="hidden sm:table-cell px-2 sm:px-4 py-2 text-gray-700 dark:text-gray-900">
+                        {usuario.role}
+                      </td>
 
-                    <td className="px-4 py-2 text-center">
-                      <div className="flex justify-center gap-2">
-                        <button
-                          className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded"
-                          onClick={() => handlerClickEdit(usuario.id)}
-                        >
-                          Editar
-                        </button>
+                      <td className="px-2 sm:px-4 py-2 text-center">
+                        <div className="flex flex-col sm:flex-row justify-center gap-2">
+                          <button
+                            className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded text-xs sm:text-sm"
+                            onClick={() => handlerClickEdit(usuario.id)}
+                          >
+                            Editar
+                          </button>
 
-                        <button
-                          className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded"
-                          onClick={() => handlerClickDelete(usuario.id)}
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-            )}
-          </tbody>
-        </table>
+                          <button
+                            className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded text-xs sm:text-sm"
+                            onClick={() => handlerClickDelete(usuario.id)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Aqui reutilizo el mismo componente para no repetir paginacion en otros paneles. */}
         <ControlesPaginacion

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserListResource;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -67,6 +68,10 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'dni' => 'required|string',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'province' => 'nullable|string|max:100',
             'role' => 'required|in:admin,commercial,technician',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
         ]);
@@ -87,10 +92,10 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'dni' => $request->dni,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'city' => $request->city,
-            'province' => $request->province,
+            'phone' => $request->phone ?? '',
+            'address' => $request->address ?? '',
+            'city' => $request->city ?? '',
+            'province' => $request->province ?? '',
             'avatar' => $avatarPath,
             'role' => $request->role,
             'active' => true,
@@ -166,7 +171,7 @@ class UserController extends Controller
 
         // Entrada: usuarios de mi empresa, ya paginados.
         // Salida: data con Resource + links/meta para que frontend pagine fácil.
-        return UserResource::collection($users)
+        return UserListResource::collection($users)
             ->additional([
                 'message' => 'Listado de usuarios de la empresa obtenido correctamente',
             ]);
@@ -251,6 +256,12 @@ class UserController extends Controller
             // DNI obligatorio como texto
             'dni' => 'required|string',
 
+            // Estos campos son opcionales
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'province' => 'nullable|string|max:100',
+
             // El rol es obligatorio y solo puede ser uno de estos tres valores:
             // - admin (administrador)
             // - commercial (comercial)
@@ -277,10 +288,10 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'dni' => $request->dni,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'city' => $request->city,
-            'province' => $request->province,
+            'phone' => $request->phone ?? '',
+            'address' => $request->address ?? '',
+            'city' => $request->city ?? '',
+            'province' => $request->province ?? '',
             'avatar' => $avatarPath,
             'role' => $request->role,
             'active' => true,
@@ -332,6 +343,10 @@ class UserController extends Controller
             ],
             'password' => 'sometimes|required|min:6',
             'dni' => 'sometimes|required|string',
+            'phone' => 'sometimes|nullable|string|max:20',
+            'address' => 'sometimes|nullable|string|max:255',
+            'city' => 'sometimes|nullable|string|max:100',
+            'province' => 'sometimes|nullable|string|max:100',
             'role' => [
                 Rule::requiredIf($isAdmin),
                 'sometimes',
@@ -378,10 +393,10 @@ class UserController extends Controller
             'email' => $request->email ?? $existingUser->email,
             'password' => isset($request->password) ? Hash::make($request->password) : $existingUser->password,
             'dni' => $request->dni ?? $existingUser->dni,
-            'phone' => $request->phone ?? $existingUser->phone,
-            'address' => $request->address ?? $existingUser->address,
-            'city' => $request->city ?? $existingUser->city,
-            'province' => $request->province ?? $existingUser->province,
+            'phone' => $request->has('phone') ? ($request->input('phone') ?? '') : $existingUser->phone,
+            'address' => $request->has('address') ? ($request->input('address') ?? '') : $existingUser->address,
+            'city' => $request->has('city') ? ($request->input('city') ?? '') : $existingUser->city,
+            'province' => $request->has('province') ? ($request->input('province') ?? '') : $existingUser->province,
             'avatar' => $avatarPath,
             'role' => $isAdmin ? ($request->role ?? $existingUser->role) : $existingUser->role,
         ]);

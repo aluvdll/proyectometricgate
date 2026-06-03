@@ -8,7 +8,6 @@ import { listarArticulosConfigurables } from "../../services/articulosConfigurab
 
 import { API_URL } from "../../services/apiBase";
 
-
 export function ArticulosPanel() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -141,146 +140,156 @@ export function ArticulosPanel() {
         </div>
 
         {tabActiva === "standard" && (
-          <table className="min-w-full rounded-md border border-orange-400">
-            <thead className="border border-orange-400 bg-orange-500">
-              <tr>
-                <th className="px-3 py-2 text-left text-gray-800">Imagen</th>
-                <th className="px-3 py-2 text-left text-gray-800">Código</th>
-                <th className="px-3 py-2 text-left text-gray-800">Familia</th>
-                <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
-                <th className="px-3 py-2 text-center text-gray-800">Base</th>
-                <th className="px-3 py-2 text-center text-gray-800">IVA</th>
-                <th className="px-3 py-2 text-center text-gray-800">Estado</th>
-                <th className="px-3 py-2 text-center text-gray-800">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="border border-orange-400">
-              {articulosFiltrados.map((a, index) => (
-                <tr
-                  key={a.id}
-                  className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
-                >
-                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                    {a.image ? (
-                      <img
-                        src={`${API_URL}/storage/${a.image}`}
-                        alt={a.name}
-                        className="h-12 w-12 rounded object-cover"
-                      />
-                    ) : (
-                      <span className="text-xs text-gray-500">Sin imagen</span>
-                    )}
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                    {a.code}
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                    {a.family?.name || "Sin familia"}
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                    {a.name}
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                    {Number(a.base_price).toFixed(2)} €
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                    {Number(a.tax_percentage).toFixed(2)}%
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                    {a.active ? "Activo" : "Inactivo"}
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          `/adminPanel/articulos/vereditararticulo/${a.id}`,
-                        )
-                      }
-                      className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
-                    >
-                      Ver
-                    </button>
-                  </td>
-                </tr>
-              ))}
-
-              {articulosFiltrados.length === 0 && (
+          <div className="overflow-x-auto rounded-md border border-orange-400">
+            <table className="w-full min-w-[980px]">
+              <thead className="border border-orange-400 bg-orange-500">
                 <tr>
-                  <td
-                    colSpan={9}
-                    className="px-3 py-6 text-center text-gray-600"
-                  >
-                    No hay artículos para mostrar
-                  </td>
+                  <th className="px-3 py-2 text-left text-gray-800">Imagen</th>
+                  <th className="px-3 py-2 text-left text-gray-800">Código</th>
+                  <th className="px-3 py-2 text-left text-gray-800">Familia</th>
+                  <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
+                  <th className="px-3 py-2 text-center text-gray-800">Base</th>
+                  <th className="px-3 py-2 text-center text-gray-800">IVA</th>
+                  <th className="px-3 py-2 text-center text-gray-800">
+                    Estado
+                  </th>
+                  <th className="px-3 py-2 text-center text-gray-800">
+                    Acciones
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody className="border border-orange-400">
+                {articulosFiltrados.map((a, index) => (
+                  <tr
+                    key={a.id}
+                    className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
+                  >
+                    <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                      {a.image ? (
+                        <img
+                          src={`${API_URL}/storage/${a.image}`}
+                          alt={a.name}
+                          className="h-12 w-12 rounded object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-500">
+                          Sin imagen
+                        </span>
+                      )}
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                      {a.code}
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                      {a.family?.name || "Sin familia"}
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                      {a.name}
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                      {Number(a.base_price).toFixed(2)} €
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                      {Number(a.tax_percentage).toFixed(2)}%
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                      {a.active ? "Activo" : "Inactivo"}
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/adminPanel/articulos/vereditararticulo/${a.id}`,
+                          )
+                        }
+                        className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+                      >
+                        Ver
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {articulosFiltrados.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={9}
+                      className="px-3 py-6 text-center text-gray-600"
+                    >
+                      No hay artículos para mostrar
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {tabActiva === "configurable" && (
-          <table className="min-w-full rounded-md border border-orange-400">
-            <thead className="border border-orange-400 bg-orange-500">
-              <tr>
-                <th className="px-3 py-2 text-left text-gray-800">Código</th>
-                <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
-                <th className="px-3 py-2 text-center text-gray-800">IVA</th>
-                <th className="px-3 py-2 text-center text-gray-800">Estado</th>
-                <th className="px-3 py-2 text-center text-gray-800">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="border border-orange-400">
-              {configurablesFiltrados.map((a, index) => (
-                <tr
-                  key={a.id}
-                  className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
-                >
-                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                    {a.code}
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                    {a.name}
-                  </td>
-
-                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                    {Number(a.tax_percentage || 0).toFixed(2)}%
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                    {a.active ? "Activo" : "Inactivo"}
-                  </td>
-                  <td className="border border-orange-400 px-3 py-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(`/adminPanel/presupuestos/nuevopresupuesto`)
-                      }
-                      className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
-                    >
-                      Usar en presupuesto
-                    </button>
-                  </td>
-                </tr>
-              ))}
-
-              {configurablesFiltrados.length === 0 && (
+          <div className="overflow-x-auto rounded-md border border-orange-400">
+            <table className="w-full min-w-[680px]">
+              <thead className="border border-orange-400 bg-orange-500">
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-3 py-6 text-center text-gray-600"
-                  >
-                    No hay artículos configurables para mostrar
-                  </td>
+                  <th className="px-3 py-2 text-left text-gray-800">Código</th>
+                  <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
+                  <th className="px-3 py-2 text-center text-gray-800">IVA</th>
+                  <th className="px-3 py-2 text-center text-gray-800">
+                    Estado
+                  </th>
+                  <th className="px-3 py-2 text-center text-gray-800">
+                    Acciones
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody className="border border-orange-400">
+                {configurablesFiltrados.map((a, index) => (
+                  <tr
+                    key={a.id}
+                    className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
+                  >
+                    <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                      {a.code}
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                      {a.name}
+                    </td>
+
+                    <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                      {Number(a.tax_percentage || 0).toFixed(2)}%
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                      {a.active ? "Activo" : "Inactivo"}
+                    </td>
+                    <td className="border border-orange-400 px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/adminPanel/presupuestos/nuevopresupuesto`)
+                        }
+                        className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+                      >
+                        Usar en presupuesto
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {configurablesFiltrados.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-3 py-6 text-center text-gray-600"
+                    >
+                      No hay artículos configurables para mostrar
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

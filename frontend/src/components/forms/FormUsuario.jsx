@@ -203,7 +203,7 @@ export function FormUsuario({ mode, userId }) {
         <h2 className="text-xl font-bold mb-6 text-gray-700 dark:text-gray-200">
           {isEdit ? "Editar usuario" : "Nuevo usuario"}
         </h2>
-
+{/* {DESESTRUCTURO  FORM}  */}
         {[
           ["Nombre", "name"],
           ["DNI", "dni"],
@@ -218,7 +218,12 @@ export function FormUsuario({ mode, userId }) {
               type="text"
               className="w-full px-3 py-2 rounded-md border border-orange-500"
               {...register(field, {
-                required: `El campo ${label} es obligatorio`,
+                required:
+                //excluyo estos campos.. no son obligatorios, pero si se rellenan, deben tener un formato correcto (ejemplo: teléfono))
+                  field === "address" || field === "phone" || field === "city" || field === "province"
+
+                    ? false
+                    : `El campo ${label} es obligatorio`,
               })}
             />
             {errors[field] && (

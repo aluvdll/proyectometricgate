@@ -78,54 +78,63 @@ export function FamiliasArticulosPanel() {
           </div>
         </div>
 
-        <table className="min-w-full rounded-md border border-orange-400">
-          <thead className="border border-orange-400 bg-orange-500">
-            <tr>
-              <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
-              <th className="px-3 py-2 text-left text-gray-800">Descripción</th>
-              <th className="px-3 py-2 text-center text-gray-800">Estado</th>
-              <th className="px-3 py-2 text-center text-gray-800">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="border border-orange-400">
-            {familiasFiltradas.map((familia, index) => (
-              <tr
-                key={familia.id}
-                className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
-              >
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {familia.name}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-gray-700">
-                  {familia.description || "-"}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
-                  {familia.active ? "Activa" : "Inactiva"}
-                </td>
-                <td className="border border-orange-400 px-3 py-2 text-center">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        `/adminPanel/familias/vereditarfamilia/${familia.id}`,
-                      )
-                    }
-                    className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
-                  >
-                    Ver
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {familiasFiltradas.length === 0 && (
+        <div className="overflow-x-auto rounded-md border border-orange-400">
+          <table className="w-full min-w-[680px]">
+            <thead className="border border-orange-400 bg-orange-500">
               <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-gray-600">
-                  No hay familias para mostrar
-                </td>
+                <th className="px-3 py-2 text-left text-gray-800">Nombre</th>
+                <th className="px-3 py-2 text-left text-gray-800">
+                  Descripción
+                </th>
+                <th className="px-3 py-2 text-center text-gray-800">Estado</th>
+                <th className="px-3 py-2 text-center text-gray-800">
+                  Acciones
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="border border-orange-400">
+              {familiasFiltradas.map((familia, index) => (
+                <tr
+                  key={familia.id}
+                  className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50"} border border-orange-400`}
+                >
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {familia.name}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-gray-700">
+                    {familia.description || "-"}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
+                    {familia.active ? "Activa" : "Inactiva"}
+                  </td>
+                  <td className="border border-orange-400 px-3 py-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/adminPanel/familias/vereditarfamilia/${familia.id}`,
+                        )
+                      }
+                      className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+                    >
+                      Ver
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {familiasFiltradas.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-3 py-6 text-center text-gray-600"
+                  >
+                    No hay familias para mostrar
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {notifyVisible && (

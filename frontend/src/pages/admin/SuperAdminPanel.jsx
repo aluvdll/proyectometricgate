@@ -285,8 +285,8 @@ export function SuperAdminPanel() {
               Todavia no hay empresas.
             </p>
           ) : (
-            <div className="overflow-auto">
-              <table className="min-w-full border-collapse text-sm dark:text-gray-100">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[860px] border-collapse text-sm dark:text-gray-100">
                 <thead>
                   <tr className="border-b bg-gray-50 text-left dark:border-slate-700 dark:bg-slate-800">
                     <th className="px-3 py-2">ID</th>
@@ -380,8 +380,8 @@ export function SuperAdminPanel() {
                   Esta empresa no tiene usuarios.
                 </p>
               ) : (
-                <div className="max-h-[60vh] overflow-auto">
-                  <table className="min-w-full border-collapse text-sm dark:text-gray-100">
+                <div className="max-h-[60vh] overflow-x-auto">
+                  <table className="w-full min-w-[720px] border-collapse text-sm dark:text-gray-100">
                     <thead>
                       <tr className="border-b bg-gray-50 text-left dark:border-slate-700 dark:bg-slate-800">
                         <th className="px-3 py-2">ID</th>
