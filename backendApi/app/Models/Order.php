@@ -34,9 +34,6 @@ class Order extends Model
         'total_amount' => 'decimal:2',
     ];
 
-    // ╔════════════════════════════════════════════════════════════════╗
-    // ║ RELACIONES                                                     ║
-    // ╚════════════════════════════════════════════════════════════════╝
 
     // Un pedido pertenece a una empresa
     public function company()

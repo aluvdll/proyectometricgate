@@ -112,15 +112,13 @@ class UserController extends Controller
     // Aquí elimino un usuario desde el contexto de superadmin.
     public function destroy($id)
     {
-        $authUser = request()->user();
-
-        $user = User::where('id', $id)
-            ->where('company_id', $authUser->company_id)
-            ->first();
+        // Como este endpoint va detrás de middleware superadmin,
+        // no debo limitar por company_id del usuario autenticado.
+        $user = User::where('id', $id)->first();
 
         if (!$user) {
             return response()->json([
-                'error' => 'Usuario no encontrado en tu empresa'
+                'error' => 'Usuario no encontrado'
             ], 404);
         }
 

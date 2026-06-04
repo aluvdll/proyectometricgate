@@ -64,15 +64,21 @@ export function DetallePedido() {
 
   const generarMatricula = async () => {
     try {
+      // Cargo html2pdf bajo demanda para no penalizar la carga normal de la pantalla.
       const html2pdf = (await import("html2pdf.js")).default;
+
+      // Traigo en paralelo logo y datos de impresion para montar la cabecera del PDF.
       const [logoEmpresaDataUrl, datosEmpresaImpresion] = await Promise.all([
         obtenerLogoEmpresaDataUrl(),
         obtenerDatosEmpresaImpresion(),
       ]);
 
+      // Normalizo objeto empresa para evitar null checks repetidos al pintar bloques.
       const empresa = datosEmpresaImpresion || {};
 
       // Crear HTML del PDF
+      // Aqui construyo un contenedor A6 en milimetros; este nodo temporal
+      // es lo que html2pdf convertira en documento final.
       const element = document.createElement("div");
       element.style.width = "105mm";
       // Dejo un pequeño margen tecnico para evitar que html2pdf cree una 2ª pagina en blanco.
@@ -89,6 +95,8 @@ export function DetallePedido() {
       element.style.overflow = "hidden";
 
       // Logo
+      // Si tengo logo de empresa lo pinto arriba; si falla su carga lo oculto
+      // para que no rompa el layout del documento.
       const logo = document.createElement("img");
       logo.src = logoEmpresaDataUrl || "";
       logo.style.display = "block";
@@ -99,6 +107,7 @@ export function DetallePedido() {
         logo.style.display = "none";
       };
 
+      // Fallback visual de empresa cuando no hay logo: muestro tarjeta con datos basicos.
       const cuadroEmpresa = document.createElement("div");
       cuadroEmpresa.style.display = "none";
       cuadroEmpresa.style.width = "100%";
@@ -110,6 +119,7 @@ export function DetallePedido() {
       cuadroEmpresa.style.fontSize = "9px";
       cuadroEmpresa.style.color = "#111827";
 
+      // Priorizo nombre comercial y, si no existe, uso razon fiscal.
       const nombreEmpresa =
         datosEmpresaImpresion?.commercial_name ||
         datosEmpresaImpresion?.fiscal_name ||
@@ -123,6 +133,7 @@ export function DetallePedido() {
       `;
 
       // Número de matrícula
+      // Este bloque es el protagonista del PDF: etiqueta + numero del pedido.
       const numeroMatricula = document.createElement("div");
       numeroMatricula.style.textAlign = "center";
       numeroMatricula.style.width = "100%";
@@ -135,6 +146,7 @@ export function DetallePedido() {
       `;
 
       // Datos de la empresa
+      // Aqui dejo la informacion de contacto para identificar de quien es la matricula.
       const datosEmpresa = document.createElement("div");
       datosEmpresa.style.textAlign = "center";
       datosEmpresa.innerHTML = `
@@ -155,6 +167,7 @@ export function DetallePedido() {
       `;
 
       // Logo pequeño de MetricGate con datos de contacto del footer.
+      // Pie fijo de marca para mantener consistencia visual en todas las matriculas.
       const pieContenedor = document.createElement("div");
       pieContenedor.style.marginTop = "auto";
       pieContenedor.style.width = "100%";
@@ -188,6 +201,7 @@ export function DetallePedido() {
       pieContenedor.appendChild(contactoMetricGate);
       pieContenedor.appendChild(logoMetricGate);
 
+      // Si hay logo de empresa uso logo; si no, muestro la caja de datos fallback.
       if (logoEmpresaDataUrl) {
         element.appendChild(logo);
       } else {
@@ -199,16 +213,21 @@ export function DetallePedido() {
       element.appendChild(pieContenedor);
 
       // Opciones de html2pdf
+      // Configuracion orientada a formato A6 vertical y maxima legibilidad impresa.
       const options = {
         margin: [0, 0, 0, 0],
         filename: `matricula_${pedido.order_number}.pdf`,
+        // PNG conserva mejor lineas y texto fino en este tipo de composicion.
         image: { type: "image/png", quality: 0.98 },
+        // Scale 2 mejora la definicion al rasterizar el HTML.
         html2canvas: { scale: 2 },
         jsPDF: { unit: "mm", format: "a6", orientation: "portrait" },
+        // Intento minimizar cortes no deseados dentro del contenido.
         pagebreak: { mode: ["avoid-all", "css", "legacy"] },
       };
 
       // Generar PDF
+      // Flujo final: set opciones -> from elemento temporal -> save descarga.
       html2pdf().set(options).from(element).save();
     } catch (error) {
       console.error("Error generando PDF:", error);

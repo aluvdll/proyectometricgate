@@ -13,31 +13,37 @@ class StandardArticleController extends Controller
 {
     private function authorizeReadAccess(Request $request)
     {
+        // Aqui leo el usuario autenticado asociado al token/sesion actual.
         $user = $request->user();
 
+        // Si no hay usuario autenticado, corto con 401.
         if (!$user) {
             return response()->json([
                 'error' => 'No autenticado',
             ], 401);
         }
 
+        // En lectura permito admin, commercial y technician.
         if (!in_array($user->role, ['admin', 'commercial', 'technician'], true)) {
             return response()->json([
                 'error' => 'No autorizado. Solo administrador, comercial o técnico.',
             ], 403);
         }
 
+        // Sin empresa asignada no puedo filtrar por company_id de forma segura.
         if (!$user->company_id) {
             return response()->json([
                 'error' => 'Usuario sin empresa asignada.',
             ], 422);
         }
 
+        // Si todo esta correcto, devuelvo null para continuar en el endpoint.
         return null;
     }
 
     private function authorizeAdmin(Request $request)
     {
+        // Aqui repito validacion de usuario autenticado para operaciones de escritura.
         $user = $request->user();
 
         if (!$user) {
@@ -46,18 +52,21 @@ class StandardArticleController extends Controller
             ], 401);
         }
 
+        // Crear/editar articulos queda restringido solo al rol admin.
         if ($user->role !== 'admin') {
             return response()->json([
                 'error' => 'No autorizado. Solo el administrador puede crear o editar artículos.',
             ], 403);
         }
 
+        // Tambien exijo empresa para mantener aislamiento multiempresa.
         if (!$user->company_id) {
             return response()->json([
                 'error' => 'Usuario sin empresa asignada.',
             ], 422);
         }
 
+        // Null implica autorizacion correcta.
         return null;
     }
 
@@ -124,8 +133,10 @@ class StandardArticleController extends Controller
             return $authError;
         }
 
+        // Aqui fijo la empresa desde el usuario autenticado; no confio en datos del cliente.
         $companyId = $request->user()->company_id;
 
+        // Aqui valido el payload de alta y reglas de pertenencia por empresa.
         $validated = $request->validate([
             'code' => [
                 'required',
@@ -158,6 +169,7 @@ class StandardArticleController extends Controller
             'image.max' => 'La imagen no puede superar 30MB.',
         ]);
 
+        // Si llega imagen, la guardo en disco public y conservo la ruta relativa.
         $imagePath = null;
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('standard-articles', 'public');
@@ -193,8 +205,10 @@ class StandardArticleController extends Controller
             return $authError;
         }
 
+        // Empresa del usuario autenticado para evitar ediciones cruzadas.
         $companyId = $request->user()->company_id;
 
+        // Busco el articulo dentro de la misma empresa del usuario.
         $article = StandardArticle::where('company_id', $companyId)
             ->where('id', $id)
             ->first();
@@ -205,6 +219,7 @@ class StandardArticleController extends Controller
             ], 404);
         }
 
+        // En update uso reglas "sometimes" para permitir actualizaciones parciales.
         $validated = $request->validate([
             'code' => [
                 'sometimes',
@@ -241,6 +256,7 @@ class StandardArticleController extends Controller
             'image.max' => 'La imagen no puede superar 30MB.',
         ]);
 
+        // Aqui construyo los datos finales preservando valor actual cuando un campo no viene.
         $updateData = [
             'family_id' => $request->has('family_id') ? ($validated['family_id'] ?? null) : $article->family_id,
             'code' => $request->has('code') ? trim($validated['code']) : $article->code,
@@ -251,13 +267,16 @@ class StandardArticleController extends Controller
             'active' => $request->has('active') ? (bool) $validated['active'] : $article->active,
         ];
 
+        // Si se sube nueva imagen, elimino la anterior para no dejar basura en storage.
         if ($request->hasFile('image')) {
             if ($article->image) {
                 Storage::disk('public')->delete($article->image);
             }
+            // Finalmente guardo la nueva imagen y actualizo su ruta en el articulo.
             $updateData['image'] = $request->file('image')->store('standard-articles', 'public');
         }
 
+        // Persisto todos los cambios en base de datos.
         $article->update($updateData);
 
         return response()->json([

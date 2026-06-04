@@ -12,31 +12,37 @@ class ArticleFamilyController extends Controller
 {
     private function authorizeAdminOrCommercial(Request $request)
     {
+        // Aqui obtengo el usuario autenticado para validar acceso al endpoint.
         $user = $request->user();
 
+        // Si no hay sesion/token valido, corto con 401.
         if (!$user) {
             return response()->json([
                 'error' => 'No autenticado',
             ], 401);
         }
 
+        // Para lectura permito admin y commercial.
         if (!in_array($user->role, ['admin', 'commercial'], true)) {
             return response()->json([
                 'error' => 'No autorizado. Solo administrador o comercial.',
             ], 403);
         }
 
+        // Sin empresa no puedo aplicar filtros por company_id de forma segura.
         if (!$user->company_id) {
             return response()->json([
                 'error' => 'Usuario sin empresa asignada.',
             ], 422);
         }
 
+        // Null indica acceso concedido.
         return null;
     }
 
     private function authorizeAdmin(Request $request)
     {
+        // Aqui valido credenciales para operaciones de escritura.
         $user = $request->user();
 
         if (!$user) {
@@ -45,18 +51,21 @@ class ArticleFamilyController extends Controller
             ], 401);
         }
 
+        // Crear o editar familias solo lo puede hacer el admin.
         if ($user->role !== 'admin') {
             return response()->json([
                 'error' => 'No autorizado. Solo el administrador puede crear o editar familias.',
             ], 403);
         }
 
+        // Tambien exijo empresa para mantener aislamiento multiempresa.
         if (!$user->company_id) {
             return response()->json([
                 'error' => 'Usuario sin empresa asignada.',
             ], 422);
         }
 
+        // Null indica autorizacion correcta.
         return null;
     }
 
@@ -113,8 +122,10 @@ class ArticleFamilyController extends Controller
             return $authError;
         }
 
+        // Company fijada desde backend (usuario autenticado), no desde cliente.
         $companyId = $request->user()->company_id;
 
+        // Aqui valido payload y unicidad del nombre por empresa.
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -131,6 +142,7 @@ class ArticleFamilyController extends Controller
             'name.unique' => 'Ya existe una familia con ese nombre en tu empresa.',
         ]);
 
+        // Creo la familia forzando company_id desde servidor.
         $family = ArticleFamily::create([
             'company_id' => $companyId,
             'name' => trim($validated['name']),
@@ -154,8 +166,10 @@ class ArticleFamilyController extends Controller
             return $authError;
         }
 
+        // Empresa del usuario para restringir alcance de la actualizacion.
         $companyId = $request->user()->company_id;
 
+        // Busco la familia dentro de la empresa autenticada.
         $family = ArticleFamily::where('company_id', $companyId)
             ->where('id', $id)
             ->first();
@@ -166,6 +180,7 @@ class ArticleFamilyController extends Controller
             ], 404);
         }
 
+        // En update uso "sometimes" para permitir cambios parciales de campos.
         $validated = $request->validate([
             'name' => [
                 'sometimes',
@@ -185,6 +200,7 @@ class ArticleFamilyController extends Controller
             'name.unique' => 'Ya existe una familia con ese nombre en tu empresa.',
         ]);
 
+        // Construyo update parcial: solo cambio lo que venga en la request.
         $family->update([
             'name' => $request->has('name') ? trim($validated['name']) : $family->name,
             'description' => $request->has('description') ? $validated['description'] : $family->description,

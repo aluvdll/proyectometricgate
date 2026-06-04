@@ -22,6 +22,8 @@ function formatDate(value) {
 }
 
 function waitForImagesLoaded(container) {
+  // Aqui espero a que todas las imagenes del bloque imprimible esten cargadas
+  // para evitar logos rotos o huecos en blanco al capturar el PDF.
   const images = Array.from(container.querySelectorAll("img"));
 
   return Promise.all(
@@ -123,37 +125,59 @@ export default function BudgetPrintPage() {
   }, [budget]);
 
   async function handleGeneratePdf() {
+    // Si todavia no tengo el nodo a imprimir o no hay presupuesto cargado,
+    // no intento generar nada para evitar errores de runtime.
     if (!printRef.current || !budget) return;
 
+    // Aqui activo estado visual de "generando" y limpio errores anteriores.
     setGeneratingPdf(true);
     setPdfError("");
 
     try {
+      // Primero me aseguro de que todas las imagenes (logo empresa, etc.)
+      // esten completamente cargadas antes de lanzar html2canvas.
       await waitForImagesLoaded(printRef.current);
 
+      // Importo la libreria de forma diferida para no cargarla en el bundle inicial
+      // y solo traerla cuando el usuario realmente pulsa "Descargar PDF".
       const { default: html2pdf } = await import("html2pdf.js");
+
+      // El nombre del fichero sale del numero de presupuesto para que sea facil de identificar.
       const fileName = `${budget.budget_number || "presupuesto"}.pdf`;
 
+      // Pipeline de html2pdf:
+      // 1) set: configuro calidad, margenes y formato de pagina.
+      // 2) from: le paso el nodo React ya renderizado para imprimir.
+      // 3) save: dispara la descarga del PDF en el navegador.
       await html2pdf()
         .set({
+          // Margen uniforme para que el contenido no quede pegado al borde.
           margin: [8, 8, 8, 8],
           filename: fileName,
+          // Exporto imagen interna a jpeg con buena calidad para equilibrar peso/definicion.
           image: { type: "jpeg", quality: 0.95 },
           html2canvas: {
+            // Subo escala para mejorar nitidez en texto fino y bordes.
             scale: 1.2,
+            // Permite capturar imagenes remotas con CORS habilitado.
             useCORS: true,
             logging: false,
             backgroundColor: "#ffffff",
+            // Evita quedarse esperando indefinidamente por imagenes lentas.
             imageTimeout: 15000,
           },
+          // Genero A4 vertical en milimetros para salida estandar de presupuesto.
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          // Respeta reglas CSS de salto cuando sea posible.
           pagebreak: { mode: ["css", "legacy"] },
         })
         .from(printRef.current)
         .save();
     } catch (err) {
+      // Si falla cualquier paso, muestro mensaje controlado al usuario.
       setPdfError(err?.message || "No se pudo generar el PDF.");
     } finally {
+      // Siempre desactivo el estado de carga, haya ido bien o mal.
       setGeneratingPdf(false);
     }
   }
