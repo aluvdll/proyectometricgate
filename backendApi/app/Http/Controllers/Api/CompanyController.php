@@ -239,8 +239,8 @@ class CompanyController extends Controller
     // ==============================================================
     // NOTA DE MANTENIMIENTO
     // Este bloque de destroy queda desactivado por ahora.
-    // Activarlo solo cuando se vuelva a habilitar el borrado fisico
-    // de empresas desde frontend y se quiera ejecutar el cascade total.
+    // Lo activare en breve desde SuperAdmin Panel, cuando se habilite
+    // el borrado fisico de empresas con su cascade completo.
     // Si permanece desactivado, revisar tambien la ruta DELETE
     // /api/companies/{id} para evitar endpoints activos sin metodo.
     // ==============================================================

@@ -28,17 +28,10 @@ class AuthController extends Controller
         // buscar usuario
         $user = User::where('email', $request->email)->first();
 
-        // error usuario no registrado
-        if (!$user) {
+        // Devuelvo el mismo mensaje para no filtrar si la cuenta existe o no.
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
-                'error' => 'Usuario no registrado'
-            ], 404);
-        }
-
-        // error contraseña incorrecta
-        if (!Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'error' => 'Usuario o contraseña incorrecta'
+                'error' => 'Credenciales invalidas'
             ], 401);
         }
 
@@ -60,9 +53,13 @@ class AuthController extends Controller
             }
         }
 
-        // 1) Creo un token de acceso para que el frontend pueda autenticarse
-        // en las siguientes peticiones (Authorization: Bearer ...).
-        $token = $user->createToken('api-token')->plainTextToken;
+        // Politica de rotacion: en cada login invalido tokens previos de este usuario.
+        $user->tokens()->delete();
+
+        // Politica de expiracion: el token vence segun SANCTUM_TOKEN_EXPIRATION.
+        $expirationMinutes = max((int) config('sanctum.expiration', 120), 1);
+        $expiresAt = now()->addMinutes($expirationMinutes);
+        $token = $user->createToken('api-token', ['*'], $expiresAt)->plainTextToken;
 
         // 2) Devuelvo la respuesta del login.
         // - user: lo paso por UserResource para que salga con el mismo formato
@@ -107,17 +104,15 @@ class AuthController extends Controller
     {
         // Validar email
         $request->validate([
-            'email' => 'required|email|exists:users,email'
-        ], [
-            'email.exists' => 'No encontramos una cuenta con ese email'
+            'email' => 'required|email'
         ]);
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
             return response()->json([
-                'error' => 'Usuario no encontrado'
-            ], 404);
+                'message' => 'Si el email es valido, recibiras instrucciones para recuperar tu contrasena'
+            ]);
         }
 
         // Generar token único
@@ -149,7 +144,7 @@ class AuthController extends Controller
             });
 
             return response()->json([
-                'message' => 'Se ha enviado un correo con instrucciones para recuperar tu contraseña'
+                'message' => 'Si el email es valido, recibiras instrucciones para recuperar tu contrasena'
             ]);
         } catch (\Throwable $e) {
             Log::error('Error enviando email de recuperación de contraseña', [
@@ -168,13 +163,20 @@ class AuthController extends Controller
      */
     public function resetPassword(Request $request)
     {
+        // Mensaje unificado actual para no filtrar estados internos.
+        // Mensajes antiguos que habia antes (los dejo comentados como referencia):
+        // - El token de recuperación es inválido o ha expirado
+        // - El token de recuperación es inválido
+        // - El token de recuperación ha expirado
+        // - El token de recuperacion es invalido o ha expirado
+        $invalidResetMessage = 'El proceso de recuperacion no es valido o ha expirado';
+
         // Validar datos
         $request->validate([
             'token' => 'required|string',
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required|email',
             'password' => 'required|string|min:6|confirmed'
         ], [
-            'email.exists' => 'Usuario no encontrado',
             'password.min' => 'La contraseña debe tener al menos 6 caracteres',
             'password.confirmed' => 'Las contraseñas no coinciden'
         ]);
@@ -186,14 +188,15 @@ class AuthController extends Controller
         // Verificar que el token existe
         if (!$record) {
             return response()->json([
-                'error' => 'El token de recuperación es inválido o ha expirado'
+                'error' => $invalidResetMessage
             ], 400);
         }
 
         // Verificar que el token es válido
         if (!Hash::check($request->token, $record->token)) {
             return response()->json([
-                'error' => 'El token de recuperación es inválido'
+                // 'error' => 'El token de recuperación es inválido'
+                'error' => $invalidResetMessage
             ], 400);
         }
 
@@ -202,7 +205,8 @@ class AuthController extends Controller
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
             return response()->json([
-                'error' => 'El token de recuperación ha expirado'
+                //'error' => 'El token de recuperación ha expirado'
+                'error' => $invalidResetMessage
             ], 400);
         }
 
@@ -211,8 +215,9 @@ class AuthController extends Controller
 
         if (!$user) {
             return response()->json([
-                'error' => 'Usuario no encontrado'
-            ], 404);
+                //  'error' => 'El token de recuperacion es invalido o ha expirado'
+                'error' => $invalidResetMessage
+            ], 400);
         }
 
         // Actualizar contraseña

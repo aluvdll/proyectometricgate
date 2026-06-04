@@ -5,7 +5,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Sanctum\Sanctum;
 
-// Este test comprueba la regresion: un superadmin sin company_id puede borrar usuarios de cualquier empresa.
+// Aqui compruebo la regresion: si soy superadmin sin company_id, puedo borrar usuarios de cualquier empresa.
 test('super admin can delete a user even without company assigned', function () {
     if (!in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
         $this->markTestSkipped('sqlite no está disponible en este entorno de tests.');
