@@ -169,7 +169,7 @@ class StripeController extends Controller
             'plan_name' => $planName,
             'amount_cents' => $amountCents,
         ], now()->addDays(7));
-
+        //ENVIO DE CORREO CON LINK DE REGISTRO
         try {
             Mail::send('emails.company-registration', [
                 'planName' => $planName,
@@ -309,12 +309,6 @@ class StripeController extends Controller
             return response()->json([
                 'message' => 'Este registro ya se completó anteriormente.',
             ], 409);
-        }
-
-        if (strcasecmp($validated['admin_email'], $registration['customer_email']) !== 0) {
-            return response()->json([
-                'message' => 'El email del administrador debe coincidir con el email usado en el pago.',
-            ], 422);
         }
 
         $logoPath = null;
