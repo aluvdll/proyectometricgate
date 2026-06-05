@@ -35,14 +35,21 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // error usuario inactivo
+        // Regla 1 de acceso: aunque las credenciales sean correctas,
+        // si el usuario esta inactivo no puede entrar al sistema.
+        // Se responde 403 (prohibido) porque el login es valido,
+        // pero la politica de negocio bloquea el acceso.
+        // AUN NO SE UTILIZA, PERO ES PROBABLE QUE EN EL FUTURO SE ACTIVE, POR ESO LO DEJO YA PUESTO.
         if (!$user->active) {
             return response()->json([
                 'error' => 'Usuario inactivo'
             ], 403);
         }
 
-        //  error empresa inactiva (solo aplica a usuarios de empresa)
+        // Regla 2 de acceso: para usuarios asociados a empresa,
+        // la empresa tambien debe estar activa.
+        // Si la empresa esta inactiva, se bloquea el acceso con 403.
+        // Nota: esto no aplica a usuarios sin company_id (por ejemplo, super admin).
         if ($user->company_id) {
             $company = Company::find($user->company_id);
 

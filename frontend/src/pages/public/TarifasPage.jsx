@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { NotificationModal } from "../../components/modals/NotificationModal";
 
+// Renderiza la pagina de tarifas y gestiona el flujo de checkout con Stripe.
 export const Tarifas = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export const Tarifas = () => {
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyType, setNotifyType] = useState("success");
 
+  // Muestra una notificacion temporal en pantalla con tipo y mensaje.
   const showNotification = (title, message, type = "success") => {
     setNotifyTitle(title);
     setNotifyMessage(message);
@@ -18,6 +20,7 @@ export const Tarifas = () => {
     setTimeout(() => setNotifyVisible(false), 3500);
   };
 
+  // Lee una notificacion enviada por navegacion y la muestra al entrar en la pagina.
   useEffect(() => {
     const notify = location.state?.notify;
 
@@ -34,6 +37,7 @@ export const Tarifas = () => {
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.state]);
 
+  // Inicia el checkout: valida configuracion, crea la sesion en backend y redirige a Stripe.
   const handleCheckout = async (plan = "basica") => {
     try {
       if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
@@ -44,7 +48,7 @@ export const Tarifas = () => {
         );
         return;
       }
-
+      //una u otra forma de configurar la url del backend, con prioridad a la variable de entorno y fallback a localhost.
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
       const response = await fetch(`${apiUrl}/api/checkout`, {
@@ -58,14 +62,18 @@ export const Tarifas = () => {
       if (!response.ok) {
         throw new Error("No se pudo crear la sesión de pago.");
       }
-
+//***************************************************** */
+//AQUI ES DONDE CREO LA SESION DE STRIPE.
       const session = await response.json();
       const sessionUrl = session?.url;
+
+      // session.url la genera Stripe en el backend y apunta al Checkout alojado de Stripe.
 
       if (!sessionUrl) {
         throw new Error("La respuesta del backend no incluye session.url.");
       }
 
+      // Redireccion exacta a Stripe: al asignar href, el navegador navega fuera de la app a esa URL.
       window.location.href = sessionUrl;
     } catch (error) {
       showNotification(

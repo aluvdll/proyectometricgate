@@ -18,9 +18,17 @@ use Stripe\Webhook;
 
 class StripeController extends Controller
 {
-    // Yo recibo y valido el webhook de Stripe para confirmar eventos de pago de forma segura.
+    // Flujo general del controlador:
+    // 1) checkout: crea la sesion de pago en Stripe y devuelve su URL.
+    // 2) confirmPaymentAndSendRegistrationEmail: comprueba pago, genera token y envia email.
+    // 3) registrationInfo: valida token y devuelve datos del pago para precargar el formulario.
+    // 4) completeRegistration: crea empresa + admin y marca el token como usado.
+    // 5) webhook: valida eventos firmados de Stripe (auditoria/soporte de eventos).
+
+    // Endpoint de webhook: valida firma de Stripe antes de procesar cualquier evento.
     public function webhook(Request $request)
     {
+        // Cuerpo crudo y cabecera de firma que Stripe envia en cada webhook.
         $payload = $request->getContent();
 
         $sig_header = $request->server('HTTP_STRIPE_SIGNATURE');
@@ -28,7 +36,7 @@ class StripeController extends Controller
         $endpoint_secret = config('services.stripe.webhook_secret');
 
         try {
-
+            // Si la firma no coincide o el payload es invalido, se aborta con 400.
             $event = Webhook::constructEvent(
                 $payload,
                 $sig_header,
@@ -46,12 +54,11 @@ class StripeController extends Controller
             ], 400);
         }
 
-        // PAGO EXITOSO
+        // Evento de pago completado: se deja trazabilidad en logs.
         if ($event->type === 'checkout.session.completed') {
 
             $session = $event->data->object;
 
-            // DEBUG
             Log::info('Pago completado Stripe', [
                 'session_id' => $session->id,
                 'email' => $session->customer_details->email ?? null,
@@ -65,16 +72,17 @@ class StripeController extends Controller
         ]);
     }
 
-    // Yo creo una sesion de Checkout en Stripe segun el plan seleccionado y devuelvo la URL de pago.
+    // Crea una sesion de Checkout en Stripe para el plan elegido y devuelve URL de pago.
     public function checkout(Request $request)
     {
-        // Cargo la clave secreta de Stripe para autenticar las llamadas al API desde el backend.
+        // Clave secreta de servidor para hablar con Stripe desde backend.
         Stripe::setApiKey(config('services.stripe.secret'));
 
         $plans = config('services.stripe.plans', []);
         $defaultPlan = array_key_first($plans) ?: 'basica';
         $requestedPlan = $request->input('plan', $defaultPlan);
 
+        // Solo permite planes definidos en configuracion.
         if (!array_key_exists($requestedPlan, $plans)) {
             return response()->json([
                 'message' => 'Plan no válido.',
@@ -84,8 +92,10 @@ class StripeController extends Controller
 
         $producto = $plans[$requestedPlan];
 
+        // Asegura que success_url reciba session_id para enlazar el retorno con Stripe.
         $successUrl = $this->appendSessionIdPlaceholder(config('services.stripe.success_url'));
 
+        // Stripe guarda esta sesion; el backend solo retorna id y url al frontend.
         $session = Session::create([
             'line_items' => [[
                 'price_data' => [
@@ -113,17 +123,20 @@ class StripeController extends Controller
         ]);
     }
 
-    // Yo verifico que la sesion pagada sea valida y envio el correo con el enlace de registro de empresa.
+    // Confirma que la sesion esta pagada y envia email con enlace seguro de registro.
     public function confirmPaymentAndSendRegistrationEmail(Request $request)
     {
-        // Valido que me llegue session_id y que tenga formato de texto antes de consultar Stripe.
+        // Valida entrada minima antes de consultar Stripe.
         $validated = $request->validate([
             'session_id' => 'required|string',
         ]);
 
+        // Configura la API key secreta para que este endpoint pueda
+        // consultar Stripe de forma autenticada.
         Stripe::setApiKey(config('services.stripe.secret'));
 
         try {
+            // Recupera estado real de la sesion desde Stripe (fuente de verdad del pago).
             $session = Session::retrieve($validated['session_id']);
         } catch (\Throwable $e) {
             return response()->json([
@@ -131,12 +144,14 @@ class StripeController extends Controller
             ], 422);
         }
 
+        // No permite continuar si Stripe no confirma estado paid.
         if (($session->payment_status ?? null) !== 'paid') {
             return response()->json([
                 'message' => 'El pago aún no aparece como completado.',
             ], 409);
         }
 
+        // Evita reenvios de correo para la misma sesion.
         $cacheKey = 'stripe_registration_email_sent_' . $session->id;
         if (Cache::has($cacheKey)) {
             return response()->json([
@@ -145,31 +160,41 @@ class StripeController extends Controller
             ]);
         }
 
+        // Yo aqui intento sacar el email del cliente de Stripe.
+        // Primero busco en customer_details.email, que es donde suele venir.
+        // Si ahi no viene, pruebo en customer_email, porque a veces Stripe 
+        // lo manda en ese campo.
+        // Si en ambos sigue vacio, devuelvo 422 porque sin email no puedo enviar el enlace de registro.
         $customerEmail = data_get($session, 'customer_details.email')
             ?? data_get($session, 'customer_email');
 
+        // Sin email no se puede enviar el enlace de registro, por eso se responde 422.
         if (!$customerEmail) {
             return response()->json([
                 'message' => 'No se encontró un email del cliente en la sesión.',
             ], 422);
         }
 
+        // Datos de pago mostrados en el email y en la pantalla de registro.
         $planName = data_get($session, 'metadata.plan_name', 'Plan contratado');
         $amountCents = (int) data_get($session, 'amount_total', 0);
         $amountEuros = number_format($amountCents / 100, 2, ',', '.');
         $frontendUrl = rtrim(env('FRONTEND_URL', 'http://localhost:5173'), '/');
 
+        // Token de un solo flujo para abrir el formulario de alta.
         $registrationToken = Str::random(64);
         $registrationTokenCacheKey = 'stripe_registration_token_' . $registrationToken;
         $registrationFormUrl = $frontendUrl . '/registro-empresa?token=' . $registrationToken;
 
+        // Persiste temporalmente datos asociados al token (caduca en 7 dias).
         Cache::put($registrationTokenCacheKey, [
             'session_id' => $session->id,
             'customer_email' => $customerEmail,
             'plan_name' => $planName,
             'amount_cents' => $amountCents,
         ], now()->addDays(7));
-        //ENVIO DE CORREO CON LINK DE REGISTRO
+
+        // Envia email de registro con enlace firmado por token.
         try {
             Mail::send('emails.company-registration', [
                 'planName' => $planName,
@@ -191,6 +216,7 @@ class StripeController extends Controller
             ], 500);
         }
 
+        // Marca que esta sesion ya recibio correo para evitar duplicados.
         Cache::put($cacheKey, true, now()->addDays(2));
 
         return response()->json([
@@ -199,7 +225,7 @@ class StripeController extends Controller
         ]);
     }
 
-    // Yo valido el token de registro y devuelvo los datos del pago para rellenar la pantalla de registro.
+    // Valida token de registro y devuelve datos para pintar el formulario de alta.
     public function registrationInfo(Request $request)
     {
         $validated = $request->validate([
@@ -214,6 +240,7 @@ class StripeController extends Controller
             ], 404);
         }
 
+        // Si ya se completo el alta para esta sesion, no se permite reutilizar.
         $completedCacheKey = 'stripe_registration_completed_' . $registration['session_id'];
         if (Cache::has($completedCacheKey)) {
             return response()->json([
@@ -229,10 +256,11 @@ class StripeController extends Controller
         ]);
     }
 
-    //completo el alta de empresa y administrador usando el token emitido tras un pago correcto.
+    // Completa alta de empresa y admin usando token emitido tras pago valido.
 
     public function completeRegistration(Request $request)
     {
+        // Valida todos los datos de empresa y administrador.
         $validated = $request->validate([
             'token' => 'required|string',
 
@@ -295,6 +323,7 @@ class StripeController extends Controller
             'admin_province' => 'provincia del administrador',
         ]);
 
+        // Recupera contexto de pago vinculado al token.
         $tokenCacheKey = 'stripe_registration_token_' . $validated['token'];
         $registration = Cache::get($tokenCacheKey);
 
@@ -304,6 +333,7 @@ class StripeController extends Controller
             ], 404);
         }
 
+        // Impide completar dos veces el mismo flujo.
         $completedCacheKey = 'stripe_registration_completed_' . $registration['session_id'];
         if (Cache::has($completedCacheKey)) {
             return response()->json([
@@ -311,6 +341,7 @@ class StripeController extends Controller
             ], 409);
         }
 
+        // Logo opcional: si llega archivo, se guarda antes de la transaccion.
         $logoPath = null;
         if ($request->hasFile('logo')) {
             $logoPath = $request->file('logo')->store('company-logos', 'local');
@@ -322,8 +353,10 @@ class StripeController extends Controller
             }
         }
 
+        // Transaccion atomica: crea empresa y admin, o revierte todo si falla.
         try {
             $resultado = DB::transaction(function () use ($validated, $registration, $logoPath) {
+                // Regla de negocio: limite de usuarios segun plan contratado.
                 $maxUsers = stripos($registration['plan_name'] ?? '', 'extendida') !== false ? 25 : 5;
 
                 $empresa = Company::create([
@@ -362,6 +395,7 @@ class StripeController extends Controller
                 ];
             });
         } catch (\Throwable $e) {
+            // Si falla la transaccion y se habia guardado logo, se limpia archivo huerfano.
             if ($logoPath) {
                 Storage::disk('local')->delete($logoPath);
             }
@@ -369,6 +403,7 @@ class StripeController extends Controller
             throw $e;
         }
 
+        // Invalida token y marca el flujo como completado.
         Cache::forget($tokenCacheKey);
         Cache::put($completedCacheKey, true, now()->addDays(30));
 
@@ -379,7 +414,7 @@ class StripeController extends Controller
         ], 201);
     }
 
-    // Yo agrego el placeholder de session_id a la URL de exito si todavia no esta incluido.
+    // Asegura que success_url incluya {CHECKOUT_SESSION_ID} para recuperar la sesion al volver.
     private function appendSessionIdPlaceholder(string $url): string
     {
         if (str_contains($url, '{CHECKOUT_SESSION_ID}')) {

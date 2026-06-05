@@ -15,6 +15,6 @@ export const loginUsuario = async (data) => {
     }
 
     // Error de conexión
-    throw new Error("Error de conexión con el servidor");
+    throw new Error("Error de conexión con el servidor, vuelva a intentarlo más tarde.  Si el problema persiste, contacte al soporte. Gracias por su paciencia. ");
   }
 };
