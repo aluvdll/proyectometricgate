@@ -410,10 +410,11 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     );
   };
 
-  // Aqui creo una nueva linea configurable usando el primer articulo configurable disponible.
+  // Aqui creo una nueva linea configurable:
+  // - si hay 1, entro directo a configurarlo
+  // - si hay más de 1, abro el modal para elegir
   const abrirNuevoConfigurable = () => {
-    const primerConfigurable = articulosConfigurables[0];
-    if (!primerConfigurable) {
+    if (!articulosConfigurables.length) {
       showNotification(
         "Sin configurables",
         "No hay artículos configurables disponibles.",
@@ -422,7 +423,13 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
       return;
     }
 
-    abrirPaginaConfigurable(primerConfigurable.id, lines.length, null);
+    if (articulosConfigurables.length === 1) {
+      abrirPaginaConfigurable(articulosConfigurables[0].id, lines.length, null);
+      return;
+    }
+
+    setConfigSearch("");
+    setIsConfigListModalOpen(true);
   };
 
   // Aqui recupero resultado de la pantalla configurable y restauro el formulario al volver.

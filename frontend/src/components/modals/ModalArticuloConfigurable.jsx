@@ -16,7 +16,12 @@ function parseRuleParams(params) {
 }
 
 // Aqui valido en frontend las medidas usando las reglas dinámicas que vienen del backend.
-function validarMedidasConReglas(medidas, rules = [], touched = {}) {
+function validarMedidasConReglas(
+  medidas,
+  rules = [],
+  touched = {},
+  articleCode = null,
+) {
   const errors = {};
 
   // Solo añado errores a campos ya tocados para no ensuciar la UI antes de tiempo.
@@ -89,38 +94,40 @@ function validarMedidasConReglas(medidas, rules = [], touched = {}) {
     }
   });
 
-  // Fallback de seguridad en frontend para PTA2H2FSP:
-  // aunque falte alguna regla dinámica en BD, mantenemos estas reglas clave en UI.
-  const dValue = toNumber(medidas.alto_hueco);
-  if (touched.alto_hueco && dValue !== null && dValue > 3000) {
-    addError("alto_hueco", "La medida D no puede ser superior a 3000mm.");
-  }
+  // Fallback de seguridad solo para PTA2H2FSP:
+  // evita aplicar reglas hardcodeadas a otros artículos configurables.
+  if (articleCode === "PTA2H2FSP") {
+    const dValue = toNumber(medidas.alto_hueco);
+    if (touched.alto_hueco && dValue !== null && dValue > 3000) {
+      addError("alto_hueco", "La medida D no puede ser superior a 3000mm.");
+    }
 
-  const aValue = toNumber(medidas.alto_obra);
-  if (
-    touched.alto_obra &&
-    aValue !== null &&
-    dValue !== null &&
-    aValue - dValue < 140
-  ) {
-    addError(
-      "alto_obra",
-      "La medida A debe ser al menos 140mm mayor que la medida D.",
-    );
-  }
+    const aValue = toNumber(medidas.alto_obra);
+    if (
+      touched.alto_obra &&
+      aValue !== null &&
+      dValue !== null &&
+      aValue - dValue < 140
+    ) {
+      addError(
+        "alto_obra",
+        "La medida A debe ser al menos 140mm mayor que la medida D.",
+      );
+    }
 
-  const bValue = toNumber(medidas.ancho_obra);
-  const cValue = toNumber(medidas.ancho_hueco);
-  if (
-    touched.ancho_obra &&
-    bValue !== null &&
-    cValue !== null &&
-    bValue < cValue
-  ) {
-    addError(
-      "ancho_obra",
-      "La medida B (ancho obra) no puede ser inferior a C (ancho hueco libre).",
-    );
+    const bValue = toNumber(medidas.ancho_obra);
+    const cValue = toNumber(medidas.ancho_hueco);
+    if (
+      touched.ancho_obra &&
+      bValue !== null &&
+      cValue !== null &&
+      bValue < cValue
+    ) {
+      addError(
+        "ancho_obra",
+        "La medida B (ancho obra) no puede ser inferior a C (ancho hueco libre).",
+      );
+    }
   }
 
   return errors;
@@ -171,6 +178,7 @@ function calcularMedidasFabricacionLive(medidas) {
 
 const COTAS_IMAGE_BY_CODE = {
   PTA2H2FSP: "/cotas/PTA2H2FSP-cotas.svg",
+  CORRED2H2F: "/cotas/CORRED2H2F-cotas.svg",
 };
 
 /**
@@ -284,7 +292,12 @@ export function ModalArticuloConfigurable({
     setTouched(nextTouched);
     setMedidas(nextMedidas);
     setErrores(
-      validarMedidasConReglas(nextMedidas, articulo?.rules, nextTouched),
+      validarMedidasConReglas(
+        nextMedidas,
+        articulo?.rules,
+        nextTouched,
+        articulo?.code,
+      ),
     );
     setResultado(null);
   }
@@ -316,7 +329,12 @@ export function ModalArticuloConfigurable({
     });
 
     // Hago una validación completa antes de disparar el cálculo remoto.
-    const frontErrors = validarMedidasConReglas(medidas, rules, touchedAll);
+    const frontErrors = validarMedidasConReglas(
+      medidas,
+      rules,
+      touchedAll,
+      articulo?.code,
+    );
     if (!hasRequiredValues || Object.keys(frontErrors).length > 0) {
       setResultado(null);
       return;
