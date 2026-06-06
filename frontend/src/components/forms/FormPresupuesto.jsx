@@ -230,14 +230,14 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
     const texto = clientSearch.trim().toLowerCase();
 
     if (!texto) {
-      return clientes.slice(0, 8);
+      return clientes.slice(0, 10);
     }
 
     return clientes
       .filter((cliente) =>
         construirTextoCliente(cliente).toLowerCase().includes(texto),
       )
-      .slice(0, 8);
+      .slice(0, 10);
   }, [clientes, clientSearch]);
 
   // Aqui filtro articulos estandar para el modal con buscador.
@@ -580,6 +580,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
         onSubmit={handleSubmit}
         className="w-full mx-auto rounded-md border border-orange-500 p-8 shadow-md"
       >
+        {/* CABECERA DEL FORMULARIO */}
         <h2 className="mb-6 text-xl font-bold text-gray-700 dark:text-gray-200">
           {isEdit ? "Editar presupuesto" : "Nuevo presupuesto"}
         </h2>
@@ -588,6 +589,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             Número de presupuesto: <strong>{budgetNumber}</strong>
           </div>
         )}
+        {/* DATOS GENERALES DEL PRESUPUESTO */}
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-bold text-gray-800 dark:text-gray-100">
@@ -722,6 +724,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </div>
           </div>
         </div>
+        {/* MODAL DE CLIENTES */}
         {isClientModalOpen && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-3"
@@ -763,12 +766,14 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                   <UserSearch value={clientSearch} onChange={setClientSearch} />
                 </div>
 
+                {/* LISTADO FILTRADO DE CLIENTES (VISIBLE EN MODAL) */}
                 <div className="max-h-105 space-y-2 overflow-y-auto pr-1">
                   {clientesFiltrados.map((cliente) => {
                     const seleccionado =
                       String(cliente.id) === String(formData.client_id);
 
                     return (
+                      //article es la etique html para cada cleinte.
                       <article
                         key={cliente.id}
                         className={`rounded-lg border px-3 py-2 shadow-sm ${
@@ -814,6 +819,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </div>
           </div>
         )}
+        {/* MODAL DE ARTICULOS */}
         {isArticleModalOpen && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-3"
@@ -855,6 +861,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                   </button>
                 </div>
 
+                {/* LISTADO FILTRADO DE ARTICULOS ESTANDAR */}
                 <div className="max-h-105 space-y-2 overflow-y-auto pr-1">
                   {articulosFiltrados.map((articulo) => (
                     <article
@@ -914,6 +921,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </div>
           </div>
         )}
+        {/* MODAL DE CONFIGURABLES */}
         {isConfigListModalOpen && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-3"
@@ -941,6 +949,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
                   <UserSearch value={configSearch} onChange={setConfigSearch} />
                 </div>
 
+                {/* LISTADO FILTRADO DE ARTICULOS CONFIGURABLES */}
                 <div className="max-h-105 space-y-2 overflow-y-auto pr-1">
                   {configurablesFiltrados.map((art) => (
                     <article
@@ -982,6 +991,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </div>
           </div>
         )}
+        {/* OBSERVACIONES GENERALES DEL PRESUPUESTO */}
         <div className="mb-6">
           <label className="mb-2 block text-sm font-bold">Observaciones</label>
           <textarea
@@ -993,6 +1003,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             className="w-full rounded-md border border-orange-500 px-3 py-2"
           />
         </div>
+        {/* BLOQUE DE LINEAS DEL PRESUPUESTO */}
         <div className="mb-4">
           <h3 className="text-lg font-bold text-gray-700 dark:text-gray-100">
             Líneas
@@ -1199,6 +1210,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </div>
           ))}
         </div>
+        {/* ACCIONES DE LINEAS (ANADIR ESTANDAR / ANADIR CONFIGURABLE) */}
         <div className="mt-4 flex gap-2">
           <button
             type="button"
@@ -1219,6 +1231,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             </button>
           )}
         </div>
+        {/* RESUMEN ECONOMICO CALCULADO EN TIEMPO REAL */}
         <div className="mt-6 rounded-md border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-gray-800">
           <div>
             Base imponible: <strong>{resumen.base.toFixed(2)} €</strong>
@@ -1230,6 +1243,7 @@ export function FormPresupuesto({ mode, presupuestoId = undefined }) {
             Total: <strong>{resumen.total.toFixed(2)} €</strong>
           </div>
         </div>
+        {/* ENVIO FINAL DEL PRESUPUESTO (CREATE / UPDATE) */}
         <button
           type="submit"
           disabled={saving}
