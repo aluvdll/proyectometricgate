@@ -163,11 +163,11 @@ class ConfigurableArticleController extends Controller
             return response()->json(['valid' => false, 'errors' => $errors], 422);
         }
 
-        // ── Calcular precio por parte ───────────────────────────────
-        $breakdown = $this->calcularDesglose($article, $data, $companyId);
-
         // Medidas técnicas derivadas para fabricación y explicación comercial
         $fabricationMeasures = $this->calcularMedidasFabricacion($data);
+
+        // ── Calcular precio por parte usando medidas de fabricación ──
+        $breakdown = $this->calcularDesglose($article, $data, $companyId, $fabricationMeasures);
 
         // Suma de todos los conceptos calculados
         $total = collect($breakdown)->sum('price');
@@ -239,8 +239,12 @@ class ConfigurableArticleController extends Controller
     // ─────────────────────────────────────────────────────────────────
     //  LÓGICA DE CÁLCULO
     // ─────────────────────────────────────────────────────────────────
-    private function calcularDesglose(ConfigurableArticle $article, array $data, int $companyId): array
-    {
+    private function calcularDesglose(
+        ConfigurableArticle $article,
+        array $data,
+        int $companyId,
+        array $fabricationMeasures = []
+    ): array {
         // Resultado por parte: clave => detalle de precio
         $breakdown     = [];
         // Opciones elegidas desde el frontend (por key de parte)
@@ -294,8 +298,20 @@ class ConfigurableArticleController extends Controller
                 // Cajón → precio por metro lineal × metros del cajón (cap 1480mm por motor)
                 'ml' => $effectivePrice * ($anchoCajon / 1000),
 
-                // Hojas → precio por m² × (ancho hueco real × alto en metros)
-                'm2' => $effectivePrice * (($anchoHueco / 1000) * ($alturaHueco / 1000)),
+                // m2 → para hojas se usa área de fabricación; si no existe, fallback a área de hueco
+                'm2' => $effectivePrice * match ($part->key) {
+                    'hojas_fijas' => (
+                        2
+                        * ((float) ($fabricationMeasures['ancho_cristal_fijos_laterales']['value_mm'] ?? 0) / 1000)
+                        * ((float) ($fabricationMeasures['alto_cristal_fijos_laterales']['value_mm'] ?? 0) / 1000)
+                    ),
+                    'hojas_moviles' => (
+                        2
+                        * ((float) ($fabricationMeasures['ancho_cristal_hojas_moviles']['value_mm'] ?? 0) / 1000)
+                        * ((float) ($fabricationMeasures['alto_cristal_hojas_moviles_sin_perfil_plinton']['value_mm'] ?? 0) / 1000)
+                    ),
+                    default => (($anchoHueco / 1000) * ($alturaHueco / 1000)),
+                },
 
                 // Precio fijo (fabricación)
                 'fixed', 'units' => $effectivePrice,
