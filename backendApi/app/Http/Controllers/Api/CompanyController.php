@@ -81,18 +81,41 @@ class CompanyController extends Controller
             ], 404);
         }
 
-        if (!Storage::disk('local')->exists($company->logo)) {
-            return response()->json([
-                'error' => 'Archivo de logo no encontrado'
-            ], 404);
+        $logoGuardado = (string) $company->logo;
+        $rutaRelativaPublica = null;
+
+        // Formato nuevo: /storage/logos/archivo.ext
+        if (str_starts_with($logoGuardado, '/storage/')) {
+            $rutaRelativaPublica = ltrim(substr($logoGuardado, strlen('/storage/')), '/');
         }
 
-        return response()->file(
-            Storage::disk('local')->path($company->logo),
-            [
-                'Cache-Control' => 'private, max-age=3600',
-            ]
-        );
+        // Formato directo en disco public: logos/archivo.ext
+        if (!$rutaRelativaPublica && str_starts_with($logoGuardado, 'logos/')) {
+            $rutaRelativaPublica = $logoGuardado;
+        }
+
+        if ($rutaRelativaPublica && Storage::disk('public')->exists($rutaRelativaPublica)) {
+            return response()->file(
+                Storage::disk('public')->path($rutaRelativaPublica),
+                [
+                    'Cache-Control' => 'private, max-age=3600',
+                ]
+            );
+        }
+
+        // Compatibilidad con formato antiguo guardado en disco local.
+        if (Storage::disk('local')->exists($logoGuardado)) {
+            return response()->file(
+                Storage::disk('local')->path($logoGuardado),
+                [
+                    'Cache-Control' => 'private, max-age=3600',
+                ]
+            );
+        }
+
+        return response()->json([
+            'error' => 'Archivo de logo no encontrado'
+        ], 404);
     }
 
     // Aqui listo todas las empresas para superadmin y las devuelvo con Resource.

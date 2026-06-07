@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class PanelEmpresasController extends Controller
 {
@@ -154,11 +155,20 @@ class PanelEmpresasController extends Controller
             'province' => 'sometimes|required|string|max:100',
             'postal_code' => 'sometimes|required|string|max:20',
             'logo' => 'nullable|string|max:255',
+            'logo_file' => 'nullable|image|max:2048',
             'max_users' => 'nullable|integer|min:1',
             'active' => 'sometimes|boolean',
         ]);
 
-        $empresa->update($request->all());
+        $datosActualizacion = $request->except(['logo_file']);
+
+        // Si llega un archivo de logo, lo guardo y sobreescribo la ruta de logo.
+        if ($request->hasFile('logo_file')) {
+            $rutaGuardada = $request->file('logo_file')->store('logos', 'public');
+            $datosActualizacion['logo'] = '/storage/' . $rutaGuardada;
+        }
+
+        $empresa->update($datosActualizacion);
 
         // Entrada: empresa actualizada.
         // Salida: empresa transformada por Resource de detalle.

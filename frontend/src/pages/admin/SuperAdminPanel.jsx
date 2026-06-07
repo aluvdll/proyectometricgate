@@ -41,6 +41,7 @@ const formularioEdicionInicial = {
   commercial_name: "",
   cif_nif: "",
   email: "",
+  logo: "",
   address: "",
   phone: "",
   phone2: "",
@@ -81,6 +82,10 @@ export function SuperAdminPanel() {
   const [cargandoEdicion, setCargandoEdicion] = useState(false);
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
   const [errorEdicion, setErrorEdicion] = useState("");
+  const [logoEdicionNoDisponible, setLogoEdicionNoDisponible] = useState(false);
+  const [logoArchivoEdicion, setLogoArchivoEdicion] = useState(null);
+  const [previsualizacionLogoEdicion, setPrevisualizacionLogoEdicion] =
+    useState("");
   const [formularioEdicion, setFormularioEdicion] = useState(
     formularioEdicionInicial,
   );
@@ -239,6 +244,9 @@ export function SuperAdminPanel() {
 
     setEmpresaEdicionActiva(empresa);
     setErrorEdicion("");
+    setLogoEdicionNoDisponible(false);
+    setLogoArchivoEdicion(null);
+    setPrevisualizacionLogoEdicion("");
     setCargandoEdicion(true);
 
     try {
@@ -249,6 +257,7 @@ export function SuperAdminPanel() {
         commercial_name: detalle?.commercial_name ?? "",
         cif_nif: detalle?.cif_nif ?? "",
         email: detalle?.email ?? "",
+        logo: detalle?.logo ?? "",
         address: detalle?.address ?? "",
         phone: detalle?.phone ?? "",
         phone2: detalle?.phone2 ?? "",
@@ -271,6 +280,9 @@ export function SuperAdminPanel() {
   const cerrarEdicionEmpresa = () => {
     setEmpresaEdicionActiva(null);
     setErrorEdicion("");
+    setLogoEdicionNoDisponible(false);
+    setLogoArchivoEdicion(null);
+    setPrevisualizacionLogoEdicion("");
     setCargandoEdicion(false);
     setGuardandoEdicion(false);
     setFormularioEdicion(formularioEdicionInicial);
@@ -278,10 +290,37 @@ export function SuperAdminPanel() {
 
   // Actualiza cualquier campo del formulario de edición de forma genérica.
   const cambiarCampoEdicion = (campo, valor) => {
+    if (campo === "logo") {
+      setLogoEdicionNoDisponible(false);
+    }
+
     setFormularioEdicion((prev) => ({
       ...prev,
       [campo]: valor,
     }));
+  };
+
+  // Aqui cargo una imagen desde el equipo para usarla como nuevo logo.
+  const cambiarArchivoLogoEdicion = (event) => {
+    const archivo = event.target.files?.[0] ?? null;
+
+    setLogoArchivoEdicion(archivo);
+    setLogoEdicionNoDisponible(false);
+
+    if (!archivo) {
+      setPrevisualizacionLogoEdicion("");
+      return;
+    }
+
+    const lector = new FileReader();
+    lector.onload = () => {
+      setPrevisualizacionLogoEdicion(String(lector.result || ""));
+    };
+    lector.onerror = () => {
+      setPrevisualizacionLogoEdicion("");
+      setLogoEdicionNoDisponible(true);
+    };
+    lector.readAsDataURL(archivo);
   };
 
   // Envía cambios al backend y recarga listado para reflejar valores actualizados.
@@ -293,20 +332,26 @@ export function SuperAdminPanel() {
     setErrorEdicion("");
 
     try {
-      await actualizarEmpresa(tokenSesion, empresaEdicionActiva.id, {
-        fiscal_name: formularioEdicion.fiscal_name,
-        commercial_name: formularioEdicion.commercial_name,
-        cif_nif: formularioEdicion.cif_nif,
-        email: formularioEdicion.email,
-        address: formularioEdicion.address,
-        phone: formularioEdicion.phone,
-        phone2: formularioEdicion.phone2,
-        city: formularioEdicion.city,
-        province: formularioEdicion.province,
-        postal_code: formularioEdicion.postal_code,
-        max_users: Number(formularioEdicion.max_users || 1),
-        active: Boolean(formularioEdicion.active),
-      });
+      await actualizarEmpresa(
+        tokenSesion,
+        empresaEdicionActiva.id,
+        {
+          fiscal_name: formularioEdicion.fiscal_name,
+          commercial_name: formularioEdicion.commercial_name,
+          cif_nif: formularioEdicion.cif_nif,
+          email: formularioEdicion.email,
+          logo: formularioEdicion.logo,
+          address: formularioEdicion.address,
+          phone: formularioEdicion.phone,
+          phone2: formularioEdicion.phone2,
+          city: formularioEdicion.city,
+          province: formularioEdicion.province,
+          postal_code: formularioEdicion.postal_code,
+          max_users: Number(formularioEdicion.max_users || 1),
+          active: Boolean(formularioEdicion.active),
+        },
+        logoArchivoEdicion,
+      );
 
       showNotification("Éxito", "Empresa actualizada correctamente", "success");
       await cargarEmpresas();
@@ -728,6 +773,52 @@ export function SuperAdminPanel() {
                       }
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                     />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Logo (archivo de imagen)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={cambiarArchivoLogoEdicion}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    />
+                    {formularioEdicion.logo && !logoArchivoEdicion && (
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-300">
+                        Logo actual guardado: {formularioEdicion.logo}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <p className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Previsualización del logo
+                    </p>
+                    <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 dark:border-slate-600 dark:bg-slate-800">
+                      {!previsualizacionLogoEdicion &&
+                      !formularioEdicion.logo ? (
+                        <p className="text-xs text-gray-500 dark:text-gray-300">
+                          Sin logo
+                        </p>
+                      ) : logoEdicionNoDisponible ? (
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                          No se pudo cargar la imagen seleccionada.
+                        </p>
+                      ) : (
+                        <img
+                          src={
+                            previsualizacionLogoEdicion ||
+                            formularioEdicion.logo
+                          }
+                          alt="Previsualización del logo de empresa"
+                          onError={() => setLogoEdicionNoDisponible(true)}
+                          onLoad={() => setLogoEdicionNoDisponible(false)}
+                          className="max-h-20 w-auto object-contain"
+                        />
+                      )}
+                    </div>
                   </div>
 
                   <div className="md:col-span-2">

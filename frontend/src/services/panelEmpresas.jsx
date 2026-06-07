@@ -2,12 +2,17 @@ import { API_URL } from "./apiBase";
 
 const API_BASE = `${API_URL}/api/panel/superadmin/empresas`;
 
-function crearHeaders(token) {
-  return {
+function crearHeaders(token, enviarJson = true) {
+  const headers = {
     Accept: "application/json",
-    "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   };
+
+  if (enviarJson) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return headers;
 }
 
 function urlAlternaLocal(url) {
@@ -125,12 +130,38 @@ export async function obtenerDetalleEmpresa(token, idEmpresa) {
 }
 
 // Actualiza los datos básicos de empresa desde el panel de superadmin.
-export async function actualizarEmpresa(token, idEmpresa, datos) {
-  const respuesta = await llamarApi(`${API_BASE}/${idEmpresa}`, {
-    method: "PUT",
-    headers: crearHeaders(token),
-    body: JSON.stringify(datos),
-  });
+export async function actualizarEmpresa(token, idEmpresa, datos, logoArchivo) {
+  let respuesta;
+
+  if (logoArchivo) {
+    const formData = new FormData();
+
+    Object.entries(datos).forEach(([clave, valor]) => {
+      if (valor === undefined || valor === null) return;
+
+      // Laravel valida boolean como 1/0 en formularios multipart.
+      if (typeof valor === "boolean") {
+        formData.append(clave, valor ? "1" : "0");
+        return;
+      }
+
+      formData.append(clave, String(valor));
+    });
+
+    formData.append("logo_file", logoArchivo);
+
+    respuesta = await llamarApi(`${API_BASE}/${idEmpresa}`, {
+      method: "PUT",
+      headers: crearHeaders(token, false),
+      body: formData,
+    });
+  } else {
+    respuesta = await llamarApi(`${API_BASE}/${idEmpresa}`, {
+      method: "PUT",
+      headers: crearHeaders(token),
+      body: JSON.stringify(datos),
+    });
+  }
 
   return extraerEmpresa(respuesta);
 }
