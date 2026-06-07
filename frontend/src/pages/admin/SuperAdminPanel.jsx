@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../context/AuthContext";
 import {
+  actualizarEmpresa,
   darAltaEmpresa,
   darBajaEmpresa,
+  obtenerDetalleEmpresa,
   obtenerEmpresas,
   obtenerUsuariosEmpresa,
   reactivarEmpresa,
@@ -34,6 +36,21 @@ const formularioInicial = {
   admin_province: "",
 };
 
+const formularioEdicionInicial = {
+  fiscal_name: "",
+  commercial_name: "",
+  cif_nif: "",
+  email: "",
+  address: "",
+  phone: "",
+  phone2: "",
+  city: "",
+  province: "",
+  postal_code: "",
+  max_users: 5,
+  active: true,
+};
+
 function obtenerMensajeError(error) {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -60,6 +77,13 @@ export function SuperAdminPanel() {
   const [usuariosEmpresa, setUsuariosEmpresa] = useState([]);
   const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
   const [errorUsuarios, setErrorUsuarios] = useState("");
+  const [empresaEdicionActiva, setEmpresaEdicionActiva] = useState(null);
+  const [cargandoEdicion, setCargandoEdicion] = useState(false);
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+  const [errorEdicion, setErrorEdicion] = useState("");
+  const [formularioEdicion, setFormularioEdicion] = useState(
+    formularioEdicionInicial,
+  );
 
   const showNotification = (title, message, type = "success") => {
     setNotifyTitle(title);
@@ -209,6 +233,93 @@ export function SuperAdminPanel() {
     setCargandoUsuarios(false);
   };
 
+  // Abre el modal de edición y carga los datos completos de la empresa desde backend.
+  const abrirEdicionEmpresa = async (empresa) => {
+    if (!tokenSesion) return;
+
+    setEmpresaEdicionActiva(empresa);
+    setErrorEdicion("");
+    setCargandoEdicion(true);
+
+    try {
+      const detalle = await obtenerDetalleEmpresa(tokenSesion, empresa.id);
+
+      setFormularioEdicion({
+        fiscal_name: detalle?.fiscal_name ?? "",
+        commercial_name: detalle?.commercial_name ?? "",
+        cif_nif: detalle?.cif_nif ?? "",
+        email: detalle?.email ?? "",
+        address: detalle?.address ?? "",
+        phone: detalle?.phone ?? "",
+        phone2: detalle?.phone2 ?? "",
+        city: detalle?.city ?? "",
+        province: detalle?.province ?? "",
+        postal_code: detalle?.postal_code ?? "",
+        max_users: detalle?.max_users ?? 5,
+        active: Boolean(detalle?.active),
+      });
+    } catch (err) {
+      const mensajeError = obtenerMensajeError(err);
+      setErrorEdicion(mensajeError);
+      showNotification("Error", mensajeError, "error");
+    } finally {
+      setCargandoEdicion(false);
+    }
+  };
+
+  // Cierra modal y deja el formulario listo para una futura edición.
+  const cerrarEdicionEmpresa = () => {
+    setEmpresaEdicionActiva(null);
+    setErrorEdicion("");
+    setCargandoEdicion(false);
+    setGuardandoEdicion(false);
+    setFormularioEdicion(formularioEdicionInicial);
+  };
+
+  // Actualiza cualquier campo del formulario de edición de forma genérica.
+  const cambiarCampoEdicion = (campo, valor) => {
+    setFormularioEdicion((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }));
+  };
+
+  // Envía cambios al backend y recarga listado para reflejar valores actualizados.
+  const guardarEdicionEmpresa = async (event) => {
+    event.preventDefault();
+    if (!tokenSesion || !empresaEdicionActiva) return;
+
+    setGuardandoEdicion(true);
+    setErrorEdicion("");
+
+    try {
+      await actualizarEmpresa(tokenSesion, empresaEdicionActiva.id, {
+        fiscal_name: formularioEdicion.fiscal_name,
+        commercial_name: formularioEdicion.commercial_name,
+        cif_nif: formularioEdicion.cif_nif,
+        email: formularioEdicion.email,
+        address: formularioEdicion.address,
+        phone: formularioEdicion.phone,
+        phone2: formularioEdicion.phone2,
+        city: formularioEdicion.city,
+        province: formularioEdicion.province,
+        postal_code: formularioEdicion.postal_code,
+        max_users: Number(formularioEdicion.max_users || 1),
+        active: Boolean(formularioEdicion.active),
+      });
+
+      showNotification("Éxito", "Empresa actualizada correctamente", "success");
+      await cargarEmpresas();
+      cerrarEdicionEmpresa();
+    } catch (err) {
+      const mensajeError = obtenerMensajeError(err);
+      setErrorEdicion(mensajeError);
+      showNotification("Error", mensajeError, "error");
+    } finally {
+      setGuardandoEdicion(false);
+    }
+  };
+
   if (!esSuperAdmin) {
     return (
       <div className="mt-24 px-6">
@@ -334,6 +445,12 @@ export function SuperAdminPanel() {
                             Usuarios
                           </button>
                           <button
+                            onClick={() => void abrirEdicionEmpresa(empresa)}
+                            className="rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+                          >
+                            Editar empresa
+                          </button>
+                          <button
                             onClick={() => void cambiarEstadoEmpresa(empresa)}
                             className={`rounded-md px-3 py-1.5 text-xs font-semibold text-white ${
                               empresa.active
@@ -424,6 +541,234 @@ export function SuperAdminPanel() {
                     </tbody>
                   </table>
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {empresaEdicionActiva && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <div className="w-full max-w-4xl rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Editar empresa: {empresaEdicionActiva.fiscal_name}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    Empresa ID: {empresaEdicionActiva.id}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={cerrarEdicionEmpresa}
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-slate-600 dark:text-gray-100 dark:hover:bg-slate-800"
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              {cargandoEdicion ? (
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Cargando datos de empresa...
+                </p>
+              ) : (
+                <form
+                  onSubmit={guardarEdicionEmpresa}
+                  className="grid grid-cols-1 gap-4 md:grid-cols-2"
+                >
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Nombre fiscal
+                    </label>
+                    <input
+                      value={formularioEdicion.fiscal_name}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("fiscal_name", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Nombre comercial
+                    </label>
+                    <input
+                      value={formularioEdicion.commercial_name}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("commercial_name", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      CIF/NIF
+                    </label>
+                    <input
+                      value={formularioEdicion.cif_nif}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("cif_nif", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formularioEdicion.email}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("email", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Dirección
+                    </label>
+                    <input
+                      value={formularioEdicion.address}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("address", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Teléfono principal
+                    </label>
+                    <input
+                      value={formularioEdicion.phone}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("phone", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Teléfono secundario
+                    </label>
+                    <input
+                      value={formularioEdicion.phone2}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("phone2", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Ciudad
+                    </label>
+                    <input
+                      value={formularioEdicion.city}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("city", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Provincia
+                    </label>
+                    <input
+                      value={formularioEdicion.province}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("province", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Código postal
+                    </label>
+                    <input
+                      value={formularioEdicion.postal_code}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("postal_code", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Máximo usuarios
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={formularioEdicion.max_users}
+                      onChange={(e) =>
+                        cambiarCampoEdicion("max_users", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(formularioEdicion.active)}
+                        onChange={(e) =>
+                          cambiarCampoEdicion("active", e.target.checked)
+                        }
+                      />
+                      Empresa activa
+                    </label>
+                  </div>
+
+                  {errorEdicion && (
+                    <div className="md:col-span-2 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+                      {errorEdicion}
+                    </div>
+                  )}
+
+                  <div className="md:col-span-2 flex items-center gap-2">
+                    <button
+                      type="submit"
+                      disabled={guardandoEdicion}
+                      className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {guardandoEdicion
+                        ? "Guardando cambios..."
+                        : "Guardar cambios"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={cerrarEdicionEmpresa}
+                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:border-slate-600 dark:text-gray-100 dark:hover:bg-slate-800"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
               )}
             </div>
           </div>

@@ -23,11 +23,9 @@ class PanelEmpresasController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return response()->json([
-            // Entrada: coleccion de empresas para listado.
-            // Salida: listado transformado por Resource minimo.
-            'empresas' => PanelEmpresaListadoResource::collection($empresas)->resolve(request()),
-        ]);
+        // Entrada: coleccion de empresas para listado.
+        // Salida: listado transformado por Resource minimo.
+        return PanelEmpresaListadoResource::collection($empresas);
     }
 
     // Aqui muestro detalle de una empresa concreta.
@@ -41,11 +39,9 @@ class PanelEmpresasController extends Controller
             ], 404);
         }
 
-        return response()->json([
-            // Entrada: empresa encontrada por id.
-            // Salida: empresa transformada por Resource de detalle.
-            'empresa' => (new PanelEmpresaResource($empresa))->resolve(request()),
-        ]);
+        // Entrada: empresa encontrada por id.
+        // Salida: empresa transformada por Resource de detalle.
+        return new PanelEmpresaResource($empresa);
     }
 
     // Aqui doy de alta una empresa y su usuario admin inicial.
@@ -124,13 +120,15 @@ class PanelEmpresasController extends Controller
             ];
         });
 
-        return response()->json([
-            'mensaje' => 'Empresa dada de alta correctamente',
-            // Entrada: empresa y admin creados en transaccion.
-            // Salida: ambos objetos transformados por Resource.
-            'empresa' => (new PanelEmpresaResource($resultado['empresa']))->resolve($request),
-            'administrador' => (new PanelEmpresaAdminResource($resultado['administrador']))->resolve($request),
-        ], 201);
+        // Entrada: empresa y admin creados en transaccion.
+        // Salida: empresa como Resource con metadatos adicionales.
+        return (new PanelEmpresaResource($resultado['empresa']))
+            ->additional([
+                'mensaje' => 'Empresa dada de alta correctamente',
+                'administrador' => new PanelEmpresaAdminResource($resultado['administrador']),
+            ])
+            ->response()
+            ->setStatusCode(201);
     }
 
     // Aqui actualizo datos de una empresa existente.
@@ -162,12 +160,12 @@ class PanelEmpresasController extends Controller
 
         $empresa->update($request->all());
 
-        return response()->json([
-            'mensaje' => 'Empresa actualizada correctamente',
-            // Entrada: empresa actualizada.
-            // Salida: empresa transformada por Resource de detalle.
-            'empresa' => (new PanelEmpresaResource($empresa))->resolve($request),
-        ]);
+        // Entrada: empresa actualizada.
+        // Salida: empresa transformada por Resource de detalle.
+        return (new PanelEmpresaResource($empresa))
+            ->additional([
+                'mensaje' => 'Empresa actualizada correctamente',
+            ]);
     }
 
     // Aqui doy de baja logica una empresa (active = false).
@@ -182,20 +180,20 @@ class PanelEmpresasController extends Controller
         }
 
         if (!$empresa->active) {
-            return response()->json([
-                'mensaje' => 'La empresa ya estaba dada de baja',
-                'empresa' => (new PanelEmpresaResource($empresa))->resolve(request()),
-            ]);
+            return (new PanelEmpresaResource($empresa))
+                ->additional([
+                    'mensaje' => 'La empresa ya estaba dada de baja',
+                ]);
         }
 
         $empresa->update(['active' => false]);
 
-        return response()->json([
-            'mensaje' => 'Empresa dada de baja correctamente',
-            // Entrada: empresa dada de baja.
-            // Salida: empresa transformada por Resource de detalle.
-            'empresa' => (new PanelEmpresaResource($empresa->fresh()))->resolve(request()),
-        ]);
+        // Entrada: empresa dada de baja.
+        // Salida: empresa transformada por Resource de detalle.
+        return (new PanelEmpresaResource($empresa->fresh()))
+            ->additional([
+                'mensaje' => 'Empresa dada de baja correctamente',
+            ]);
     }
 
     // Aqui reactivo una empresa dada de baja.
@@ -210,19 +208,19 @@ class PanelEmpresasController extends Controller
         }
 
         if ($empresa->active) {
-            return response()->json([
-                'mensaje' => 'La empresa ya estaba activa',
-                'empresa' => (new PanelEmpresaResource($empresa))->resolve(request()),
-            ]);
+            return (new PanelEmpresaResource($empresa))
+                ->additional([
+                    'mensaje' => 'La empresa ya estaba activa',
+                ]);
         }
 
         $empresa->update(['active' => true]);
 
-        return response()->json([
-            'mensaje' => 'Empresa reactivada correctamente',
-            // Entrada: empresa reactivada.
-            // Salida: empresa transformada por Resource de detalle.
-            'empresa' => (new PanelEmpresaResource($empresa->fresh()))->resolve(request()),
-        ]);
+        // Entrada: empresa reactivada.
+        // Salida: empresa transformada por Resource de detalle.
+        return (new PanelEmpresaResource($empresa->fresh()))
+            ->additional([
+                'mensaje' => 'Empresa reactivada correctamente',
+            ]);
     }
 }

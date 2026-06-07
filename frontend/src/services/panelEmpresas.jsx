@@ -73,13 +73,37 @@ async function llamarApi(url, options) {
   return data;
 }
 
+function extraerListaEmpresas(respuesta) {
+  if (Array.isArray(respuesta?.empresas)) {
+    return respuesta.empresas;
+  }
+
+  if (Array.isArray(respuesta?.data)) {
+    return respuesta.data;
+  }
+
+  return [];
+}
+
+function extraerEmpresa(respuesta) {
+  if (respuesta?.empresa) {
+    return respuesta.empresa;
+  }
+
+  if (respuesta?.data) {
+    return respuesta.data;
+  }
+
+  return null;
+}
+
 export async function obtenerEmpresas(token) {
   const respuesta = await llamarApi(API_BASE, {
     method: "GET",
     headers: crearHeaders(token),
   });
 
-  return respuesta.empresas;
+  return extraerListaEmpresas(respuesta);
 }
 
 export async function darAltaEmpresa(token, datos) {
@@ -88,6 +112,27 @@ export async function darAltaEmpresa(token, datos) {
     headers: crearHeaders(token),
     body: JSON.stringify(datos),
   });
+}
+
+// Devuelve el detalle completo de una empresa para rellenar el formulario de edición.
+export async function obtenerDetalleEmpresa(token, idEmpresa) {
+  const respuesta = await llamarApi(`${API_BASE}/${idEmpresa}`, {
+    method: "GET",
+    headers: crearHeaders(token),
+  });
+
+  return extraerEmpresa(respuesta);
+}
+
+// Actualiza los datos básicos de empresa desde el panel de superadmin.
+export async function actualizarEmpresa(token, idEmpresa, datos) {
+  const respuesta = await llamarApi(`${API_BASE}/${idEmpresa}`, {
+    method: "PUT",
+    headers: crearHeaders(token),
+    body: JSON.stringify(datos),
+  });
+
+  return extraerEmpresa(respuesta);
 }
 
 export async function darBajaEmpresa(token, idEmpresa) {

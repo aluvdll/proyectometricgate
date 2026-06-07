@@ -12,6 +12,8 @@ export function ArticulosPanel() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const esAdmin = user?.role === "admin";
+  const esTecnico = user?.role === "technician";
+  const mostrarAccionesConfigurables = !esTecnico;
 
   const [articulos, setArticulos] = useState([]);
   const [articulosConfigurables, setArticulosConfigurables] = useState([]);
@@ -238,9 +240,11 @@ export function ArticulosPanel() {
                   <th className="px-3 py-2 text-center text-gray-800">
                     Estado
                   </th>
-                  <th className="px-3 py-2 text-center text-gray-800">
-                    Acciones
-                  </th>
+                  {mostrarAccionesConfigurables && (
+                    <th className="px-3 py-2 text-center text-gray-800">
+                      Acciones
+                    </th>
+                  )}
                 </tr>
               </thead>
 
@@ -263,24 +267,28 @@ export function ArticulosPanel() {
                     <td className="border border-orange-400 px-3 py-2 text-center text-gray-700">
                       {a.active ? "Activo" : "Inactivo"}
                     </td>
-                    <td className="border border-orange-400 px-3 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(`/adminPanel/presupuestos/nuevopresupuesto`)
-                        }
-                        className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
-                      >
-                        Usar en presupuesto
-                      </button>
-                    </td>
+                    {mostrarAccionesConfigurables && (
+                      <td className="border border-orange-400 px-3 py-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/adminPanel/presupuestos/nuevopresupuesto`,
+                            )
+                          }
+                          className="rounded-md bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+                        >
+                          Usar en presupuesto
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
 
                 {configurablesFiltrados.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={mostrarAccionesConfigurables ? 5 : 4}
                       className="px-3 py-6 text-center text-gray-600"
                     >
                       No hay artículos configurables para mostrar
