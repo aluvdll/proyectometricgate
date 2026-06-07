@@ -90,7 +90,10 @@ class CompanyController extends Controller
         return response()->file(
             Storage::disk('local')->path($company->logo),
             [
-                'Cache-Control' => 'private, max-age=3600',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, private',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+                'Vary' => 'Authorization',
             ]
         );
     }

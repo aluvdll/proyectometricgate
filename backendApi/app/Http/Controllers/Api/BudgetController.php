@@ -15,6 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 class BudgetController extends Controller
 {
+    // Esta funcion la uso para cortar acceso al principio y asegurar que solo entren usuarios validos de mi empresa.
     // Aqui centralizo la validacion de acceso para los endpoints de presupuestos.
     // Solo permito usuarios autenticados con rol admin o commercial y con empresa asignada.
     private function authorizeAdminOrCommercial(Request $request)
@@ -47,6 +48,7 @@ class BudgetController extends Controller
         return null;
     }
 
+    // Esta funcion me devuelve todas las reglas que voy a aplicar al payload para crear o actualizar sin duplicar codigo.
     // Aqui defino las reglas de validacion para crear o actualizar presupuestos.
     // Reutilizo esta funcion para no duplicar reglas en store y update.
     private function rules(int $companyId, bool $isUpdate = false): array
@@ -102,6 +104,7 @@ class BudgetController extends Controller
         ];
     }
 
+    // Esta funcion centraliza los textos de error para que frontend reciba mensajes claros y consistentes.
     // Aqui agrupo todos los mensajes de error personalizados de validacion.
     // Asi mantengo textos consistentes para frontend.
     private function messages(): array
@@ -122,6 +125,7 @@ class BudgetController extends Controller
         ];
     }
 
+    // Esta funcion genera el siguiente numero de presupuesto por empresa y año con formato fijo para mantener trazabilidad.
     // Aqui genero el numero de presupuesto correlativo por año y por empresa.
     // Formato final: YYYY-00001.
     private function generateBudgetNumber(int $companyId, string $budgetDate): string
@@ -157,6 +161,7 @@ class BudgetController extends Controller
         return $year . '-' . str_pad((string) $nextSequence, 5, '0', STR_PAD_LEFT);
     }
 
+    // Esta funcion es mi motor de calculo: normaliza lineas, calcula importes y prepara todo lo que luego voy a guardar.
     // Aqui preparo las lineas del presupuesto y calculo importes totales.
     // Tambien valido coherencia en lineas configurables y separo su configuracion.
     private function buildLines(array $lines, int $companyId): array
@@ -173,11 +178,17 @@ class BudgetController extends Controller
         }
 
         // Aqui recojo los ids de articulos estandar para resolver datos por lote.
+        // Aqui convierto el array de lineas en una coleccion para poder encadenar operaciones comodamente.
         $articleIds = collect($lines)
+            // Aqui me quedo solo con el valor standard_article_id de cada linea.
             ->pluck('standard_article_id')
+            // Aqui quito los valores vacios o nulos para no consultar ids invalidos.
             ->filter()
+            // Aqui fuerzo cada id a entero para trabajar siempre con un tipo consistente.
             ->map(fn ($id) => (int) $id)
+            // Aqui reindexo la coleccion desde cero para dejarla limpia y ordenada.
             ->values()
+            // Aqui convierto la coleccion final en array normal para usarlo en whereIn.
             ->all();
 
         // Aqui cargo articulos estandar de la empresa y los indexo por id.
@@ -237,7 +248,8 @@ class BudgetController extends Controller
                 $configurationsToSave[$index] = $line['configuration'];
             }
 
-            // Aqui acumulo la linea y sumo sus importes a los totales del presupuesto.
+            // Aqui acumulo la linea y 
+            // SUMO sus importes a los totales del presupuesto.
             $preparedLines[] = $preparedLine;
 
             $baseAmount += $netSubtotal;
@@ -255,6 +267,7 @@ class BudgetController extends Controller
         ];
     }
 
+    // Esta funcion devuelve el listado de presupuestos de la empresa actual para pintar el panel de forma ligera.
     public function index(Request $request)
     {
         // Aqui valido permisos antes de listar presupuestos.
@@ -279,6 +292,7 @@ class BudgetController extends Controller
         ]);
     }
 
+    // Esta funcion devuelve el detalle completo de un presupuesto concreto siempre dentro del contexto de mi empresa.
     public function show(Request $request, int $id)
     {
         // Aqui valido permisos antes de ver detalle.
@@ -309,6 +323,7 @@ class BudgetController extends Controller
         ]);
     }
 
+    // Esta funcion crea un presupuesto nuevo de principio a fin: valida, calcula y guarda cabecera, lineas y configuraciones en transaccion.
     public function store(Request $request)
     {
         // Aqui valido permisos antes de crear un presupuesto nuevo.
@@ -378,6 +393,7 @@ class BudgetController extends Controller
         ], 201);
     }
 
+    // Esta funcion actualiza un presupuesto existente recalculando todo en backend y creando pedido automaticamente si pasa a aceptado.
     public function update(Request $request, int $id)
     {
         // Aqui valido permisos antes de actualizar presupuesto.

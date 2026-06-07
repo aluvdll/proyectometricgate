@@ -37,9 +37,10 @@ export async function obtenerLogoEmpresaDataUrl() {
   }
 
   try {
-    const response = await fetch(`${API_URL}/api/company/logo`, {
+    const response = await fetch(`${API_URL}/api/company/logo?v=${Date.now()}`, {
       method: "GET",
       headers: authHeaders("image/*"),
+      cache: "no-store",
     });
 
     if (!response.ok) {
